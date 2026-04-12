@@ -1,0 +1,34 @@
+{
+  "app": {
+    "title": "Nova Chat",
+    "ready": "Application ready"
+  },
+  "loading": {
+    "welcome": "Welcome to Nova ✨",
+    "status": {
+      "idle": "Preparing…",
+      "single": "In progress: {{label}}…",
+      "multiple": "In progress: {{count}} tasks…"
+    },
+    "error": {
+      "title": "Startup error ❌",
+      "retry": "Retry"
+    }
+  },
+  "boot": {
+    "steps": {
+      "preDelay": "Initialization",
+      "ipc": "Connecting to main process",
+      "libs": "Loading libraries",
+      "postDelay": "Finalizing"
+    },
+    "errors": {
+      "ipc": "Unable to contact the main process",
+      "libs": "Error while loading libraries"
+    }
+  },
+  "errors": {
+    "timeout": "Timeout after {{ms}} ms",
+    "unknown": "Unknown error"
+  }
+}

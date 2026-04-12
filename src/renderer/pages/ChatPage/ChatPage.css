@@ -1,0 +1,149 @@
+.chat-page {
+  position: relative;
+  display: grid;
+  grid-template-columns: 304px minmax(0, 1fr);
+  gap: 18px;
+  height: 100vh;
+  padding: 18px;
+  background: var(--color-surface);
+  overflow: hidden;
+}
+
+.chat-page::before,
+.chat-page::after {
+  content: "";
+  position: absolute;
+  border-radius: 999px;
+  pointer-events: none;
+  filter: blur(132px);
+  opacity: 0.58;
+  will-change: transform, opacity;
+}
+
+.chat-page::before {
+  top: -220px;
+  right: 12%;
+  width: 520px;
+  height: 520px;
+  background: rgba(0, 191, 255, 0.14);
+  box-shadow:
+    0 0 120px rgba(0, 191, 255, 0.2),
+    0 0 220px rgba(0, 191, 255, 0.12),
+    0 0 340px rgba(0, 191, 255, 0.06);
+  animation: nova-orbit-one 18s ease-in-out infinite alternate;
+}
+
+.chat-page::after {
+  bottom: -240px;
+  left: 18%;
+  width: 480px;
+  height: 480px;
+  background: rgba(28, 100, 242, 0.11);
+  box-shadow:
+    0 0 110px rgba(28, 100, 242, 0.18),
+    0 0 200px rgba(28, 100, 242, 0.1),
+    0 0 320px rgba(28, 100, 242, 0.05);
+  animation: nova-orbit-two 24s ease-in-out infinite alternate;
+}
+
+.chat-page__main {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  height: calc(100vh - 36px);
+  min-width: 0;
+  border: 1px solid var(--color-line-soft);
+  border-radius: 28px;
+  background: linear-gradient(180deg, rgba(18, 26, 39, 0.94), rgba(10, 14, 20, 0.94));
+  box-shadow:
+    0 28px 60px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  overflow: hidden;
+}
+
+.chat-page__content {
+  position: relative;
+  min-height: 0;
+  background:
+    linear-gradient(180deg, rgba(9, 13, 19, 0.22), transparent 18%),
+    var(--color-surface);
+  overflow: hidden;
+}
+
+.chat-page__content::before {
+  content: "";
+  position: absolute;
+  top: -8%;
+  right: -3%;
+  width: 520px;
+  height: 520px;
+  border-radius: 999px;
+  background: var(--color-accent-medium);
+  box-shadow:
+    0 0 120px var(--color-accent-strong),
+    0 0 240px var(--color-accent-medium),
+    0 0 380px rgba(0, 191, 255, 0.12);
+  filter: blur(92px);
+  transform-origin: center;
+  pointer-events: none;
+  opacity: 0.46;
+  will-change: transform, opacity;
+  animation: nova-content-breathe 24s ease-in-out infinite;
+}
+
+.chat-page__panel {
+  height: 100%;
+  border: 1px solid var(--color-line-soft);
+  background: linear-gradient(180deg, rgba(15, 22, 34, 0.9), rgba(11, 15, 20, 0.82));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+  overflow: hidden;
+}
+
+@keyframes nova-orbit-one {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.46;
+  }
+  100% {
+    transform: translate3d(22px, 32px, 0) scale(1.08);
+    opacity: 0.68;
+  }
+}
+
+@keyframes nova-orbit-two {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.4;
+  }
+  100% {
+    transform: translate3d(-28px, -18px, 0) scale(1.06);
+    opacity: 0.58;
+  }
+}
+
+@keyframes nova-content-breathe {
+  0% {
+    transform: scale(0.98);
+    opacity: 0.46;
+  }
+  50% {
+    transform: scale(1.06);
+    opacity: 0.58;
+  }
+  100% {
+    transform: scale(0.98);
+    opacity: 0.46;
+  }
+}
+
+@media (max-width: 900px) {
+  .chat-page {
+    grid-template-columns: 1fr;
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .chat-page__main {
+    height: calc(100vh - 24px);
+  }
+}

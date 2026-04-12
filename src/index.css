@@ -1,0 +1,92 @@
+:root {
+  color: #e5e7eb;
+  background: #0b0f14;
+  font-family:
+    Inter, "Segoe UI", sans-serif;
+  --color-accent: #0d6ea8;
+  --color-accent-glow: rgba(13, 110, 168, 0.42);
+  --color-accent-strong: rgba(13, 110, 168, 0.36);
+  --color-accent-medium: rgba(13, 110, 168, 0.24);
+  --color-accent-soft: rgba(13, 110, 168, 0.18);
+  --color-accent-subtle: rgba(13, 110, 168, 0.08);
+  --color-background: #0b0f14;
+  --color-background-secondary: #111827;
+  --color-background-tertiary: #0f1722;
+  --color-surface-elevated: #121a27;
+  --color-border: #1f2937;
+  --color-border-strong: rgba(255, 255, 255, 0.08);
+  --color-border-soft: rgba(255, 255, 255, 0.06);
+  --color-line-soft: rgba(255, 255, 255, 0.04);
+  --color-muted: #9ca3af;
+  --color-text: #e5e7eb;
+  --color-text-strong: #f3f4f6;
+  --color-text-soft: #dbe4ee;
+  --color-placeholder: #7f8b98;
+  --color-panel: #111827;
+  --color-panel-overlay: rgba(17, 24, 39, 0.78);
+  --color-panel-overlay-strong: rgba(17, 24, 39, 0.84);
+  --color-sidebar: #0f1722;
+  --color-surface: #0b0f14;
+  --color-user: #10253a;
+  --color-button-text: #03131d;
+  --color-danger-surface: rgba(56, 20, 24, 0.48);
+  --color-danger-surface-hover: rgba(88, 24, 32, 0.58);
+  --color-danger-text: #f3b6be;
+  --color-danger-text-strong: #ffd0d5;
+  --color-danger-border: rgba(248, 113, 113, 0.28);
+  --color-black-shadow: rgba(0, 0, 0, 0.28);
+  --shadow-soft: 0 12px 30px rgba(0, 0, 0, 0.28);
+  --header-height: 72px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  margin: 0 !important;
+  color: var(--color-text);
+  background:
+    linear-gradient(180deg, rgba(10, 14, 20, 0.96), rgba(11, 15, 20, 1)),
+    var(--color-background);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+}
+
+button,
+textarea {
+  font: inherit;
+}
+
+::selection {
+  background: var(--color-accent-medium);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #233244 transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: #233244;
+  background-clip: padding-box;
+}

@@ -1,0 +1,9 @@
+.message-list {
+  display: grid;
+  gap: 18px;
+  height: 100%;
+  padding: 30px clamp(18px, 4vw, 54px);
+  overflow-y: auto;
+  scroll-behavior: smooth;
+  align-content: start;
+}
