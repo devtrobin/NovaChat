@@ -11,6 +11,11 @@ export type RunTurnResult = {
   ok: boolean;
 };
 
+export type SubmitCommandInputRequest = {
+  commandId: string;
+  value: string;
+};
+
 export type ChatTurnEvent =
   | {
       conversationId: string;

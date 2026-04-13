@@ -1,5 +1,10 @@
 export type AIProviderId = "openai";
 
+export type LocalFilesSettings = {
+  conversationsDirectory: string;
+  settingsPath: string;
+};
+
 export type OpenAISettings = {
   apiKey: string;
   baseUrl: string;
@@ -9,6 +14,7 @@ export type OpenAISettings = {
 
 export type AppSettings = {
   activeProvider: AIProviderId;
+  localFiles: LocalFilesSettings;
   openai: OpenAISettings;
 };
 

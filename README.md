@@ -2,7 +2,7 @@
 
 Nova Chat est une application desktop Electron + React pensée comme une interface de chat type ChatGPT, avec un thème Nova sombre, une persistance locale des conversations, une configuration OpenAI et un canal `device` permettant a l'agent de demander l'execution de commandes locales.
 
-![Capture de Nova Chat](<src/ressources/Capture d’écran 2026-04-12 à 04.27.13.png>)
+![Capture de Nova Chat](docs/screenshot.png)
 
 ## Fonctionnalites
 

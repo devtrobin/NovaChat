@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from "electron";
 import { PersistedChatState } from "./renderer/types/chat.types";
-import { ChatTurnEvent, RunTurnRequest, RunTurnResult } from "./shared/ai.types";
+import { ChatTurnEvent, RunTurnRequest, RunTurnResult, SubmitCommandInputRequest } from "./shared/ai.types";
 import { AppSettings, SettingsTestResult } from "./shared/settings.types";
 
 type AIEventListener = (event: ChatTurnEvent) => void;
@@ -28,5 +28,7 @@ contextBridge.exposeInMainWorld("nova", {
       return () => ipcRenderer.removeListener("nova:ai:event", wrapped);
     },
     runTurn: (request: RunTurnRequest): Promise<RunTurnResult> => ipcRenderer.invoke("nova:ai:run-turn", request),
+    submitCommandInput: (payload: SubmitCommandInputRequest): Promise<boolean> =>
+      ipcRenderer.invoke("nova:ai:submit-command-input", payload),
   },
 });

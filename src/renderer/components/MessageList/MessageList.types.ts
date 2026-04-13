@@ -4,4 +4,5 @@ export type MessageListProps = {
   messages: ChatMessage[];
   onKillCommand?: (commandId: string) => void;
   onOpenSettings?: () => void;
+  onSubmitCommandInput?: (commandId: string, value: string) => void;
 };

@@ -3,8 +3,14 @@ import { formatMessageTime } from "./MessageItem.service";
 import { MessageItemProps } from "./MessageItem.types";
 import "./MessageItem.css";
 
-export default function MessageItem({ message, onKillCommand, onOpenSettings }: MessageItemProps) {
+export default function MessageItem({
+  message,
+  onKillCommand,
+  onOpenSettings,
+  onSubmitCommandInput,
+}: MessageItemProps) {
   const [showResult, setShowResult] = React.useState(false);
+  const [commandInput, setCommandInput] = React.useState("");
 
   if (message.from === "system") {
     return (
@@ -24,6 +30,8 @@ export default function MessageItem({ message, onKillCommand, onOpenSettings }: 
 
   if (message.to === "device" || message.from === "device") {
     const isRunningCommand = message.to === "device" && message.status === "running";
+    const isWaitingForInput = message.to === "device" && message.status === "waiting-input";
+    const displayOutput = message.to === "device" ? message.result?.trim() : "";
 
     return (
       <article className="message-item message-item--device">
@@ -45,6 +53,30 @@ export default function MessageItem({ message, onKillCommand, onOpenSettings }: 
           </div>
         </div>
         <pre className="message-item__console-command">{message.content}</pre>
+        {displayOutput ? <pre className="message-item__console-result">{message.result}</pre> : null}
+        {isWaitingForInput && message.commandId ? (
+          <form
+            className="message-item__console-input-row"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const value = commandInput;
+              if (!value) return;
+              onSubmitCommandInput?.(message.commandId as string, value);
+              setCommandInput("");
+            }}
+          >
+            <input
+              className="message-item__console-input"
+              onChange={(event) => setCommandInput(event.target.value)}
+              placeholder={message.inputPlaceholder ?? "Entrez la valeur demandee"}
+              type={message.inputSecret ? "password" : "text"}
+              value={commandInput}
+            />
+            <button className="message-item__console-submit" type="submit">
+              Envoyer
+            </button>
+          </form>
+        ) : null}
         {message.from === "device" && message.isExpandable && message.result ? (
           <>
             <button
@@ -59,6 +91,9 @@ export default function MessageItem({ message, onKillCommand, onOpenSettings }: 
         ) : null}
         {isRunningCommand ? (
           <p className="message-item__console-status">Execution en cours...</p>
+        ) : null}
+        {isWaitingForInput ? (
+          <p className="message-item__console-status">Saisie requise pour continuer la commande.</p>
         ) : null}
       </article>
     );

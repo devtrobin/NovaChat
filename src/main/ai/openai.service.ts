@@ -1,19 +1,35 @@
-import { ChatMessage } from "../../renderer/types/chat.types";
+import { ApiRequestRecord, ChatMessage } from "../../renderer/types/chat.types";
 import { OpenAISettings, SettingsTestResult } from "../../shared/settings.types";
 
 type ProviderResponse =
   | { content: string; from: "assistant"; to: "device" | "user" };
 
+export class OpenAIRequestError extends Error {
+  apiRecords: ApiRequestRecord[];
+
+  constructor(message: string, apiRecords: ApiRequestRecord[]) {
+    super(message);
+    this.apiRecords = apiRecords;
+  }
+}
+
+export type GenerateOpenAIReplyResult = {
+  apiRecords: ApiRequestRecord[];
+  providerResponse: ProviderResponse;
+};
+
 export async function generateOpenAIReply(
   settings: OpenAISettings,
   messages: ChatMessage[],
-): Promise<ProviderResponse> {
+): Promise<GenerateOpenAIReplyResult> {
+  const requestBody = {
+    input: buildInput(messages),
+    model: settings.model,
+    store: false,
+  };
+
   const response = await fetch(`${stripTrailingSlash(settings.baseUrl)}/responses`, {
-    body: JSON.stringify({
-      input: buildInput(messages),
-      model: settings.model,
-      store: false,
-    }),
+    body: JSON.stringify(requestBody),
     headers: {
       "Authorization": `Bearer ${settings.apiKey}`,
       "Content-Type": "application/json",
@@ -21,13 +37,46 @@ export async function generateOpenAIReply(
     method: "POST",
   });
 
+  const requestRecord: ApiRequestRecord = {
+    at: new Date().toISOString(),
+    direction: "request",
+    from: "nova",
+    payload: requestBody,
+    to: "openai.responses",
+  };
+
   if (!response.ok) {
-    throw new Error(await response.text());
+    const errorText = await response.text();
+    const responseRecord: ApiRequestRecord = {
+      at: new Date().toISOString(),
+      direction: "response",
+      from: "openai.responses",
+      payload: {
+        body: errorText,
+        ok: response.ok,
+        status: response.status,
+        statusText: response.statusText,
+      },
+      to: "nova",
+    };
+    throw new OpenAIRequestError(errorText, [requestRecord, responseRecord]);
   }
 
   const data = await response.json() as { output?: Array<{ content?: Array<{ text?: string; type?: string }> }> };
   const text = extractText(data);
-  return parseProviderResponse(text);
+  return {
+    apiRecords: [
+      requestRecord,
+      {
+        at: new Date().toISOString(),
+        direction: "response",
+        from: "openai.responses",
+        payload: data,
+        to: "nova",
+      },
+    ],
+    providerResponse: parseProviderResponse(text),
+  };
 }
 
 export async function testOpenAIConnection(settings: OpenAISettings): Promise<SettingsTestResult> {

@@ -1,5 +1,5 @@
 import { PersistedChatState } from "./types/chat.types";
-import { ChatTurnEvent, RunTurnRequest, RunTurnResult } from "../shared/ai.types";
+import { ChatTurnEvent, RunTurnRequest, RunTurnResult, SubmitCommandInputRequest } from "../shared/ai.types";
 import { AppSettings, SettingsTestResult } from "../shared/settings.types";
 
 export { };
@@ -22,6 +22,7 @@ declare global {
         killCommand: (commandId: string) => Promise<void>;
         onEvent: (listener: (event: ChatTurnEvent) => void) => () => void;
         runTurn: (request: RunTurnRequest) => Promise<RunTurnResult>;
+        submitCommandInput: (payload: SubmitCommandInputRequest) => Promise<boolean>;
       };
     };
   }

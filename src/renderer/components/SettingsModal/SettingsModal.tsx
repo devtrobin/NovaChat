@@ -3,6 +3,8 @@ import { AppSettings } from "../../../shared/settings.types";
 import { SettingsModalProps } from "./SettingsModal.types";
 import "./SettingsModal.css";
 
+type SettingsCategory = "local-files" | "openai";
+
 type StatusState = {
   kind: "error" | "idle" | "success";
   message: string;
@@ -12,7 +14,19 @@ function createEmptyStatus() {
   return { kind: "idle", message: "" } satisfies StatusState;
 }
 
-function validateDraft(settings: AppSettings): string | null {
+function validateDraft(settings: AppSettings, category: SettingsCategory): string | null {
+  if (category === "local-files") {
+    if (!settings.localFiles.settingsPath.trim()) {
+      return "Le chemin du fichier de configuration est requis.";
+    }
+
+    if (!settings.localFiles.conversationsDirectory.trim()) {
+      return "Le dossier des conversations est requis.";
+    }
+
+    return null;
+  }
+
   if (!settings.openai.apiKey.trim()) {
     return "La cle API OpenAI est requise.";
   }
@@ -29,6 +43,7 @@ function validateDraft(settings: AppSettings): string | null {
 }
 
 export default function SettingsModal({ isOpen, onClose, onSaved }: SettingsModalProps) {
+  const [activeCategory, setActiveCategory] = React.useState<SettingsCategory>("local-files");
   const [draft, setDraft] = React.useState<AppSettings | null>(null);
   const [status, setStatus] = React.useState<StatusState>(createEmptyStatus());
   const [isBusy, setIsBusy] = React.useState(false);
@@ -51,6 +66,7 @@ export default function SettingsModal({ isOpen, onClose, onSaved }: SettingsModa
     async function loadSettings() {
       setIsBusy(true);
       setStatus(createEmptyStatus());
+      setActiveCategory("local-files");
       try {
         const nextSettings = await window.nova.settings.load();
         if (!active) return;
@@ -74,8 +90,9 @@ export default function SettingsModal({ isOpen, onClose, onSaved }: SettingsModa
   async function handleTestConnection() {
     if (!currentSettings) return;
 
-    const validationError = validateDraft(currentSettings);
+    const validationError = validateDraft(currentSettings, "openai");
     if (validationError) {
+      setActiveCategory("openai");
       setStatus({
         kind: "error",
         message: validationError,
@@ -99,6 +116,16 @@ export default function SettingsModal({ isOpen, onClose, onSaved }: SettingsModa
 
   async function handleConfirm() {
     if (!currentSettings) return;
+
+    const localFilesError = validateDraft(currentSettings, "local-files");
+    if (localFilesError) {
+      setActiveCategory("local-files");
+      setStatus({
+        kind: "error",
+        message: localFilesError,
+      });
+      return;
+    }
 
     const isValid = await handleTestConnection();
     if (!isValid) return;
@@ -125,98 +152,180 @@ export default function SettingsModal({ isOpen, onClose, onSaved }: SettingsModa
         </header>
         <div className="settings-modal__body">
           {currentSettings ? (
-            <div className="settings-modal__form">
-              <label className="settings-modal__field">
-                <span className="settings-modal__label">Provider</span>
-                <select
-                  className="settings-modal__input"
-                  disabled={isBusy}
-                  onChange={() => {
-                    setDraft((current) => current ? { ...current, activeProvider: "openai" } : current);
-                    setStatus(createEmptyStatus());
-                  }}
-                  value={currentSettings.activeProvider}
-                >
-                  <option value="openai">OpenAI</option>
-                </select>
-              </label>
-              <label className="settings-modal__field">
-                <span className="settings-modal__label">OpenAI API Key</span>
-                <input
-                  className="settings-modal__input"
-                  disabled={isBusy}
-                  onChange={(event) => {
-                    setDraft((current) => current ? {
-                      ...current,
-                      openai: {
-                        ...current.openai,
-                        apiKey: event.target.value,
-                      },
-                    } : current);
-                    setStatus(createEmptyStatus());
-                  }}
-                  type="password"
-                  value={currentSettings.openai.apiKey}
-                />
-              </label>
-              <label className="settings-modal__field">
-                <span className="settings-modal__label">Model</span>
-                <input
-                  className="settings-modal__input"
-                  disabled={isBusy}
-                  onChange={(event) => {
-                    setDraft((current) => current ? {
-                      ...current,
-                      openai: {
-                        ...current.openai,
-                        model: event.target.value,
-                      },
-                    } : current);
-                    setStatus(createEmptyStatus());
-                  }}
-                  placeholder="gpt-5.1-mini"
-                  type="text"
-                  value={currentSettings.openai.model}
-                />
-              </label>
-              <label className="settings-modal__field">
-                <span className="settings-modal__label">Base URL</span>
-                <input
-                  className="settings-modal__input"
-                  disabled={isBusy}
-                  onChange={(event) => {
-                    setDraft((current) => current ? {
-                      ...current,
-                      openai: {
-                        ...current.openai,
-                        baseUrl: event.target.value,
-                      },
-                    } : current);
-                    setStatus(createEmptyStatus());
-                  }}
-                  placeholder="https://api.openai.com/v1"
-                  type="text"
-                  value={currentSettings.openai.baseUrl}
-                />
-              </label>
-              <div className="settings-modal__actions">
+            <div className="settings-modal__layout">
+              <aside className="settings-modal__sidebar" aria-label="Categories de parametres">
                 <button
-                  className="settings-modal__test"
-                  disabled={isBusy}
-                  onClick={() => void handleTestConnection()}
+                  className={`settings-modal__nav-item${activeCategory === "local-files" ? " settings-modal__nav-item--active" : ""}`}
+                  onClick={() => {
+                    setActiveCategory("local-files");
+                    setStatus(createEmptyStatus());
+                  }}
                   type="button"
                 >
-                  Tester la connexion
+                  Fichier local
                 </button>
+                <button
+                  className={`settings-modal__nav-item${activeCategory === "openai" ? " settings-modal__nav-item--active" : ""}`}
+                  onClick={() => {
+                    setActiveCategory("openai");
+                    setStatus(createEmptyStatus());
+                  }}
+                  type="button"
+                >
+                  Open AI
+                </button>
+              </aside>
+              <div className="settings-modal__panel">
+                {activeCategory === "local-files" ? (
+                  <div className="settings-modal__form">
+                    <div className="settings-modal__section-head">
+                      <h3 className="settings-modal__section-title">Fichier local</h3>
+                      <p className="settings-modal__section-text">
+                        Definis ou Nova enregistre les conversations et la configuration active.
+                      </p>
+                    </div>
+                    <label className="settings-modal__field">
+                      <span className="settings-modal__label">Fichier de configuration</span>
+                      <input
+                        className="settings-modal__input"
+                        disabled={isBusy}
+                        onChange={(event) => {
+                          setDraft((current) => current ? {
+                            ...current,
+                            localFiles: {
+                              ...current.localFiles,
+                              settingsPath: event.target.value,
+                            },
+                          } : current);
+                          setStatus(createEmptyStatus());
+                        }}
+                        placeholder="/chemin/vers/settings.json"
+                        type="text"
+                        value={currentSettings.localFiles.settingsPath}
+                      />
+                    </label>
+                    <label className="settings-modal__field">
+                      <span className="settings-modal__label">Fichier des conversations</span>
+                      <input
+                        className="settings-modal__input"
+                        disabled={isBusy}
+                        onChange={(event) => {
+                          setDraft((current) => current ? {
+                            ...current,
+                        localFiles: {
+                          ...current.localFiles,
+                          conversationsDirectory: event.target.value,
+                        },
+                      } : current);
+                      setStatus(createEmptyStatus());
+                    }}
+                        placeholder="/chemin/vers/dossier-conversations"
+                        type="text"
+                        value={currentSettings.localFiles.conversationsDirectory}
+                      />
+                    </label>
+                    <p className="settings-modal__hint">
+                      Nova conserve un point d'ancrage local pour retrouver la configuration au redemarrage.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="settings-modal__form">
+                    <div className="settings-modal__section-head">
+                      <h3 className="settings-modal__section-title">Open AI</h3>
+                      <p className="settings-modal__section-text">
+                        Configure la connexion API OpenAI utilisee par l'orchestrateur Electron.
+                      </p>
+                    </div>
+                    <label className="settings-modal__field">
+                      <span className="settings-modal__label">Provider</span>
+                      <select
+                        className="settings-modal__input"
+                        disabled={isBusy}
+                        onChange={() => {
+                          setDraft((current) => current ? { ...current, activeProvider: "openai" } : current);
+                          setStatus(createEmptyStatus());
+                        }}
+                        value={currentSettings.activeProvider}
+                      >
+                        <option value="openai">OpenAI</option>
+                      </select>
+                    </label>
+                    <label className="settings-modal__field">
+                      <span className="settings-modal__label">OpenAI API Key</span>
+                      <input
+                        className="settings-modal__input"
+                        disabled={isBusy}
+                        onChange={(event) => {
+                          setDraft((current) => current ? {
+                            ...current,
+                            openai: {
+                              ...current.openai,
+                              apiKey: event.target.value,
+                            },
+                          } : current);
+                          setStatus(createEmptyStatus());
+                        }}
+                        type="password"
+                        value={currentSettings.openai.apiKey}
+                      />
+                    </label>
+                    <label className="settings-modal__field">
+                      <span className="settings-modal__label">Model</span>
+                      <input
+                        className="settings-modal__input"
+                        disabled={isBusy}
+                        onChange={(event) => {
+                          setDraft((current) => current ? {
+                            ...current,
+                            openai: {
+                              ...current.openai,
+                              model: event.target.value,
+                            },
+                          } : current);
+                          setStatus(createEmptyStatus());
+                        }}
+                        placeholder="gpt-5.1-mini"
+                        type="text"
+                        value={currentSettings.openai.model}
+                      />
+                    </label>
+                    <label className="settings-modal__field">
+                      <span className="settings-modal__label">Base URL</span>
+                      <input
+                        className="settings-modal__input"
+                        disabled={isBusy}
+                        onChange={(event) => {
+                          setDraft((current) => current ? {
+                            ...current,
+                            openai: {
+                              ...current.openai,
+                              baseUrl: event.target.value,
+                            },
+                          } : current);
+                          setStatus(createEmptyStatus());
+                        }}
+                        placeholder="https://api.openai.com/v1"
+                        type="text"
+                        value={currentSettings.openai.baseUrl}
+                      />
+                    </label>
+                    <div className="settings-modal__actions">
+                      <button
+                        className="settings-modal__test"
+                        disabled={isBusy}
+                        onClick={() => void handleTestConnection()}
+                        type="button"
+                      >
+                        Tester la connexion
+                      </button>
+                    </div>
+                  </div>
+                )}
                 {status.kind !== "idle" ? (
                   <p className={`settings-modal__status settings-modal__status--${status.kind}`}>
                     {status.message}
                   </p>
-                ) : (
-                  <p className="settings-modal__hint">
-                    La configuration est testee avant enregistrement.
-                  </p>
-                )}
+                ) : null}
               </div>
             </div>
           ) : (
@@ -227,7 +336,12 @@ export default function SettingsModal({ isOpen, onClose, onSaved }: SettingsModa
           <button className="settings-modal__cancel" disabled={isBusy} onClick={onClose} type="button">
             Annuler
           </button>
-          <button className="settings-modal__confirm" disabled={isBusy || !currentSettings} onClick={() => void handleConfirm()} type="button">
+          <button
+            className="settings-modal__confirm"
+            disabled={isBusy || !currentSettings}
+            onClick={() => void handleConfirm()}
+            type="button"
+          >
             Valider
           </button>
         </footer>

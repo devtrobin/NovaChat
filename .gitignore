@@ -90,3 +90,8 @@ typings/
 
 # Electron-Forge
 out/
+
+# Local app data
+settings.json
+conversations.json
+conversations/

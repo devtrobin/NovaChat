@@ -1,19 +1,25 @@
 import { app, BrowserWindow, ipcMain } from "electron";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import path from "node:path";
 import { runTurn } from "./main/ai/ai.orchestrator";
 import { testOpenAIConnection } from "./main/ai/openai.service";
-import { awaitDeviceCommand, killDeviceCommand, startDeviceCommand } from "./main/device/device.service";
+import { loadChatStateFromDirectory, saveChatStateToDirectories } from "./main/chat/chat-storage.service";
+import {
+  awaitDeviceCommand,
+  killDeviceCommand,
+  startDeviceCommand,
+  submitInputToCommand,
+} from "./main/device/device.service";
 import {
   createDefaultSettings,
+  getConversationsPathFromSettings,
+  getReferenceConversationsDirectory,
+  getReferenceConversationsPath,
   loadSettingsFromDisk,
   saveSettingsToDisk,
 } from "./main/settings/settings.service";
 import { PersistedChatState } from "./renderer/types/chat.types";
-import { RunTurnRequest } from "./shared/ai.types";
+import { RunTurnRequest, SubmitCommandInputRequest } from "./shared/ai.types";
 import { AppSettings } from "./shared/settings.types";
 import { createDefaultChatState } from "./renderer/services/conversation.service";
-
 declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
 
@@ -33,32 +39,30 @@ const createWindow = (): void => {
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
 };
 
-function getChatStoragePath(): string {
-  return path.join(app.getPath("userData"), "nova-chat", "conversations.json");
-}
+let chatSaveQueue = Promise.resolve();
 
 async function loadChatStateFromDisk(): Promise<PersistedChatState> {
-  const filePath = getChatStoragePath();
+  const configuredDirectory = await getConversationsPathFromSettings();
+  const referenceDirectory = getReferenceConversationsDirectory();
+  const candidateDirectories = configuredDirectory === referenceDirectory
+    ? [configuredDirectory]
+    : [configuredDirectory, referenceDirectory];
 
-  try {
-    const content = await readFile(filePath, "utf-8");
-    const parsed = JSON.parse(content) as PersistedChatState;
-    return {
-      activeConversationId: parsed.activeConversationId ?? null,
-      conversations: Array.isArray(parsed.conversations) ? parsed.conversations : [],
-    };
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-      return createDefaultChatState();
-    }
-    throw error;
+  for (const directory of candidateDirectories) {
+    const state = await loadChatStateFromDirectory(directory);
+    if (state) return state;
   }
+
+  return createDefaultChatState();
 }
 
 async function saveChatStateToDisk(state: PersistedChatState): Promise<void> {
-  const filePath = getChatStoragePath();
-  await mkdir(path.dirname(filePath), { recursive: true });
-  await writeFile(filePath, JSON.stringify(state, null, 2), "utf-8");
+  await saveChatStateToDirectories(
+    state,
+    await getConversationsPathFromSettings(),
+    getReferenceConversationsDirectory(),
+    getReferenceConversationsPath(),
+  );
 }
 
 app.on("ready", createWindow);
@@ -84,7 +88,8 @@ ipcMain.handle("nova:chat:load", async () => {
 });
 
 ipcMain.handle("nova:chat:save", async (_event, state: PersistedChatState) => {
-  await saveChatStateToDisk(state);
+  chatSaveQueue = chatSaveQueue.then(() => saveChatStateToDisk(state));
+  await chatSaveQueue;
 });
 
 ipcMain.handle("nova:settings:load", async () => {
@@ -122,6 +127,10 @@ ipcMain.handle("nova:ai:run-turn", async (event, request: RunTurnRequest) => {
 
 ipcMain.handle("nova:ai:kill-command", async (_event, commandId: string) => {
   await killDeviceCommand(commandId);
+});
+
+ipcMain.handle("nova:ai:submit-command-input", async (_event, payload: SubmitCommandInputRequest) => {
+  return submitInputToCommand(payload.commandId, payload.value);
 });
 
 ipcMain.handle("nova:device:start-command", async (_event, command: string) => {

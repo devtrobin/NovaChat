@@ -120,6 +120,13 @@ export default function ChatPage() {
     await window.nova.ai.killCommand(commandId);
   }, []);
 
+  const handleSubmitCommandInput = React.useCallback(async (commandId: string, value: string) => {
+    await window.nova.ai.submitCommandInput({
+      commandId,
+      value,
+    });
+  }, []);
+
   return (
     <div className="chat-page">
       <ConversationSidebar
@@ -150,6 +157,7 @@ export default function ChatPage() {
                 messages={activeConversation.messages}
                 onKillCommand={handleKillCommand}
                 onOpenSettings={() => setIsSettingsOpen(true)}
+                onSubmitCommandInput={handleSubmitCommandInput}
               />
             ) : (
               <EmptyState />

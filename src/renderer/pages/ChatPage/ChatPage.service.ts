@@ -64,6 +64,19 @@ export function replaceMessage(
   return messages.map((message) => (message.id === messageId ? nextMessage : message));
 }
 
+export function replaceOrAppendMessage(
+  messages: ChatMessage[],
+  messageId: string,
+  nextMessage: ChatMessage,
+): ChatMessage[] {
+  const hasMessage = messages.some((message) => message.id === messageId);
+  if (!hasMessage) {
+    return [...messages, nextMessage];
+  }
+
+  return replaceMessage(messages, messageId, nextMessage);
+}
+
 export function renameConversation(
   conversations: Conversation[],
   conversationId: string,
@@ -134,7 +147,7 @@ export function applyChatTurnEvent(
   if (event.type === "replace-message") {
     return replaceConversation(baseConversations, {
       ...targetConversation,
-      messages: replaceMessage(targetConversation.messages, event.messageId, event.message),
+      messages: replaceOrAppendMessage(targetConversation.messages, event.messageId, event.message),
       updatedAt: event.message.createdAt,
     });
   }
