@@ -24,7 +24,7 @@ export async function runTurn(
   }
 
   const userMessage = createUserMessage(request.userInput);
-  const systemMessage = createSystemMessage("Tache en cours: generation de la reponse...");
+  let systemMessage = createSystemMessage("Tache en cours: generation de la reponse...");
   emit({
     conversationId: request.conversationId,
     messages: [userMessage, systemMessage],
@@ -133,6 +133,18 @@ export async function runTurn(
       turnMessages.push(deviceMessage);
       activeMessageId = null;
 
+      emit({
+        conversationId: request.conversationId,
+        messageId: systemMessage.id,
+        type: "remove-message",
+      });
+      systemMessage = createSystemMessage("Tache en cours: generation de la reponse...");
+      emit({
+        conversationId: request.conversationId,
+        messages: [systemMessage],
+        type: "append-messages",
+      });
+
       if (commandResult.code === 130) {
         turnMessages.push(createInternalSystemMessage(
           "L'utilisateur a mis un terme a la commande device. Tu peux repondre directement sans nouvelle commande.",
@@ -141,10 +153,12 @@ export async function runTurn(
     }
   } catch (error) {
     let errorApiRecords: ApiRequestRecord[] = [];
+    let errorDisplayMessage = "Erreur durant la generation de la reponse.";
     if (error instanceof OpenAIRequestError) {
       userMessage.apiRequests = [...(userMessage.apiRequests ?? []), ...error.apiRecords];
       appendLifecycleLog(userMessage, "api-response-error", "Erreur recue depuis l'assistant.");
       errorApiRecords = error.apiRecords;
+      errorDisplayMessage = error.displayMessage;
       emit({
         conversationId: request.conversationId,
         message: { ...userMessage },
@@ -153,7 +167,7 @@ export async function runTurn(
       });
     }
 
-    const errorMessage = createAssistantErrorMessage();
+    const errorMessage = createAssistantErrorMessage(errorDisplayMessage);
     errorMessage.apiRequests = [...errorApiRecords];
     appendLifecycleLog(errorMessage, "api-response-attached", "Trace API associee au message d'erreur assistant.");
     emit({ conversationId: request.conversationId, messages: [errorMessage], type: "append-messages" });
@@ -178,8 +192,8 @@ function createAssistantMessage(content: string): ChatMessage {
   };
 }
 
-function createAssistantErrorMessage(): ChatMessage {
-  return createAssistantMessage("Erreur durant la generation de la reponse.");
+function createAssistantErrorMessage(content: string): ChatMessage {
+  return createAssistantMessage(content);
 }
 
 function createRunningDeviceMessage(command: string, commandId: string): ChatMessage {

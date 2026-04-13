@@ -15,15 +15,14 @@ export default function MessageItem({
   if (message.from === "system") {
     return (
       <article className="message-item message-item--system">
-        <div className="message-item__system-header">
-          <span className="message-item__system-label">Systeme</span>
+        <div className="message-item__system-line">
+          <p className="message-item__system-text">{message.content}</p>
           {message.actionType === "open-settings" ? (
             <button className="message-item__system-action" onClick={onOpenSettings} type="button">
               {message.actionLabel ?? "Ouvrir"}
             </button>
           ) : null}
         </div>
-        <p className="message-item__system-text">{message.content}</p>
       </article>
     );
   }

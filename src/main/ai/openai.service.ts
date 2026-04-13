@@ -6,10 +6,12 @@ type ProviderResponse =
 
 export class OpenAIRequestError extends Error {
   apiRecords: ApiRequestRecord[];
+  displayMessage: string;
 
-  constructor(message: string, apiRecords: ApiRequestRecord[]) {
+  constructor(message: string, apiRecords: ApiRequestRecord[], displayMessage?: string) {
     super(message);
     this.apiRecords = apiRecords;
+    this.displayMessage = displayMessage ?? message;
   }
 }
 
@@ -47,6 +49,7 @@ export async function generateOpenAIReply(
 
   if (!response.ok) {
     const errorText = await response.text();
+    const displayMessage = formatProviderError(errorText, response.status, response.statusText);
     const responseRecord: ApiRequestRecord = {
       at: new Date().toISOString(),
       direction: "response",
@@ -59,7 +62,7 @@ export async function generateOpenAIReply(
       },
       to: "nova",
     };
-    throw new OpenAIRequestError(errorText, [requestRecord, responseRecord]);
+    throw new OpenAIRequestError(errorText, [requestRecord, responseRecord], displayMessage);
   }
 
   const data = await response.json() as { output?: Array<{ content?: Array<{ text?: string; type?: string }> }> };
@@ -139,7 +142,7 @@ function buildInput(messages: ChatMessage[]) {
       content: [
         {
           text: JSON.stringify({
-            conversation: messages,
+            conversation: messages.map(toProviderMessage),
           }),
           type: "input_text",
         },
@@ -147,6 +150,31 @@ function buildInput(messages: ChatMessage[]) {
       role: "user",
     },
   ];
+}
+
+function toProviderMessage(message: ChatMessage) {
+  return {
+    actionLabel: message.actionLabel,
+    actionType: message.actionType,
+    commandId: message.commandId,
+    content: message.content,
+    createdAt: message.createdAt,
+    from: message.from,
+    id: message.id,
+    inputPlaceholder: message.inputPlaceholder,
+    inputRequested: message.inputRequested,
+    inputSecret: message.inputSecret,
+    isExpandable: message.isExpandable,
+    result: sanitizeResult(message.result),
+    status: message.status,
+    to: message.to,
+  };
+}
+
+function sanitizeResult(value?: string): string | undefined {
+  if (!value) return undefined;
+  if (value.length <= 4000) return value;
+  return `${value.slice(0, 4000)}\n\n[output truncated: ${value.length - 4000} chars omitted]`;
 }
 
 function extractText(data: { output?: Array<{ content?: Array<{ text?: string; type?: string }> }> }): string {
@@ -189,4 +217,23 @@ function stripCodeFences(value: string): string {
 
 function stripTrailingSlash(value: string): string {
   return value.replace(/\/+$/, "");
+}
+
+function formatProviderError(errorText: string, status: number, statusText: string): string {
+  try {
+    const parsed = JSON.parse(errorText) as {
+      error?: { code?: string; message?: string; param?: string; type?: string };
+    };
+    if (parsed.error?.message) {
+      const parts = [`Erreur OpenAI ${status}`];
+      if (parsed.error.code) parts.push(`[${parsed.error.code}]`);
+      parts.push(`: ${parsed.error.message}`);
+      if (parsed.error.param) parts.push(` (parametre: ${parsed.error.param})`);
+      return parts.join("");
+    }
+  } catch {
+    // Fallback below.
+  }
+
+  return `Erreur OpenAI ${status} ${statusText}: ${errorText}`;
 }
