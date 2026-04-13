@@ -15,6 +15,19 @@ export class OpenAIRequestError extends Error {
   }
 }
 
+export class NovaResponseParseError extends Error {
+  apiRecords: ApiRequestRecord[];
+  displayMessage: string;
+  rawResponse: string;
+
+  constructor(rawResponse: string, apiRecords: ApiRequestRecord[], displayMessage?: string) {
+    super(displayMessage ?? rawResponse);
+    this.apiRecords = apiRecords;
+    this.displayMessage = displayMessage ?? rawResponse;
+    this.rawResponse = rawResponse;
+  }
+}
+
 export type GenerateOpenAIReplyResult = {
   apiRecords: ApiRequestRecord[];
   providerResponse: ProviderResponse;
@@ -67,18 +80,26 @@ export async function generateOpenAIReply(
 
   const data = await response.json() as { output?: Array<{ content?: Array<{ text?: string; type?: string }> }> };
   const text = extractText(data);
+  const responseRecord: ApiRequestRecord = {
+    at: new Date().toISOString(),
+    direction: "response",
+    from: "openai.responses",
+    payload: data,
+    to: "nova",
+  };
+  const apiRecords = [requestRecord, responseRecord];
+  const providerResponse = parseProviderResponse(text);
+  if (!providerResponse) {
+    throw new NovaResponseParseError(
+      text,
+      apiRecords,
+      `Erreur de parsing Nova: la reponse du provider n'est pas un message Nova valide. Reponse brute: ${truncateForDisplay(text)}`,
+    );
+  }
+
   return {
-    apiRecords: [
-      requestRecord,
-      {
-        at: new Date().toISOString(),
-        direction: "response",
-        from: "openai.responses",
-        payload: data,
-        to: "nova",
-      },
-    ],
-    providerResponse: parseProviderResponse(text),
+    apiRecords,
+    providerResponse,
   };
 }
 
@@ -127,10 +148,15 @@ function buildInput(messages: ChatMessage[]) {
             "Each message uses this schema: { id, from, to, content, createdAt, status?, result?, commandId?, actionType?, actionLabel?, isExpandable? }.",
             "Reply only with one minified JSON object compatible with the Nova format subset.",
             'If you answer the user directly, reply exactly like: {"from":"assistant","to":"user","content":"..."}',
-            'If you need the local machine to run a shell command, reply exactly like: {"from":"assistant","to":"device","content":"<single bash or zsh command>"}',
+            'If you need the local machine to run a shell command, reply exactly like: {"from":"assistant","to":"device","content":"<single shell command body>"}',
             "Never answer as user, device or system.",
             "When you ask the device to run a command, the device result will come back later in the conversation as a Nova message from device to assistant.",
             "Use device commands only when they are genuinely needed.",
+            "Device commands must be robust and simple.",
+            "Do not wrap the command in bash -lc, zsh -lc, sh -c, cmd /c, or powershell -Command because Nova already executes the command in a shell.",
+            "Avoid heredoc blocks, multi-layer escaping, nested quoting, and giant one-liners when a simpler command is possible.",
+            "Prefer short sequential shell commands joined with && when needed.",
+            "When you can inspect with one command and answer after the result returns, do that instead of generating a huge diagnostic script.",
             "Never wrap JSON in markdown fences.",
           ].join(" "),
           type: "input_text",
@@ -185,34 +211,82 @@ function extractText(data: { output?: Array<{ content?: Array<{ text?: string; t
     .trim() ?? "";
 }
 
-function parseProviderResponse(value: string): ProviderResponse {
-  try {
-    const parsed = JSON.parse(stripCodeFences(value)) as ProviderResponse;
-    if (
-      parsed.from === "assistant"
-      && (parsed.to === "user" || parsed.to === "device")
-      && typeof parsed.content === "string"
-      && parsed.content.trim()
-    ) {
-      return {
-        content: parsed.content.trim(),
-        from: "assistant",
-        to: parsed.to,
-      };
-    }
-  } catch {
-    // Fallback below.
+function parseProviderResponse(value: string): ProviderResponse | null {
+  const parsed = parseProviderResponseObject(value);
+  if (parsed) {
+    return parsed;
   }
-
-  return {
-    content: value.trim() || "Je n'ai pas pu formater correctement la reponse.",
-    from: "assistant",
-    to: "user",
-  };
+  return null;
 }
 
 function stripCodeFences(value: string): string {
   return value.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
+}
+
+function parseProviderResponseObject(value: string): ProviderResponse | null {
+  const sanitized = stripCodeFences(value);
+  const candidates = [sanitized, extractJsonObject(sanitized)].filter(
+    (candidate): candidate is string => Boolean(candidate),
+  );
+
+  for (const candidate of candidates) {
+    const parsed = parseJsonRecursively(candidate);
+    if (!parsed || typeof parsed !== "object") continue;
+
+    const maybeResponse = parsed as Partial<ProviderResponse>;
+    if (
+      maybeResponse.from !== "assistant"
+      || (maybeResponse.to !== "user" && maybeResponse.to !== "device")
+      || typeof maybeResponse.content !== "string"
+      || !maybeResponse.content.trim()
+    ) {
+      continue;
+    }
+
+    return {
+      content: maybeResponse.to === "device"
+        ? normalizeDeviceCommand(maybeResponse.content)
+        : maybeResponse.content.trim(),
+      from: "assistant",
+      to: maybeResponse.to,
+    };
+  }
+
+  return null;
+}
+
+function parseJsonRecursively(value: string, depth = 0): unknown {
+  if (depth > 2) return null;
+
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    if (typeof parsed === "string") {
+      return parseJsonRecursively(parsed, depth + 1);
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function extractJsonObject(value: string): string | null {
+  const start = value.indexOf("{");
+  const end = value.lastIndexOf("}");
+  if (start === -1 || end === -1 || end <= start) return null;
+  return value.slice(start, end + 1).trim();
+}
+
+function normalizeDeviceCommand(command: string): string {
+  const trimmed = command.trim();
+  const shellWrappedMatch = trimmed.match(
+    /^(?:bash|zsh|sh)\s+-lc\s+(['"])([\s\S]*)\1$/i,
+  );
+
+  if (shellWrappedMatch) {
+    return shellWrappedMatch[2].trim();
+  }
+
+  return trimmed;
 }
 
 function stripTrailingSlash(value: string): string {
@@ -236,4 +310,11 @@ function formatProviderError(errorText: string, status: number, statusText: stri
   }
 
   return `Erreur OpenAI ${status} ${statusText}: ${errorText}`;
+}
+
+function truncateForDisplay(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return "[vide]";
+  if (trimmed.length <= 280) return trimmed;
+  return `${trimmed.slice(0, 280)}...`;
 }

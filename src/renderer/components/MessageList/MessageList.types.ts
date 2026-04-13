@@ -5,4 +5,6 @@ export type MessageListProps = {
   onKillCommand?: (commandId: string) => void;
   onOpenSettings?: () => void;
   onSubmitCommandInput?: (commandId: string, value: string) => void;
+  searchQuery?: string;
+  selectedMessageId?: string | null;
 };

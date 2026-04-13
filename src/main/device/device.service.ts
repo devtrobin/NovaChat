@@ -10,21 +10,34 @@ type ProgressListener = (progress: DeviceCommandProgress) => void;
 type RunningCommand = {
   awaitingInput: boolean;
   child: ChildProcess;
+  cwd: string;
   inputPlaceholder?: string;
   inputSecret?: boolean;
+  normalizedCommand: string;
   onProgress?: ProgressListener;
   output: string;
   promise: Promise<DeviceCommandResult>;
+  shell: string;
+  startedAt: number;
+  timedOut: boolean;
   wasKilled: boolean;
 };
 
 const runningCommands = new Map<string, RunningCommand>();
 
-function resolveShell(command: string): { file: string; args: string[] } {
+export class DevicePolicyError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "DevicePolicyError";
+  }
+}
+
+function resolveShell(command: string): { args: string[]; file: string; shell: string } {
   if (process.platform === "win32") {
     return {
       args: ["/d", "/s", "/c", command],
       file: process.env.ComSpec || "cmd.exe",
+      shell: process.env.ComSpec || "cmd.exe",
     };
   }
 
@@ -32,6 +45,7 @@ function resolveShell(command: string): { file: string; args: string[] } {
   return {
     args: ["-lc", command],
     file: preferredShell,
+    shell: preferredShell,
   };
 }
 
@@ -78,23 +92,36 @@ export function startDeviceCommand(
   onProgress?: ProgressListener,
 ): StartedDeviceCommand {
   const commandId = crypto.randomUUID();
-  const shell = resolveShell(command);
+  const normalizedCommand = normalizeCommand(command);
+  assertCommandAllowed(normalizedCommand);
+  const shell = resolveShell(normalizedCommand);
+  const cwd = process.cwd();
   const child = spawn(shell.file, shell.args, {
-    cwd: process.cwd(),
+    cwd,
     stdio: ["pipe", "pipe", "pipe"],
   });
 
   const runningCommand: RunningCommand = {
     awaitingInput: false,
     child,
+    cwd,
     onProgress,
+    normalizedCommand,
     output: "",
     promise: Promise.resolve({
       code: 1,
       commandId,
+      cwd,
+      durationMs: 0,
+      normalizedCommand,
       ok: false,
       output: "",
+      shell: shell.shell,
+      signal: null,
     }),
+    shell: shell.shell,
+    startedAt: Date.now(),
+    timedOut: false,
     wasKilled: false,
   };
 
@@ -115,16 +142,32 @@ export function startDeviceCommand(
   child.stderr?.on("data", appendOutput);
 
   runningCommand.promise = new Promise<DeviceCommandResult>((resolve) => {
-    child.on("close", (code) => {
+    child.on("close", (code, signal) => {
       runningCommands.delete(commandId);
       const output = runningCommand.output.trim()
         || (runningCommand.wasKilled ? "Commande interrompue." : "Commande terminee sans sortie.");
+      const durationMs = Date.now() - runningCommand.startedAt;
+      const resolvedCode = typeof code === "number" ? code : (runningCommand.wasKilled ? 130 : 1);
 
       resolve({
-        code: typeof code === "number" ? code : (runningCommand.wasKilled ? 130 : 1),
+        code: resolvedCode,
         commandId,
+        cwd: runningCommand.cwd,
+        durationMs,
+        errorType: runningCommand.timedOut
+          ? "timeout"
+          : runningCommand.wasKilled
+            ? "killed"
+            : resolvedCode === 127
+              ? "not-found"
+              : resolvedCode === 0
+                ? undefined
+                : "shell",
+        normalizedCommand: runningCommand.normalizedCommand,
         ok: !runningCommand.wasKilled && code === 0,
         output,
+        shell: runningCommand.shell,
+        signal,
       });
     });
 
@@ -133,14 +176,21 @@ export function startDeviceCommand(
       resolve({
         code: 1,
         commandId,
+        cwd: runningCommand.cwd,
+        durationMs: Date.now() - runningCommand.startedAt,
+        errorType: "shell",
+        normalizedCommand: runningCommand.normalizedCommand,
         ok: false,
         output: error.message,
+        shell: runningCommand.shell,
+        signal: null,
       });
     });
   });
 
   const timeout = globalThis.setTimeout(() => {
     if (child.killed) return;
+    runningCommand.timedOut = true;
     runningCommand.wasKilled = true;
     child.kill(getKillSignal());
   }, 15000);
@@ -154,7 +204,12 @@ export function startDeviceCommand(
   }) as ChildProcess["kill"];
 
   runningCommands.set(commandId, runningCommand);
-  return { commandId };
+  return {
+    commandId,
+    cwd,
+    normalizedCommand,
+    shell: shell.shell,
+  };
 }
 
 export async function awaitDeviceCommand(commandId: string): Promise<DeviceCommandResult> {
@@ -163,8 +218,14 @@ export async function awaitDeviceCommand(commandId: string): Promise<DeviceComma
     return {
       code: 1,
       commandId,
+      cwd: process.cwd(),
+      durationMs: 0,
+      errorType: "not-found",
+      normalizedCommand: "",
       ok: false,
       output: "Commande introuvable ou deja terminee.",
+      shell: process.platform === "win32" ? (process.env.ComSpec || "cmd.exe") : (process.env.SHELL || "/bin/zsh"),
+      signal: null,
     };
   }
 
@@ -187,4 +248,19 @@ export async function submitInputToCommand(commandId: string, value: string): Pr
   runningCommand.onProgress?.(buildProgress(commandId, runningCommand));
   runningCommand.child.stdin.write(`${value}\n`);
   return true;
+}
+
+function normalizeCommand(command: string): string {
+  return command.replace(/\r\n/g, "\n").trim();
+}
+
+function assertCommandAllowed(command: string): void {
+  const trimmed = command.trim();
+  if (!trimmed) {
+    throw new DevicePolicyError("La commande device est vide.");
+  }
+
+  if (/\0/.test(trimmed)) {
+    throw new DevicePolicyError("La commande device contient un caractere interdit.");
+  }
 }

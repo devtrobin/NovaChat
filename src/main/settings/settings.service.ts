@@ -32,6 +32,7 @@ export function createDefaultSettings(): AppSettings {
       model: "",
       provider: "openai",
     },
+    previewMode: false,
   };
 }
 

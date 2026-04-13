@@ -1,8 +1,8 @@
 import { ApiRequestRecord, ChatMessage } from "../../renderer/types/chat.types";
 import { ChatTurnEvent, RunTurnRequest, RunTurnResult } from "../../shared/ai.types";
 import { AppSettings } from "../../shared/settings.types";
-import { awaitDeviceCommand, startDeviceCommand } from "../device/device.service";
-import { generateOpenAIReply, OpenAIRequestError } from "./openai.service";
+import { awaitDeviceCommand, DevicePolicyError, startDeviceCommand } from "../device/device.service";
+import { generateOpenAIReply, NovaResponseParseError, OpenAIRequestError } from "./openai.service";
 
 type Emit = (event: ChatTurnEvent) => void;
 
@@ -11,19 +11,23 @@ export async function runTurn(
   settings: AppSettings,
   emit: Emit,
 ): Promise<RunTurnResult> {
+  const userMessage = createUserMessage(request.userInput);
+  if (isDirectCommand(request.userInput)) {
+    return runDirectCommandTurn(request, userMessage, emit);
+  }
+
   if (!settings.openai.apiKey || !settings.openai.model) {
     const systemMessage = createSystemMessage(
       "Configuration OpenAI manquante.",
       "Ouvrir les parametres",
     );
-    emit({ conversationId: request.conversationId, messages: [systemMessage], type: "append-messages" });
+    emit({ conversationId: request.conversationId, messages: [userMessage, systemMessage], type: "append-messages" });
     globalThis.setTimeout(() => {
       emit({ conversationId: request.conversationId, messageId: systemMessage.id, type: "remove-message" });
     }, 4500);
     return { ok: false };
   }
 
-  const userMessage = createUserMessage(request.userInput);
   let systemMessage = createSystemMessage("Tache en cours: generation de la reponse...");
   emit({
     conversationId: request.conversationId,
@@ -70,65 +74,35 @@ export async function runTurn(
       appendLifecycleLog(
         runningMessage,
         "assistant-requested-device",
-        JSON.stringify({
-          content: providerResponse.content,
+        "L'assistant a demande une execution device.",
+        {
+          command: providerResponse.content,
           from: "assistant",
           to: "device",
-        }),
+        },
       );
       activeMessageId = runningMessage.id;
       emit({ conversationId: request.conversationId, messages: [runningMessage], type: "append-messages" });
 
-      const runningCommand = startDeviceCommand(providerResponse.content, (progress) => {
-        if (progress.awaitingInput && !runningMessage.lifecycleLog?.some((entry) => entry.event === "device-waiting-input")) {
-          appendLifecycleLog(runningMessage, "device-waiting-input", "La commande attend une saisie utilisateur.");
-        }
-        emit({
-          conversationId: request.conversationId,
-          message: {
-            ...runningMessage,
-            commandId: progress.commandId,
-            inputPlaceholder: progress.inputPlaceholder,
-            inputRequested: progress.awaitingInput,
-            inputSecret: progress.inputSecret,
-            result: progress.output,
-            status: progress.awaitingInput ? "waiting-input" : "running",
-          },
-          messageId: runningMessage.id,
-          type: "replace-message",
-        });
-      });
-      runningMessage.commandId = runningCommand.commandId;
-      appendLifecycleLog(runningMessage, "device-started", "Execution de la commande device.");
-      emit({
+      const deviceMessage = await executeDeviceCommand({
+        command: providerResponse.content,
         conversationId: request.conversationId,
-        message: {
-          ...runningMessage,
-          commandId: runningCommand.commandId,
-        },
-        messageId: runningMessage.id,
-        type: "replace-message",
+        emit,
+        initialMessage: runningMessage,
+        messageId: activeMessageId,
+        resultRecipient: "assistant",
+        resultSender: "device",
+        runningRecipient: "device",
+        runningSender: "assistant",
+        sourceLabel: "assistant",
+        systemMessageId: systemMessage.id,
       });
-
-      const commandResult = await awaitDeviceCommand(runningCommand.commandId);
-      const deviceMessage = createDeviceResultMessage(
-        providerResponse.content,
-        activeMessageId,
-        commandResult,
-        runningMessage,
-      );
       deviceMessage.apiRequests = [...(runningMessage.apiRequests ?? [])];
       appendLifecycleLog(
         deviceMessage,
-        commandResult.code === 130 ? "device-killed" : "device-finished",
-        commandResult.code === 130 ? "Commande interrompue par l'utilisateur." : "Commande terminee.",
+        "assistant-device-cycle-complete",
+        "Cycle assistant -> device termine.",
       );
-      emit({
-        conversationId: request.conversationId,
-        message: deviceMessage,
-        messageId: activeMessageId,
-        type: "replace-message",
-      });
 
       turnMessages.push(deviceMessage);
       activeMessageId = null;
@@ -145,7 +119,7 @@ export async function runTurn(
         type: "append-messages",
       });
 
-      if (commandResult.code === 130) {
+      if (deviceMessage.lifecycleLog?.some((entry) => entry.event === "device-killed")) {
         turnMessages.push(createInternalSystemMessage(
           "L'utilisateur a mis un terme a la commande device. Tu peux repondre directement sans nouvelle commande.",
         ));
@@ -165,6 +139,21 @@ export async function runTurn(
         messageId: userMessage.id,
         type: "replace-message",
       });
+    } else if (error instanceof NovaResponseParseError) {
+      userMessage.apiRequests = [...(userMessage.apiRequests ?? []), ...error.apiRecords];
+      appendLifecycleLog(userMessage, "api-response-error", "Reponse assistant invalide pour Nova.");
+      errorApiRecords = error.apiRecords;
+      errorDisplayMessage = error.displayMessage;
+      emit({
+        conversationId: request.conversationId,
+        message: { ...userMessage },
+        messageId: userMessage.id,
+        type: "replace-message",
+      });
+    } else if (error instanceof DevicePolicyError) {
+      errorDisplayMessage = `Commande refusee par la policy device: ${error.message}`;
+    } else if (error instanceof Error) {
+      errorDisplayMessage = classifyRuntimeError(error);
     }
 
     const errorMessage = createAssistantErrorMessage(errorDisplayMessage);
@@ -177,6 +166,161 @@ export async function runTurn(
 
   emit({ conversationId: request.conversationId, messageId: systemMessage.id, type: "remove-message" });
   return { ok: false };
+}
+
+async function runDirectCommandTurn(
+  request: RunTurnRequest,
+  userMessage: ChatMessage,
+  emit: Emit,
+): Promise<RunTurnResult> {
+  const command = extractDirectCommand(request.userInput);
+  if (shouldSetTitle(request)) {
+    emit({
+      conversationId: request.conversationId,
+      title: request.userInput.trim().slice(0, 36) || "Nouvelle conversation",
+      type: "set-title",
+    });
+  }
+  const systemMessage = createSystemMessage("Tache en cours: execution de la commande...");
+  emit({
+    conversationId: request.conversationId,
+    messages: [userMessage, systemMessage],
+    type: "append-messages",
+  });
+
+  const runningMessage = createRunningDeviceMessage(command, "", "user", "device");
+  appendLifecycleLog(runningMessage, "user-requested-device", "L'utilisateur a demande une execution device.", {
+    command,
+    from: "user",
+    to: "device",
+  });
+  emit({ conversationId: request.conversationId, messages: [runningMessage], type: "append-messages" });
+
+  try {
+    await executeDeviceCommand({
+      command,
+      conversationId: request.conversationId,
+      emit,
+      initialMessage: runningMessage,
+      messageId: runningMessage.id,
+      resultRecipient: "user",
+      resultSender: "device",
+      runningRecipient: "device",
+      runningSender: "user",
+      sourceLabel: "user",
+      systemMessageId: systemMessage.id,
+    });
+    emit({ conversationId: request.conversationId, messageId: systemMessage.id, type: "remove-message" });
+    return { ok: true };
+  } catch (error) {
+    const errorMessage = createDeviceImmediateErrorMessage(command, runningMessage.id, error);
+    emit({
+      conversationId: request.conversationId,
+      message: errorMessage,
+      messageId: runningMessage.id,
+      type: "replace-message",
+    });
+    emit({ conversationId: request.conversationId, messageId: systemMessage.id, type: "remove-message" });
+    return { ok: false };
+  }
+}
+
+async function executeDeviceCommand({
+  command,
+  conversationId,
+  emit,
+  initialMessage,
+  messageId,
+  resultRecipient,
+  resultSender,
+}: {
+  command: string;
+  conversationId: string;
+  emit: Emit;
+  initialMessage: ChatMessage;
+  messageId: string;
+  resultRecipient: "assistant" | "user";
+  resultSender: "device";
+  runningRecipient: "device";
+  runningSender: "assistant" | "user";
+  sourceLabel: "assistant" | "user";
+  systemMessageId: string;
+}): Promise<ChatMessage> {
+  const runningCommand = startDeviceCommand(command, (progress) => {
+    if (progress.awaitingInput && !initialMessage.lifecycleLog?.some((entry) => entry.event === "device-waiting-input")) {
+      appendLifecycleLog(
+        initialMessage,
+        "device-waiting-input",
+        "La commande attend une saisie utilisateur.",
+        {
+          inputPlaceholder: progress.inputPlaceholder,
+          inputSecret: progress.inputSecret,
+        },
+      );
+    }
+    emit({
+      conversationId,
+      message: {
+        ...initialMessage,
+        commandId: progress.commandId,
+        inputPlaceholder: progress.inputPlaceholder,
+        inputRequested: progress.awaitingInput,
+        inputSecret: progress.inputSecret,
+        result: progress.output,
+        status: progress.awaitingInput ? "waiting-input" : "running",
+      },
+      messageId,
+      type: "replace-message",
+    });
+  });
+
+  initialMessage.commandId = runningCommand.commandId;
+  appendLifecycleLog(initialMessage, "device-started", "Execution de la commande device.", {
+    commandId: runningCommand.commandId,
+    cwd: runningCommand.cwd,
+    normalizedCommand: runningCommand.normalizedCommand,
+    shell: runningCommand.shell,
+  });
+  emit({
+    conversationId,
+    message: {
+      ...initialMessage,
+      commandId: runningCommand.commandId,
+    },
+    messageId,
+    type: "replace-message",
+  });
+
+  const commandResult = await awaitDeviceCommand(runningCommand.commandId);
+  const deviceMessage = createDeviceResultMessage(
+    command,
+    messageId,
+    commandResult,
+    initialMessage,
+    resultSender,
+    resultRecipient,
+  );
+  appendLifecycleLog(
+    deviceMessage,
+    commandResult.code === 130 ? "device-killed" : "device-finished",
+    commandResult.code === 130 ? "Commande interrompue par l'utilisateur." : "Commande terminee.",
+    {
+      code: commandResult.code,
+      cwd: commandResult.cwd,
+      durationMs: commandResult.durationMs,
+      errorType: commandResult.errorType,
+      normalizedCommand: commandResult.normalizedCommand,
+      shell: commandResult.shell,
+      signal: commandResult.signal ?? null,
+    },
+  );
+  emit({
+    conversationId,
+    message: deviceMessage,
+    messageId,
+    type: "replace-message",
+  });
+  return deviceMessage;
 }
 
 function createAssistantMessage(content: string): ChatMessage {
@@ -196,34 +340,52 @@ function createAssistantErrorMessage(content: string): ChatMessage {
   return createAssistantMessage(content);
 }
 
-function createRunningDeviceMessage(command: string, commandId: string): ChatMessage {
+function createRunningDeviceMessage(
+  command: string,
+  commandId: string,
+  from: "assistant" | "user" = "assistant",
+  to: "device" = "device",
+): ChatMessage {
   return {
     apiRequests: [],
     commandId,
     content: command,
     createdAt: new Date().toISOString(),
-    from: "assistant",
+    from,
     id: crypto.randomUUID(),
     isExpandable: true,
     lifecycleLog: [createLifecycleEntry("created", "Message device cree.")],
     result: "",
     status: "running",
-    to: "device",
+    to,
   };
 }
 
 function createDeviceResultMessage(
   command: string,
   id: string,
-  result: { commandId: string; ok: boolean; output: string },
+  result: {
+    code: number;
+    commandId: string;
+    cwd: string;
+    durationMs: number;
+    errorType?: "killed" | "not-found" | "policy" | "shell" | "timeout";
+    normalizedCommand: string;
+    ok: boolean;
+    output: string;
+    shell: string;
+    signal?: string | null;
+  },
   previousMessage?: ChatMessage,
+  from: "device" = "device",
+  to: "assistant" | "user" = "assistant",
 ): ChatMessage {
   return {
     apiRequests: [],
     commandId: result.commandId,
     content: command,
     createdAt: new Date().toISOString(),
-    from: "device",
+    from,
     id,
     isExpandable: true,
     lifecycleLog: [
@@ -232,7 +394,33 @@ function createDeviceResultMessage(
     ],
     result: result.output,
     status: result.ok ? "success" : "error",
-    to: "assistant",
+    to,
+  };
+}
+
+function createDeviceImmediateErrorMessage(command: string, id: string, error: unknown): ChatMessage {
+  const displayMessage = error instanceof DevicePolicyError
+    ? `Commande refusee par la policy device: ${error.message}`
+    : error instanceof Error
+      ? classifyRuntimeError(error)
+      : "Erreur shell: impossible d'executer la commande.";
+
+  return {
+    apiRequests: [],
+    content: command,
+    createdAt: new Date().toISOString(),
+    from: "device",
+    id,
+    isExpandable: true,
+    lifecycleLog: [
+      createLifecycleEntry("created", "Resultat device cree."),
+      createLifecycleEntry("device-finished", "La commande n'a pas pu demarrer.", {
+        errorType: error instanceof DevicePolicyError ? "policy" : "shell",
+      }),
+    ],
+    result: displayMessage,
+    status: "error",
+    to: "user",
   };
 }
 
@@ -280,14 +468,39 @@ function shouldSetTitle(request: RunTurnRequest): boolean {
   return request.messages.filter((message) => message.from !== "system").length === 0;
 }
 
-function createLifecycleEntry(event: string, details?: string) {
+function createLifecycleEntry(event: string, details?: string, metadata?: Record<string, unknown>) {
   return {
     at: new Date().toISOString(),
     details,
     event,
+    metadata,
   };
 }
 
-function appendLifecycleLog(message: ChatMessage, event: string, details?: string): void {
-  message.lifecycleLog = [...(message.lifecycleLog ?? []), createLifecycleEntry(event, details)];
+function appendLifecycleLog(
+  message: ChatMessage,
+  event: string,
+  details?: string,
+  metadata?: Record<string, unknown>,
+): void {
+  message.lifecycleLog = [...(message.lifecycleLog ?? []), createLifecycleEntry(event, details, metadata)];
+}
+
+function classifyRuntimeError(error: Error): string {
+  const message = error.message.trim();
+  if (/spawn|enoent|shell/i.test(message)) {
+    return `Erreur shell: ${message}`;
+  }
+  if (/policy/i.test(message)) {
+    return `Commande refusee par la policy device: ${message}`;
+  }
+  return `Erreur Nova: ${message || "erreur inconnue."}`;
+}
+
+function isDirectCommand(input: string): boolean {
+  return /^\/cmd(?:\s+.+)?$/i.test(input.trim());
+}
+
+function extractDirectCommand(input: string): string {
+  return input.trim().replace(/^\/cmd\s*/i, "").trim();
 }

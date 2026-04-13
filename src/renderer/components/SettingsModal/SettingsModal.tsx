@@ -42,35 +42,24 @@ function validateDraft(settings: AppSettings, category: SettingsCategory): strin
   return null;
 }
 
-export default function SettingsModal({ isOpen, onClose, onSaved }: SettingsModalProps) {
+export default function SettingsModal({ onSaved }: SettingsModalProps) {
   const [activeCategory, setActiveCategory] = React.useState<SettingsCategory>("local-files");
   const [draft, setDraft] = React.useState<AppSettings | null>(null);
+  const [initialSettings, setInitialSettings] = React.useState<AppSettings | null>(null);
   const [status, setStatus] = React.useState<StatusState>(createEmptyStatus());
   const [isBusy, setIsBusy] = React.useState(false);
 
   React.useEffect(() => {
-    if (!isOpen) return;
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") onClose();
-    }
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
-
-  React.useEffect(() => {
-    if (!isOpen) return;
     let active = true;
 
     async function loadSettings() {
       setIsBusy(true);
       setStatus(createEmptyStatus());
-      setActiveCategory("local-files");
       try {
         const nextSettings = await window.nova.settings.load();
         if (!active) return;
         setDraft(nextSettings);
+        setInitialSettings(nextSettings);
       } finally {
         if (active) setIsBusy(false);
       }
@@ -81,14 +70,12 @@ export default function SettingsModal({ isOpen, onClose, onSaved }: SettingsModa
     return () => {
       active = false;
     };
-  }, [isOpen]);
-
-  if (!isOpen) return null;
+  }, []);
 
   const currentSettings = draft;
 
   async function handleTestConnection() {
-    if (!currentSettings) return;
+    if (!currentSettings) return false;
 
     const validationError = validateDraft(currentSettings, "openai");
     if (validationError) {
@@ -133,25 +120,29 @@ export default function SettingsModal({ isOpen, onClose, onSaved }: SettingsModa
     setIsBusy(true);
     try {
       const savedSettings = await window.nova.settings.save(currentSettings);
+      setInitialSettings(savedSettings);
+      setDraft(savedSettings);
       onSaved(savedSettings);
-      onClose();
     } finally {
       setIsBusy(false);
     }
   }
 
+  function handleReset() {
+    if (!initialSettings) return;
+    setDraft(initialSettings);
+    setStatus(createEmptyStatus());
+    setActiveCategory("local-files");
+  }
+
   return (
-    <div className="settings-modal" role="dialog" aria-modal="true" aria-label="Parametres">
-      <button className="settings-modal__backdrop" onClick={onClose} type="button" />
-      <section className="settings-modal__dialog">
-        <header className="settings-modal__header">
-          <h2 className="settings-modal__title">⚙ Parametres</h2>
-          <button className="settings-modal__close" onClick={onClose} type="button" aria-label="Fermer">
-            ×
-          </button>
-        </header>
-        <div className="settings-modal__body">
-          {currentSettings ? (
+    <section className="settings-modal" aria-label="Parametres">
+      <header className="settings-modal__header">
+        <h2 className="settings-modal__title">Parametres</h2>
+      </header>
+      {currentSettings ? (
+        <>
+          <div className="settings-modal__body">
             <div className="settings-modal__layout">
               <aside className="settings-modal__sidebar" aria-label="Categories de parametres">
                 <button
@@ -205,24 +196,39 @@ export default function SettingsModal({ isOpen, onClose, onSaved }: SettingsModa
                       />
                     </label>
                     <label className="settings-modal__field">
-                      <span className="settings-modal__label">Fichier des conversations</span>
+                      <span className="settings-modal__label">Dossier des conversations</span>
                       <input
                         className="settings-modal__input"
                         disabled={isBusy}
                         onChange={(event) => {
                           setDraft((current) => current ? {
                             ...current,
-                        localFiles: {
-                          ...current.localFiles,
-                          conversationsDirectory: event.target.value,
-                        },
-                      } : current);
-                      setStatus(createEmptyStatus());
-                    }}
+                            localFiles: {
+                              ...current.localFiles,
+                              conversationsDirectory: event.target.value,
+                            },
+                          } : current);
+                          setStatus(createEmptyStatus());
+                        }}
                         placeholder="/chemin/vers/dossier-conversations"
                         type="text"
                         value={currentSettings.localFiles.conversationsDirectory}
                       />
+                    </label>
+                    <label className="settings-modal__checkbox">
+                      <input
+                        checked={currentSettings.previewMode}
+                        disabled={isBusy}
+                        onChange={(event) => {
+                          setDraft((current) => current ? {
+                            ...current,
+                            previewMode: event.target.checked,
+                          } : current);
+                          setStatus(createEmptyStatus());
+                        }}
+                        type="checkbox"
+                      />
+                      <span>Mode preview</span>
                     </label>
                     <p className="settings-modal__hint">
                       Nova conserve un point d'ancrage local pour retrouver la configuration au redemarrage.
@@ -321,31 +327,26 @@ export default function SettingsModal({ isOpen, onClose, onSaved }: SettingsModa
                     </div>
                   </div>
                 )}
-                {status.kind !== "idle" ? (
+                {status.message ? (
                   <p className={`settings-modal__status settings-modal__status--${status.kind}`}>
                     {status.message}
                   </p>
                 ) : null}
               </div>
             </div>
-          ) : (
-            <p className="settings-modal__text">Chargement des parametres...</p>
-          )}
-        </div>
-        <footer className="settings-modal__footer">
-          <button className="settings-modal__cancel" disabled={isBusy} onClick={onClose} type="button">
-            Annuler
-          </button>
-          <button
-            className="settings-modal__confirm"
-            disabled={isBusy || !currentSettings}
-            onClick={() => void handleConfirm()}
-            type="button"
-          >
-            Valider
-          </button>
-        </footer>
-      </section>
-    </div>
+          </div>
+          <footer className="settings-modal__footer">
+            <button className="settings-modal__cancel" disabled={isBusy} onClick={handleReset} type="button">
+              Annuler
+            </button>
+            <button className="settings-modal__confirm" disabled={isBusy} onClick={() => void handleConfirm()} type="button">
+              Valider
+            </button>
+          </footer>
+        </>
+      ) : (
+        <div className="settings-modal__loading">Chargement des parametres...</div>
+      )}
+    </section>
   );
 }

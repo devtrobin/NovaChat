@@ -7,3 +7,7 @@
   scroll-behavior: smooth;
   align-content: start;
 }
+
+.message-list__item {
+  display: grid;
+}
