@@ -1,6 +1,6 @@
 import React from "react";
 import LoadingScreen from "./components/LoadingScreen/LoadingScreen";
-import ChatPage from "./pages/ChatPage/ChatPage";
+import WorkspaceLayout from "./components/WorkspaceLayout/WorkspaceLayout";
 
 export default function App() {
   const [ready, setReady] = React.useState(false);
@@ -9,5 +9,5 @@ export default function App() {
     return <LoadingScreen onReady={() => setReady(true)} />;
   }
 
-  return <ChatPage />;
+  return <WorkspaceLayout />;
 }

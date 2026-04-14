@@ -1,0 +1,82 @@
+.workspace-layout {
+  position: relative;
+  display: grid;
+  grid-template-columns: 304px minmax(0, 1fr);
+  gap: 18px;
+  height: 100vh;
+  padding: 18px;
+  background: var(--color-surface);
+  overflow: hidden;
+}
+
+.workspace-layout::before,
+.workspace-layout::after {
+  content: "";
+  position: absolute;
+  border-radius: 999px;
+  pointer-events: none;
+  filter: blur(132px);
+  opacity: 0.58;
+  will-change: transform, opacity;
+}
+
+.workspace-layout::before {
+  top: -220px;
+  right: 12%;
+  width: 520px;
+  height: 520px;
+  background: rgba(0, 191, 255, 0.14);
+  box-shadow:
+    0 0 120px rgba(0, 191, 255, 0.2),
+    0 0 220px rgba(0, 191, 255, 0.12),
+    0 0 340px rgba(0, 191, 255, 0.06);
+  animation: nova-orbit-one 18s ease-in-out infinite alternate;
+}
+
+.workspace-layout::after {
+  bottom: -240px;
+  left: 18%;
+  width: 480px;
+  height: 480px;
+  background: rgba(28, 100, 242, 0.11);
+  box-shadow:
+    0 0 110px rgba(28, 100, 242, 0.18),
+    0 0 200px rgba(28, 100, 242, 0.1),
+    0 0 320px rgba(28, 100, 242, 0.05);
+  animation: nova-orbit-two 24s ease-in-out infinite alternate;
+}
+
+.workspace-layout__page {
+  min-width: 0;
+  min-height: 0;
+}
+
+@keyframes nova-orbit-one {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.46;
+  }
+  100% {
+    transform: translate3d(22px, 32px, 0) scale(1.08);
+    opacity: 0.68;
+  }
+}
+
+@keyframes nova-orbit-two {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.4;
+  }
+  100% {
+    transform: translate3d(-28px, -18px, 0) scale(1.06);
+    opacity: 0.58;
+  }
+}
+
+@media (max-width: 900px) {
+  .workspace-layout {
+    grid-template-columns: 1fr;
+    padding: 12px;
+    gap: 12px;
+  }
+}
