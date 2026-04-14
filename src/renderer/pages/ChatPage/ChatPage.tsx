@@ -5,14 +5,18 @@ import EmptyState from "../../components/EmptyState/EmptyState";
 import MessageList from "../../components/MessageList/MessageList";
 import SettingsModal from "../../components/SettingsModal/SettingsModal";
 import TopBar from "../../components/TopBar/TopBar";
+import { SettingsSidebarCategory } from "../../components/ConversationSidebar/ConversationSidebar.types";
 import { loadStoredChatState, saveStoredChatState } from "../../services/conversation.service";
 import { Conversation } from "../../types/chat.types";
 import {
   applyChatTurnEvent,
   createConversation,
   deleteConversation,
+  getConversationUnreadCount,
   getNextActiveConversationId,
+  hasConversationRunningSystemMessage,
   loadChatPageState,
+  markConversationAsRead,
   normalizeConversationTitle,
   renameConversation,
   replaceConversation,
@@ -32,6 +36,7 @@ export default function ChatPage() {
   );
   const [activeSection, setActiveSection] = React.useState<"agents" | "conversations" | "settings">("conversations");
   const [activeAgentId, setActiveAgentId] = React.useState<string | null>(AGENTS[0]?.id ?? null);
+  const [activeSettingsCategory, setActiveSettingsCategory] = React.useState<SettingsSidebarCategory>("local-files");
   const [isSending, setIsSending] = React.useState(initialState.isSending);
   const [isHydrated, setIsHydrated] = React.useState(false);
   const [isPreviewMode, setIsPreviewMode] = React.useState(false);
@@ -51,6 +56,15 @@ export default function ChatPage() {
       .map((message) => message.id);
   }, [activeConversation, searchQuery]);
   const selectedSearchMessageId = searchMatches[selectedSearchIndex] ?? null;
+  const conversationIndicators = React.useMemo(() => Object.fromEntries(
+    conversations.map((conversation) => [
+      conversation.id,
+      {
+        hasRunningSystemMessage: hasConversationRunningSystemMessage(conversation),
+        unreadCount: getConversationUnreadCount(conversation),
+      },
+    ]),
+  ), [conversations]);
 
   const goToNextSearchMatch = React.useCallback(() => {
     setSelectedSearchIndex((current) => (
@@ -142,10 +156,24 @@ export default function ChatPage() {
   }, [activeSection]);
 
   React.useEffect(() => {
+    if (activeSection !== "conversations" || !activeConversationId) return;
+    setConversations((current) => markConversationAsRead(current, activeConversationId));
+  }, [activeConversation?.updatedAt, activeConversationId, activeSection]);
+
+  React.useEffect(() => {
     if (!isPreviewMode && activeSection === "agents") {
       setActiveSection("conversations");
     }
   }, [activeSection, isPreviewMode]);
+
+  React.useEffect(() => {
+    if (
+      !isPreviewMode
+      && ["anthropic", "google", "mistral", "ollama", "lmstudio"].includes(activeSettingsCategory)
+    ) {
+      setActiveSettingsCategory("provider");
+    }
+  }, [activeSettingsCategory, isPreviewMode]);
 
   const handleCreateConversation = React.useCallback(() => {
     const nextConversation = createConversation();
@@ -217,8 +245,10 @@ export default function ChatPage() {
       <ConversationSidebar
         activeAgentId={activeAgentId}
         activeConversationId={activeConversationId}
+        activeSettingsCategory={activeSettingsCategory}
         activeSection={activeSection}
         agents={[...AGENTS]}
+        conversationIndicators={conversationIndicators}
         conversations={conversations}
         isPreviewMode={isPreviewMode}
         onCreateConversation={handleCreateConversation}
@@ -227,6 +257,7 @@ export default function ChatPage() {
           setActiveSection("agents");
         }}
         onSelectConversation={handleSelectConversation}
+        onSelectSettingsCategory={setActiveSettingsCategory}
         onSelectSection={setActiveSection}
       />
       <main className="chat-page__main">
@@ -327,9 +358,11 @@ export default function ChatPage() {
                 </p>
               </div>
             ) : (
-              <SettingsModal onSaved={(settings) => {
-                setIsPreviewMode(settings.previewMode);
-              }}
+              <SettingsModal
+                activeCategory={activeSettingsCategory}
+                onSaved={(settings) => {
+                  setIsPreviewMode(settings.previewMode);
+                }}
               />
             )}
           </div>

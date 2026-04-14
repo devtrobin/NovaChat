@@ -1,4 +1,4 @@
-export type AIProviderId = "openai";
+export type AIProviderId = "anthropic" | "google" | "lmstudio" | "mistral" | "ollama" | "openai";
 
 export type LocalFilesSettings = {
   conversationsDirectory: string;

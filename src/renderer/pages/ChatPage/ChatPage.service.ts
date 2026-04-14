@@ -21,6 +21,7 @@ export function createConversation(): Conversation {
 
   return {
     id: crypto.randomUUID(),
+    lastReadAt: createdAt,
     title: "Nouvelle conversation",
     createdAt,
     updatedAt: createdAt,
@@ -126,6 +127,7 @@ export function applyChatTurnEvent(
     ?? {
       createdAt: new Date().toISOString(),
       id: event.conversationId,
+      lastReadAt: undefined,
       messages: [],
       title: "Nouvelle conversation",
       updatedAt: new Date().toISOString(),
@@ -164,4 +166,44 @@ export function applyChatTurnEvent(
     title: event.title,
     updatedAt: new Date().toISOString(),
   });
+}
+
+export function markConversationAsRead(
+  conversations: Conversation[],
+  conversationId: string,
+): Conversation[] {
+  let didChange = false;
+  const nextConversations = conversations.map((conversation) => {
+    if (conversation.id !== conversationId) return conversation;
+    const latestVisibleMessage = [...conversation.messages]
+      .filter((message) => message.from !== "user")
+      .sort((left, right) => right.createdAt.localeCompare(left.createdAt))[0];
+
+    if (!latestVisibleMessage) return conversation;
+    if (conversation.lastReadAt && conversation.lastReadAt >= latestVisibleMessage.createdAt) {
+      return conversation;
+    }
+
+    didChange = true;
+    return {
+      ...conversation,
+      lastReadAt: latestVisibleMessage.createdAt,
+    };
+  });
+
+  return didChange ? nextConversations : conversations;
+}
+
+export function getConversationUnreadCount(conversation: Conversation): number {
+  return conversation.messages.filter((message) => (
+    message.from !== "user"
+    && (!conversation.lastReadAt || message.createdAt > conversation.lastReadAt)
+  )).length;
+}
+
+export function hasConversationRunningSystemMessage(conversation: Conversation): boolean {
+  return conversation.messages.some((message) => (
+    message.from === "system"
+    && message.status === "running"
+  ));
 }

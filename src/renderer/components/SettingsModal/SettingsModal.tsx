@@ -3,8 +3,6 @@ import { AppSettings } from "../../../shared/settings.types";
 import { SettingsModalProps } from "./SettingsModal.types";
 import "./SettingsModal.css";
 
-type SettingsCategory = "local-files" | "openai";
-
 type StatusState = {
   kind: "error" | "idle" | "success";
   message: string;
@@ -14,7 +12,7 @@ function createEmptyStatus() {
   return { kind: "idle", message: "" } satisfies StatusState;
 }
 
-function validateDraft(settings: AppSettings, category: SettingsCategory): string | null {
+function validateDraft(settings: AppSettings, category: SettingsModalProps["activeCategory"]): string | null {
   if (category === "local-files") {
     if (!settings.localFiles.settingsPath.trim()) {
       return "Le chemin du fichier de configuration est requis.";
@@ -24,6 +22,10 @@ function validateDraft(settings: AppSettings, category: SettingsCategory): strin
       return "Le dossier des conversations est requis.";
     }
 
+    return null;
+  }
+
+  if (category !== "openai") {
     return null;
   }
 
@@ -42,8 +44,7 @@ function validateDraft(settings: AppSettings, category: SettingsCategory): strin
   return null;
 }
 
-export default function SettingsModal({ onSaved }: SettingsModalProps) {
-  const [activeCategory, setActiveCategory] = React.useState<SettingsCategory>("local-files");
+export default function SettingsModal({ activeCategory, onSaved }: SettingsModalProps) {
   const [draft, setDraft] = React.useState<AppSettings | null>(null);
   const [initialSettings, setInitialSettings] = React.useState<AppSettings | null>(null);
   const [status, setStatus] = React.useState<StatusState>(createEmptyStatus());
@@ -77,12 +78,11 @@ export default function SettingsModal({ onSaved }: SettingsModalProps) {
   async function handleTestConnection() {
     if (!currentSettings) return false;
 
-    const validationError = validateDraft(currentSettings, "openai");
-    if (validationError) {
-      setActiveCategory("openai");
-      setStatus({
-        kind: "error",
-        message: validationError,
+      const validationError = validateDraft(currentSettings, "openai");
+      if (validationError) {
+        setStatus({
+          kind: "error",
+          message: validationError,
       });
       return false;
     }
@@ -106,7 +106,6 @@ export default function SettingsModal({ onSaved }: SettingsModalProps) {
 
     const localFilesError = validateDraft(currentSettings, "local-files");
     if (localFilesError) {
-      setActiveCategory("local-files");
       setStatus({
         kind: "error",
         message: localFilesError,
@@ -114,8 +113,10 @@ export default function SettingsModal({ onSaved }: SettingsModalProps) {
       return;
     }
 
-    const isValid = await handleTestConnection();
-    if (!isValid) return;
+    if (currentSettings.activeProvider === "openai") {
+      const isValid = await handleTestConnection();
+      if (!isValid) return;
+    }
 
     setIsBusy(true);
     try {
@@ -132,7 +133,6 @@ export default function SettingsModal({ onSaved }: SettingsModalProps) {
     if (!initialSettings) return;
     setDraft(initialSettings);
     setStatus(createEmptyStatus());
-    setActiveCategory("local-files");
   }
 
   return (
@@ -143,31 +143,8 @@ export default function SettingsModal({ onSaved }: SettingsModalProps) {
       {currentSettings ? (
         <>
           <div className="settings-modal__body">
-            <div className="settings-modal__layout">
-              <aside className="settings-modal__sidebar" aria-label="Categories de parametres">
-                <button
-                  className={`settings-modal__nav-item${activeCategory === "local-files" ? " settings-modal__nav-item--active" : ""}`}
-                  onClick={() => {
-                    setActiveCategory("local-files");
-                    setStatus(createEmptyStatus());
-                  }}
-                  type="button"
-                >
-                  Fichier local
-                </button>
-                <button
-                  className={`settings-modal__nav-item${activeCategory === "openai" ? " settings-modal__nav-item--active" : ""}`}
-                  onClick={() => {
-                    setActiveCategory("openai");
-                    setStatus(createEmptyStatus());
-                  }}
-                  type="button"
-                >
-                  Open AI
-                </button>
-              </aside>
-              <div className="settings-modal__panel">
-                {activeCategory === "local-files" ? (
+            <div className="settings-modal__panel">
+              {activeCategory === "local-files" ? (
                   <div className="settings-modal__form">
                     <div className="settings-modal__section-head">
                       <h3 className="settings-modal__section-title">Fichier local</h3>
@@ -234,28 +211,49 @@ export default function SettingsModal({ onSaved }: SettingsModalProps) {
                       Nova conserve un point d'ancrage local pour retrouver la configuration au redemarrage.
                     </p>
                   </div>
-                ) : (
+              ) : activeCategory === "provider" ? (
                   <div className="settings-modal__form">
                     <div className="settings-modal__section-head">
-                      <h3 className="settings-modal__section-title">Open AI</h3>
+                      <h3 className="settings-modal__section-title">Provider</h3>
                       <p className="settings-modal__section-text">
-                        Configure la connexion API OpenAI utilisee par l'orchestrateur Electron.
+                        Choisis le provider par defaut utilise par Nova pour les conversations et les futurs agents.
                       </p>
                     </div>
                     <label className="settings-modal__field">
-                      <span className="settings-modal__label">Provider</span>
+                      <span className="settings-modal__label">Provider par defaut</span>
                       <select
                         className="settings-modal__input"
                         disabled={isBusy}
-                        onChange={() => {
-                          setDraft((current) => current ? { ...current, activeProvider: "openai" } : current);
+                        onChange={(event) => {
+                          setDraft((current) => current ? {
+                            ...current,
+                            activeProvider: event.target.value as AppSettings["activeProvider"],
+                          } : current);
                           setStatus(createEmptyStatus());
                         }}
                         value={currentSettings.activeProvider}
                       >
                         <option value="openai">OpenAI</option>
+                        <option value="anthropic">Anthropic</option>
+                        <option value="google">Google</option>
+                        <option value="mistral">Mistral</option>
+                        <option value="ollama">Ollama</option>
+                        <option value="lmstudio">LM Studio</option>
                       </select>
                     </label>
+                    <p className="settings-modal__hint">
+                      OpenAI est actuellement le seul provider entierement configure. Les autres entrees sont preparees pour la suite.
+                    </p>
+                  </div>
+              ) : (
+                activeCategory === "openai" ? (
+                  <div className="settings-modal__form">
+                    <div className="settings-modal__section-head">
+                      <h3 className="settings-modal__section-title">OpenAI</h3>
+                      <p className="settings-modal__section-text">
+                        Configure la connexion API OpenAI utilisee par l'orchestrateur Electron.
+                      </p>
+                    </div>
                     <label className="settings-modal__field">
                       <span className="settings-modal__label">OpenAI API Key</span>
                       <input
@@ -326,13 +324,25 @@ export default function SettingsModal({ onSaved }: SettingsModalProps) {
                       </button>
                     </div>
                   </div>
-                )}
-                {status.message ? (
-                  <p className={`settings-modal__status settings-modal__status--${status.kind}`}>
-                    {status.message}
-                  </p>
-                ) : null}
-              </div>
+                ) : (
+                  <div className="settings-modal__form">
+                    <div className="settings-modal__section-head">
+                      <h3 className="settings-modal__section-title">{getProviderTitle(activeCategory)}</h3>
+                      <p className="settings-modal__section-text">
+                        Cette page de configuration sera construite ensuite.
+                      </p>
+                    </div>
+                    <p className="settings-modal__hint">
+                      Le provider {getProviderTitle(activeCategory)} est visible uniquement en mode preview pour preparer l'architecture multi-provider.
+                    </p>
+                  </div>
+                )
+              )}
+              {status.message ? (
+                <p className={`settings-modal__status settings-modal__status--${status.kind}`}>
+                  {status.message}
+                </p>
+              ) : null}
             </div>
           </div>
           <footer className="settings-modal__footer">
@@ -349,4 +359,21 @@ export default function SettingsModal({ onSaved }: SettingsModalProps) {
       )}
     </section>
   );
+}
+
+function getProviderTitle(category: Exclude<SettingsModalProps["activeCategory"], "local-files" | "provider" | "openai">): string {
+  switch (category) {
+    case "anthropic":
+      return "Anthropic";
+    case "google":
+      return "Google";
+    case "mistral":
+      return "Mistral";
+    case "ollama":
+      return "Ollama";
+    case "lmstudio":
+      return "LM Studio";
+    default:
+      return "Provider";
+  }
 }

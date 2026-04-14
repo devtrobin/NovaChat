@@ -28,7 +28,7 @@
 
 .settings-modal__body {
   min-height: 0;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 .settings-modal__loading {
@@ -38,46 +38,11 @@
   color: var(--color-muted);
 }
 
-.settings-modal__layout {
-  display: grid;
-  grid-template-columns: 220px minmax(0, 1fr);
-  height: 100%;
-  min-height: 0;
-}
-
-.settings-modal__sidebar {
-  display: grid;
-  align-content: start;
-  gap: 8px;
-  padding: 20px;
-  border-right: 1px solid var(--color-line-soft);
-  background: rgba(9, 12, 18, 0.52);
-}
-
-.settings-modal__nav-item {
-  width: 100%;
-  border: 1px solid transparent;
-  border-radius: 14px;
-  padding: 12px 14px;
-  background: transparent;
-  color: var(--color-text);
-  cursor: pointer;
-  font: inherit;
-  text-align: left;
-}
-
-.settings-modal__nav-item--active {
-  border-color: var(--color-accent-soft);
-  background: rgba(13, 110, 168, 0.14);
-  color: var(--color-text-strong);
-}
-
 .settings-modal__panel {
   display: grid;
   align-content: start;
   gap: 18px;
   padding: 22px;
-  overflow-y: auto;
 }
 
 .settings-modal__form {
@@ -210,18 +175,4 @@
   color: var(--color-button-text);
   font-weight: 700;
   box-shadow: 0 0 24px var(--color-accent-soft);
-}
-
-@media (max-width: 860px) {
-  .settings-modal__layout {
-    grid-template-columns: 1fr;
-  }
-
-  .settings-modal__sidebar {
-    grid-auto-flow: column;
-    grid-auto-columns: 1fr;
-    border-right: 0;
-    border-bottom: 1px solid var(--color-line-soft);
-    overflow-x: auto;
-  }
 }
