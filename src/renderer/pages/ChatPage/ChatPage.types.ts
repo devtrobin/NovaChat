@@ -10,6 +10,7 @@ export type ChatPageProps = {
   onOpenSettings: () => void;
   onRenameConversation: (conversationId: string, title: string) => void;
   onSendMessage: (content: string) => Promise<void>;
+  onStopTurn: (conversationId: string) => Promise<void>;
   onSubmitPermissionDecision: (payload: SubmitPermissionDecisionRequest) => Promise<void>;
   onSubmitCommandInput: (commandId: string, value: string) => Promise<void>;
   onUpdateConversationDraft: (conversationId: string, draft: string) => void;

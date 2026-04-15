@@ -3,10 +3,11 @@ import {
   ChatTurnEvent,
   RunTurnRequest,
   RunTurnResult,
+  StopTurnRequest,
   SubmitCommandInputRequest,
   SubmitPermissionDecisionRequest,
 } from "../shared/ai.types";
-import { AgentContextFile, AgentId, AgentPermissionDecision, AgentPermissionsFile, AgentWorkspaceData } from "../shared/agent.types";
+import { ActiveAgentTask, AgentContextFile, AgentId, AgentPermissionDecision, AgentPermissionsFile, AgentWorkspaceData } from "../shared/agent.types";
 import { AppSettings, SettingsTestResult } from "../shared/settings.types";
 
 export { };
@@ -35,11 +36,14 @@ declare global {
           remember: boolean,
         ) => Promise<AgentPermissionsFile>;
         deletePermission: (agentId: AgentId, command: string) => Promise<AgentPermissionsFile>;
+        getActiveTasks: (agentId: AgentId) => Promise<ActiveAgentTask[]>;
+        stopTask: (taskId: string) => Promise<boolean>;
       };
       ai: {
         killCommand: (commandId: string) => Promise<void>;
         onEvent: (listener: (event: ChatTurnEvent) => void) => () => void;
         runTurn: (request: RunTurnRequest) => Promise<RunTurnResult>;
+        stopTurn: (payload: StopTurnRequest) => Promise<boolean>;
         submitPermissionDecision: (payload: SubmitPermissionDecisionRequest) => Promise<boolean>;
         submitCommandInput: (payload: SubmitCommandInputRequest) => Promise<boolean>;
       };

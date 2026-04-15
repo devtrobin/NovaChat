@@ -23,6 +23,10 @@ export type SubmitPermissionDecisionRequest = {
   requestId: string;
 };
 
+export type StopTurnRequest = {
+  conversationId: string;
+};
+
 export type ChatTurnEvent =
   | {
       conversationId: string;

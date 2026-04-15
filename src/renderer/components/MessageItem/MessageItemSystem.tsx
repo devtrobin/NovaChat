@@ -7,12 +7,13 @@ export default function MessageItemSystem({ message, onOpenSettings, onSubmitPer
   const actions = message.actions ?? [];
   const isPermissionRequest = actions.length > 0;
   const [title, ...restLines] = message.content.split("\n");
+  const isInterrupted = title.trim() === "Tache interrompue par l'utilisateur.";
   const detailLines = isPermissionRequest ? restLines.filter((line) => line.trim()) : [];
   const command = isPermissionRequest ? detailLines[detailLines.length - 1] ?? "" : "";
   const details = isPermissionRequest ? detailLines.slice(0, -1).join("\n") : "";
 
   return (
-    <article className={`message-item message-item--system${isPermissionRequest ? " message-item--system-card" : ""}`}>
+    <article className={`message-item message-item--system${isPermissionRequest ? " message-item--system-card" : ""}${isInterrupted ? " message-item--system-neutral" : ""}`}>
       <div className="message-item__system-line">
         <div className="message-item__system-copy">
           <p className="message-item__system-text">{title}</p>

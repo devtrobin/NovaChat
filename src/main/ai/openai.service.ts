@@ -16,6 +16,7 @@ export async function generateOpenAIReply(
   settings: OpenAISettings,
   messages: ChatMessage[],
   enabledAgents: AgentId[],
+  signal?: AbortSignal,
 ): Promise<GenerateOpenAIReplyResult> {
   const requestBody = {
     input: buildInput(messages, enabledAgents),
@@ -23,7 +24,7 @@ export async function generateOpenAIReply(
     store: false,
   };
 
-  const { requestRecord, response } = await postOpenAIResponse(settings.baseUrl, settings.apiKey, requestBody);
+  const { requestRecord, response } = await postOpenAIResponse(settings.baseUrl, settings.apiKey, requestBody, signal);
 
   if (!response.ok) {
     const errorText = await response.text();
@@ -50,6 +51,7 @@ export async function generateDeviceAgentCommand(
   context: AgentContextFile,
   goal: string,
   userPrompt: string,
+  signal?: AbortSignal,
 ): Promise<GenerateDeviceAgentCommandResult> {
   const requestBody = {
     input: buildDeviceAgentInput(context, goal, userPrompt),
@@ -57,7 +59,7 @@ export async function generateDeviceAgentCommand(
     store: false,
   };
 
-  const { requestRecord, response } = await postOpenAIResponse(settings.baseUrl, settings.apiKey, requestBody);
+  const { requestRecord, response } = await postOpenAIResponse(settings.baseUrl, settings.apiKey, requestBody, signal);
 
   if (!response.ok) {
     const errorText = await response.text();
@@ -85,6 +87,7 @@ export async function generateAgentTextReply(
   context: AgentContextFile,
   request: string,
   userPrompt: string,
+  signal?: AbortSignal,
 ): Promise<{ apiRecords: ChatMessage["apiRequests"]; text: string }> {
   const requestBody = {
     input: buildGenericAgentInput(context, request, userPrompt),
@@ -92,7 +95,7 @@ export async function generateAgentTextReply(
     store: false,
   };
 
-  const { requestRecord, response } = await postOpenAIResponse(settings.baseUrl, settings.apiKey, requestBody);
+  const { requestRecord, response } = await postOpenAIResponse(settings.baseUrl, settings.apiKey, requestBody, signal);
 
   if (!response.ok) {
     const errorText = await response.text();

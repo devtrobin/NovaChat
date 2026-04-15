@@ -1,6 +1,11 @@
 import { ApiRequestRecord } from "../../renderer/types/chat.types";
 
-export async function postOpenAIResponse(baseUrl: string, apiKey: string, requestBody: unknown) {
+export async function postOpenAIResponse(
+  baseUrl: string,
+  apiKey: string,
+  requestBody: unknown,
+  signal?: AbortSignal,
+) {
   const response = await fetch(`${stripTrailingSlash(baseUrl)}/responses`, {
     body: JSON.stringify(requestBody),
     headers: {
@@ -8,6 +13,7 @@ export async function postOpenAIResponse(baseUrl: string, apiKey: string, reques
       "Content-Type": "application/json",
     },
     method: "POST",
+    signal,
   });
 
   const requestRecord: ApiRequestRecord = {

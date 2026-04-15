@@ -4,10 +4,11 @@ import {
   ChatTurnEvent,
   RunTurnRequest,
   RunTurnResult,
+  StopTurnRequest,
   SubmitCommandInputRequest,
   SubmitPermissionDecisionRequest,
 } from "./shared/ai.types";
-import { AgentContextFile, AgentId, AgentPermissionDecision, AgentPermissionsFile, AgentWorkspaceData } from "./shared/agent.types";
+import { ActiveAgentTask, AgentContextFile, AgentId, AgentPermissionDecision, AgentPermissionsFile, AgentWorkspaceData } from "./shared/agent.types";
 import { AppSettings, SettingsTestResult } from "./shared/settings.types";
 
 type AIEventListener = (event: ChatTurnEvent) => void;
@@ -32,6 +33,8 @@ contextBridge.exposeInMainWorld("nova", {
       ipcRenderer.invoke("nova:agents:save-permission", { agentId, command, decision, remember }),
     deletePermission: (agentId: AgentId, command: string): Promise<AgentPermissionsFile> =>
       ipcRenderer.invoke("nova:agents:delete-permission", { agentId, command }),
+    getActiveTasks: (agentId: AgentId): Promise<ActiveAgentTask[]> => ipcRenderer.invoke("nova:agents:get-active-tasks", agentId),
+    stopTask: (taskId: string): Promise<boolean> => ipcRenderer.invoke("nova:agents:stop-task", taskId),
   },
   ai: {
     killCommand: (commandId: string): Promise<void> => ipcRenderer.invoke("nova:ai:kill-command", commandId),
@@ -44,6 +47,7 @@ contextBridge.exposeInMainWorld("nova", {
       return () => ipcRenderer.removeListener("nova:ai:event", wrapped);
     },
     runTurn: (request: RunTurnRequest): Promise<RunTurnResult> => ipcRenderer.invoke("nova:ai:run-turn", request),
+    stopTurn: (payload: StopTurnRequest): Promise<boolean> => ipcRenderer.invoke("nova:ai:stop-turn", payload.conversationId),
     submitPermissionDecision: (payload: SubmitPermissionDecisionRequest): Promise<boolean> =>
       ipcRenderer.invoke("nova:ai:submit-permission-decision", payload),
     submitCommandInput: (payload: SubmitCommandInputRequest): Promise<boolean> =>

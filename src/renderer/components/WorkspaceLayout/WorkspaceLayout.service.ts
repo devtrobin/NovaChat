@@ -54,6 +54,7 @@ export function useWorkspaceLayoutController(): WorkspaceLayoutController {
     handleRenameConversation,
     handleSelectConversation,
     handleSendMessage,
+    handleStopTurn,
     handleUpdateConversationDraft,
   } = useWorkspaceConversationActions({
     activeConversation,
@@ -101,6 +102,7 @@ export function useWorkspaceLayoutController(): WorkspaceLayoutController {
     onSelectSection: handleSelectSection,
     onSelectSettingsCategory: handleSelectSettingsCategory,
     onSendMessage: handleSendMessage,
+    onStopTurn: handleStopTurn,
     onSubmitPermissionDecision: handleSubmitPermissionDecision,
     onSubmitCommandInput: handleSubmitCommandInput,
     onUpdateConversationDraft: handleUpdateConversationDraft,

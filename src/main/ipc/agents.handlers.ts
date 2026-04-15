@@ -1,7 +1,8 @@
 import { IpcMain } from "electron";
 import { deleteAgentPermission, loadAgentWorkspace, saveAgentContext, saveAgentPermission } from "../agents/agent-storage.service";
+import { getActiveAgentTasks, stopTurnByAgentTask } from "../ai/ai.turn-registry";
 import { getAgentsPathFromSettings } from "../settings/settings.service";
-import { AgentContextFile, AgentId, AgentPermissionDecision, AgentPermissionsFile } from "../../shared/agent.types";
+import { ActiveAgentTask, AgentContextFile, AgentId, AgentPermissionDecision, AgentPermissionsFile } from "../../shared/agent.types";
 
 export function registerAgentsHandlers(ipcMain: IpcMain): void {
   ipcMain.handle("nova:agents:load-workspace", async (_event, agentId: AgentId) => {
@@ -30,5 +31,13 @@ export function registerAgentsHandlers(ipcMain: IpcMain): void {
     payload: { agentId: AgentId; command: string },
   ): Promise<AgentPermissionsFile> => {
     return deleteAgentPermission(await getAgentsPathFromSettings(), payload.agentId, payload.command);
+  });
+
+  ipcMain.handle("nova:agents:get-active-tasks", async (_event, agentId: AgentId): Promise<ActiveAgentTask[]> => {
+    return getActiveAgentTasks(agentId);
+  });
+
+  ipcMain.handle("nova:agents:stop-task", async (_event, taskId: string): Promise<boolean> => {
+    return stopTurnByAgentTask(taskId);
   });
 }

@@ -22,6 +22,7 @@ export default function ConversationView(props: ConversationViewProps) {
         conversation={props.conversation}
         isSending={props.isSending}
         onSendMessage={props.onSendMessage}
+        onStopTurn={props.onStopTurn}
         onUpdateDraft={props.onUpdateDraft}
       />
     </section>

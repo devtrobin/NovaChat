@@ -3,11 +3,13 @@ import { ChatMessage } from "../../renderer/types/chat.types";
 import { createPermissionRequestSystemMessage, createPermissionResolutionSystemMessage } from "./ai.message-factory";
 import { Emit } from "./ai.orchestrator.types";
 
+type InternalPermissionDecision = PermissionDecision | "cancel";
+
 type PendingPermissionRequest = {
   conversationId: string;
   messageId: string;
   requestId: string;
-  resolve: (decision: PermissionDecision) => void;
+  resolve: (decision: InternalPermissionDecision) => void;
 };
 
 const pendingPermissionRequests = new Map<string, PendingPermissionRequest>();
@@ -17,7 +19,7 @@ export async function requestDevicePermission(
   conversationId: string,
   command: string,
   emit: Emit,
-): Promise<{ decision: PermissionDecision; requestMessage: ChatMessage }> {
+): Promise<{ decision: InternalPermissionDecision; requestMessage: ChatMessage }> {
   if (activeConversationRequests.has(conversationId)) {
     throw new Error("Une demande de permission est deja en attente pour cette conversation.");
   }
@@ -31,7 +33,7 @@ export async function requestDevicePermission(
     type: "append-messages",
   });
 
-  const decision = await new Promise<PermissionDecision>((resolve) => {
+  const decision = await new Promise<InternalPermissionDecision>((resolve) => {
     pendingPermissionRequests.set(requestId, {
       conversationId,
       messageId: requestMessage.id,
@@ -48,11 +50,13 @@ export async function requestDevicePermission(
     messageId: requestMessage.id,
     type: "remove-message",
   });
-  emit({
-    conversationId,
-    messages: [createPermissionResolutionSystemMessage(decision, command)],
-    type: "append-messages",
-  });
+  if (decision !== "cancel") {
+    emit({
+      conversationId,
+      messages: [createPermissionResolutionSystemMessage(decision, command)],
+      type: "append-messages",
+    });
+  }
 
   return {
     decision,
@@ -64,5 +68,12 @@ export function resolvePermissionRequest(requestId: string, decision: Permission
   const pendingRequest = pendingPermissionRequests.get(requestId);
   if (!pendingRequest) return false;
   pendingRequest.resolve(decision);
+  return true;
+}
+
+export function cancelPermissionRequest(requestId: string): boolean {
+  const pendingRequest = pendingPermissionRequests.get(requestId);
+  if (!pendingRequest) return false;
+  pendingRequest.resolve("cancel");
   return true;
 }

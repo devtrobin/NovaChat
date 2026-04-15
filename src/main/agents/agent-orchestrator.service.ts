@@ -12,6 +12,14 @@ import { generateAgentTextReply, generateDeviceAgentCommand } from "../ai/openai
 import { requestDevicePermission } from "../ai/ai.permission.service";
 import { executeDeviceCommand } from "../ai/ai.device-flow";
 import { createDeviceImmediateErrorMessage } from "../ai/ai.message-factory";
+import {
+  completeActiveAgentTask,
+  registerAbortController,
+  registerActiveAgentTask,
+  TurnStoppedError,
+  throwIfTurnStopped,
+  unregisterAbortController,
+} from "../ai/ai.turn-registry";
 
 type RunAgentTaskArgs = {
   conversationId: string;
@@ -20,6 +28,7 @@ type RunAgentTaskArgs = {
   messageId: string;
   settings: AppSettings;
   task: AgentTaskRequest;
+  turnId: string;
 };
 
 export async function runAgentTask({
@@ -29,6 +38,7 @@ export async function runAgentTask({
   messageId,
   settings,
   task,
+  turnId,
 }: RunAgentTaskArgs): Promise<{ deviceMessage: ChatMessage; result: AgentTaskResult }> {
   if (!settings.agents[task.agentId]?.enabled) {
     const deviceMessage = createAgentResultMessage(
@@ -50,108 +60,70 @@ export async function runAgentTask({
     };
   }
 
-  if (task.agentId !== "device-agent") {
-    const workspace = await loadAgentWorkspace(settings.localFiles.agentsDirectory, task.agentId);
-    const agentReply = await generateAgentTextReply(
-      settings.openai,
-      workspace.context,
-      task.request,
-      task.userPrompt,
-    );
-    const deviceMessage = createAgentResultMessage(task.agentId, agentReply.text, messageId);
-    deviceMessage.apiRequests = [...(agentReply.apiRecords ?? [])];
-    const record = await recordAgentCommandExchange({
-      agentId: task.agentId,
-      assistantRequest: task.request,
-      command: task.request,
-      result: {
-        output: agentReply.text,
-        status: "success",
-      },
-      rootDirectory: settings.localFiles.agentsDirectory,
-      triggerMessageId: task.triggerMessageId,
-      userAssistantConversationId: task.userAssistantConversationId,
-      userPrompt: task.userPrompt,
-    });
+  const activeTask = registerActiveAgentTask(turnId, {
+    agentId: task.agentId,
+    conversationId: task.userAssistantConversationId,
+    request: task.request,
+    startedAt: new Date().toISOString(),
+    title: task.userPrompt.trim().slice(0, 48) || "Tache agent",
+  });
 
-    return {
-      deviceMessage,
-      result: {
-        agentConversationId: record.agentConversationId,
-        kind: "completed",
-        output: agentReply.text,
-        request: task.request,
-        resolvedCommand: task.request,
-        status: "success",
-      },
-    };
-  }
-
-  const resolvedCommand = await resolveDeviceAgentCommand(settings, task);
-  const permissionLookup = await getAgentPermission(
-    settings.localFiles.agentsDirectory,
-    task.agentId,
-    resolvedCommand,
-  );
-
-  if (permissionLookup.decision === "deny") {
-    const deviceMessage = createDeviceImmediateErrorMessage(
-      resolvedCommand,
-      messageId,
-      new Error("Commande refusee par une permission enregistree."),
-      "assistant",
-    );
-    const record = await recordAgentCommandExchange({
-      agentId: task.agentId,
-      assistantRequest: task.request,
-      command: resolvedCommand,
-      result: {
-        output: deviceMessage.result ?? "",
-        status: "denied",
-      },
-      rootDirectory: settings.localFiles.agentsDirectory,
-      triggerMessageId: task.triggerMessageId,
-      userAssistantConversationId: task.userAssistantConversationId,
-      userPrompt: task.userPrompt,
-    });
-
-    return {
-      deviceMessage,
-      result: {
-        agentConversationId: record.agentConversationId,
-        kind: "permission-denied",
-        output: deviceMessage.result ?? "",
-        request: task.request,
-        resolvedCommand,
-      },
-    };
-  }
-
-  if (permissionLookup.decision === null) {
-    const { decision } = await requestDevicePermission(conversationId, resolvedCommand, emit);
-
-    if (decision === "allow-always") {
-      await saveAgentPermission(
-        settings.localFiles.agentsDirectory,
-        task.agentId,
-        resolvedCommand,
-        "allow",
-        true,
+  try {
+    if (task.agentId !== "device-agent") {
+      const workspace = await loadAgentWorkspace(settings.localFiles.agentsDirectory, task.agentId);
+      const controller = new AbortController();
+      registerAbortController(turnId, controller);
+      const agentReply = await generateAgentTextReply(
+        settings.openai,
+        workspace.context,
+        task.request,
+        task.userPrompt,
+        controller.signal,
       );
+      unregisterAbortController(turnId, controller);
+      throwIfTurnStopped(turnId);
+      const deviceMessage = createAgentResultMessage(task.agentId, agentReply.text, messageId);
+      deviceMessage.apiRequests = [...(agentReply.apiRecords ?? [])];
+      const record = await recordAgentCommandExchange({
+        agentId: task.agentId,
+        assistantRequest: task.request,
+        command: task.request,
+        result: {
+          output: agentReply.text,
+          status: "success",
+        },
+        rootDirectory: settings.localFiles.agentsDirectory,
+        triggerMessageId: task.triggerMessageId,
+        userAssistantConversationId: task.userAssistantConversationId,
+        userPrompt: task.userPrompt,
+      });
+
+      return {
+        deviceMessage,
+        result: {
+          agentConversationId: record.agentConversationId,
+          kind: "completed",
+          output: agentReply.text,
+          request: task.request,
+          resolvedCommand: task.request,
+          status: "success",
+        },
+      };
     }
 
-    if (decision === "deny") {
-      await saveAgentPermission(
-        settings.localFiles.agentsDirectory,
-        task.agentId,
-        resolvedCommand,
-        "deny",
-        true,
-      );
+    const resolvedCommand = await resolveDeviceAgentCommand(settings, task);
+    throwIfTurnStopped(turnId);
+    const permissionLookup = await getAgentPermission(
+      settings.localFiles.agentsDirectory,
+      task.agentId,
+      resolvedCommand,
+    );
+
+    if (permissionLookup.decision === "deny") {
       const deviceMessage = createDeviceImmediateErrorMessage(
         resolvedCommand,
         messageId,
-        new Error("Commande refusee par l'utilisateur."),
+        new Error("Commande refusee par une permission enregistree."),
         "assistant",
       );
       const record = await recordAgentCommandExchange({
@@ -179,55 +151,116 @@ export async function runAgentTask({
         },
       };
     }
-  }
 
-  let deviceMessage: ChatMessage;
+    if (permissionLookup.decision === null) {
+      const { decision } = await requestDevicePermission(conversationId, resolvedCommand, emit);
 
-  try {
-    deviceMessage = await executeDeviceCommand({
+      if (decision === "cancel") {
+        throw new TurnStoppedError();
+      }
+
+      if (decision === "allow-always") {
+        await saveAgentPermission(
+          settings.localFiles.agentsDirectory,
+          task.agentId,
+          resolvedCommand,
+          "allow",
+          true,
+        );
+      }
+
+      if (decision === "deny") {
+        await saveAgentPermission(
+          settings.localFiles.agentsDirectory,
+          task.agentId,
+          resolvedCommand,
+          "deny",
+          true,
+        );
+        const deviceMessage = createDeviceImmediateErrorMessage(
+          resolvedCommand,
+          messageId,
+          new Error("Commande refusee par l'utilisateur."),
+          "assistant",
+        );
+        const record = await recordAgentCommandExchange({
+          agentId: task.agentId,
+          assistantRequest: task.request,
+          command: resolvedCommand,
+          result: {
+            output: deviceMessage.result ?? "",
+            status: "denied",
+          },
+          rootDirectory: settings.localFiles.agentsDirectory,
+          triggerMessageId: task.triggerMessageId,
+          userAssistantConversationId: task.userAssistantConversationId,
+          userPrompt: task.userPrompt,
+        });
+
+        return {
+          deviceMessage,
+          result: {
+            agentConversationId: record.agentConversationId,
+            kind: "permission-denied",
+            output: deviceMessage.result ?? "",
+            request: task.request,
+            resolvedCommand,
+          },
+        };
+      }
+    }
+
+    let deviceMessage: ChatMessage;
+
+    try {
+      deviceMessage = await executeDeviceCommand({
+        command: resolvedCommand,
+        conversationId,
+        emit,
+        initialMessage,
+        messageId,
+        resultRecipient: "assistant",
+        resultSender: "device",
+        turnId,
+      });
+    } catch (error) {
+      deviceMessage = createDeviceImmediateErrorMessage(resolvedCommand, messageId, error, "assistant");
+      emit({
+        conversationId,
+        message: deviceMessage,
+        messageId,
+        type: "replace-message",
+      });
+    }
+
+    const record = await recordAgentCommandExchange({
+      agentId: task.agentId,
+      assistantRequest: task.request,
       command: resolvedCommand,
-      conversationId,
-      emit,
-      initialMessage,
-      messageId,
-      resultRecipient: "assistant",
-      resultSender: "device",
+      result: {
+        output: deviceMessage.result ?? "",
+        status: deviceMessage.status === "success" ? "success" : "error",
+      },
+      rootDirectory: settings.localFiles.agentsDirectory,
+      triggerMessageId: task.triggerMessageId,
+      userAssistantConversationId: task.userAssistantConversationId,
+      userPrompt: task.userPrompt,
     });
-  } catch (error) {
-    deviceMessage = createDeviceImmediateErrorMessage(resolvedCommand, messageId, error, "assistant");
-    emit({
-      conversationId,
-      message: deviceMessage,
-      messageId,
-      type: "replace-message",
-    });
+
+    return {
+      deviceMessage,
+      result: {
+        agentConversationId: record.agentConversationId,
+        kind: "completed",
+        output: deviceMessage.result ?? "",
+        request: task.request,
+        resolvedCommand,
+        status: deviceMessage.status === "success" ? "success" : "error",
+      },
+    };
+  } finally {
+    completeActiveAgentTask(activeTask.taskId);
   }
-
-  const record = await recordAgentCommandExchange({
-    agentId: task.agentId,
-    assistantRequest: task.request,
-    command: resolvedCommand,
-    result: {
-      output: deviceMessage.result ?? "",
-      status: deviceMessage.status === "success" ? "success" : "error",
-    },
-    rootDirectory: settings.localFiles.agentsDirectory,
-    triggerMessageId: task.triggerMessageId,
-    userAssistantConversationId: task.userAssistantConversationId,
-    userPrompt: task.userPrompt,
-  });
-
-  return {
-    deviceMessage,
-    result: {
-      agentConversationId: record.agentConversationId,
-      kind: "completed",
-      output: deviceMessage.result ?? "",
-      request: task.request,
-      resolvedCommand,
-      status: deviceMessage.status === "success" ? "success" : "error",
-    },
-  };
 }
 
 function createAgentResultMessage(agentId: AgentTaskRequest["agentId"], content: string, id: string): ChatMessage {
@@ -256,12 +289,16 @@ async function resolveDeviceAgentCommand(settings: AppSettings, task: AgentTaskR
   }
 
   const workspace = await loadAgentWorkspace(settings.localFiles.agentsDirectory, task.agentId);
+  const controller = new AbortController();
+  registerAbortController(task.turnId, controller);
   const deviceAgentReply = await generateDeviceAgentCommand(
     settings.openai,
     workspace.context,
     task.request,
     task.userPrompt,
+    controller.signal,
   );
+  unregisterAbortController(task.turnId, controller);
 
   return deviceAgentReply.command;
 }

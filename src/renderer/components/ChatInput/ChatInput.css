@@ -70,3 +70,8 @@
 .chat-input__button:hover:not(:disabled) {
   transform: translateY(-1px);
 }
+
+.chat-input__button--stop {
+  background: #c83b3b;
+  box-shadow: 0 0 24px rgba(200, 59, 59, 0.28);
+}

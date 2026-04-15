@@ -9,6 +9,7 @@ export {
   createRunningDeviceMessage,
 } from "./ai.message-factory.device";
 export {
+  createInterruptedSystemMessage,
   createInternalSystemMessage,
   createPermissionRequestSystemMessage,
   createPermissionResolutionSystemMessage,

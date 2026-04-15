@@ -4,6 +4,7 @@ import { createDeviceResultMessage } from "./ai.message-factory";
 import { emitDeviceProgress, emitDeviceStart } from "./ai.device-flow.progress";
 import { appendLifecycleLog } from "./ai.orchestrator.runtime";
 import { Emit } from "./ai.orchestrator.types";
+import { registerTurnCommand, throwIfTurnStopped } from "./ai.turn-registry";
 
 type ExecuteDeviceCommandArgs = {
   command: string;
@@ -13,6 +14,7 @@ type ExecuteDeviceCommandArgs = {
   messageId: string;
   resultRecipient: "assistant" | "user";
   resultSender: "device";
+  turnId: string;
 };
 
 export async function executeDeviceCommand({
@@ -23,11 +25,14 @@ export async function executeDeviceCommand({
   messageId,
   resultRecipient,
   resultSender,
+  turnId,
 }: ExecuteDeviceCommandArgs): Promise<ChatMessage> {
+  throwIfTurnStopped(turnId);
   const runningCommand = startDeviceCommand(
     command,
     emitDeviceProgress(emit, conversationId, messageId, initialMessage),
   );
+  registerTurnCommand(turnId, runningCommand.commandId);
 
   emitDeviceStart(emit, conversationId, messageId, initialMessage, runningCommand);
 

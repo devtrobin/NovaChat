@@ -77,3 +77,16 @@ export function createPermissionResolutionSystemMessage(decision: "allow" | "all
     to: "user",
   };
 }
+
+export function createInterruptedSystemMessage(): ChatMessage {
+  return {
+    apiRequests: [],
+    content: "Tache interrompue par l'utilisateur.",
+    createdAt: new Date().toISOString(),
+    from: "system",
+    id: crypto.randomUUID(),
+    lifecycleLog: [createLifecycleEntry("created", "Interruption utilisateur enregistree.")],
+    status: "idle",
+    to: "user",
+  };
+}

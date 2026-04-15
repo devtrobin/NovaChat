@@ -3,6 +3,7 @@ import { RunTurnRequest, RunTurnResult } from "../../shared/ai.types";
 import { AppSettings } from "../../shared/settings.types";
 import {
   createSystemMessage,
+  createInterruptedSystemMessage,
   createUserMessage,
 } from "./ai.message-factory";
 import {
@@ -17,6 +18,7 @@ import {
   runAssistantCycle,
 } from "./ai.orchestrator.cycle";
 import { handleMissingOpenAIConfig, handleTurnError } from "./ai.orchestrator.errors";
+import { finishTurn, startTurn, TurnStoppedError } from "./ai.turn-registry";
 
 export async function runTurn(
   request: RunTurnRequest,
@@ -48,6 +50,7 @@ export async function runTurn(
   });
 
   const turnMessages: ChatMessage[] = [...request.messages, userMessage];
+  const turnId = startTurn(request.conversationId);
 
   try {
     for (let step = 0; step < 4; step += 1) {
@@ -56,6 +59,7 @@ export async function runTurn(
         emit,
         settings,
         step,
+        turnId,
         turnMessages,
         userMessage,
       });
@@ -72,8 +76,15 @@ export async function runTurn(
       }
     }
   } catch (error) {
+    if (error instanceof TurnStoppedError || (error instanceof DOMException && error.name === "AbortError")) {
+      emit({ conversationId: request.conversationId, messageId: systemMessage.id, type: "remove-message" });
+      emit({ conversationId: request.conversationId, messages: [createInterruptedSystemMessage()], type: "append-messages" });
+      return { ok: false };
+    }
     await handleTurnError(request.conversationId, error, emit, systemMessage.id, userMessage);
     return { ok: false };
+  } finally {
+    finishTurn(turnId);
   }
 
   emit({ conversationId: request.conversationId, messageId: systemMessage.id, type: "remove-message" });

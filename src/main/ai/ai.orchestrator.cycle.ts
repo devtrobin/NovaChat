@@ -6,6 +6,11 @@ import { Emit } from "./ai.orchestrator.types";
 import { appendLifecycleLog } from "./ai.orchestrator.runtime";
 import { generateOpenAIReply } from "./openai.service";
 import {
+  registerAbortController,
+  throwIfTurnStopped,
+  unregisterAbortController,
+} from "./ai.turn-registry";
+import {
   appendUserApiTrace,
   createAssistantResponseMessage,
   createDeviceRequestMessage,
@@ -18,6 +23,7 @@ type RunAssistantCycleArgs = {
   emit: Emit;
   settings: AppSettings;
   step: number;
+  turnId: string;
   turnMessages: ChatMessage[];
   userMessage: ChatMessage;
 };
@@ -27,17 +33,24 @@ export async function runAssistantCycle({
   emit,
   settings,
   step,
+  turnId,
   turnMessages,
   userMessage,
 }: RunAssistantCycleArgs): Promise<
   | { kind: "assistant"; message: ChatMessage }
   | { kind: "agent"; message: ChatMessage }
 > {
+  throwIfTurnStopped(turnId);
+  const controller = new AbortController();
+  registerAbortController(turnId, controller);
   const { apiRecords, providerResponse } = await generateOpenAIReply(
     settings.openai,
     turnMessages,
     getEnabledAgents(settings),
+    controller.signal,
   );
+  unregisterAbortController(turnId, controller);
+  throwIfTurnStopped(turnId);
   emit({
     conversationId,
     message: appendUserApiTrace(userMessage, apiRecords, step),
@@ -60,10 +73,12 @@ export async function runAssistantCycle({
           agentId: handoff.agentId,
           mode: handoff.mode,
           request: handoff.request,
+          turnId,
           triggerMessageId: userMessage.id,
           userAssistantConversationId: conversationId,
           userPrompt: userMessage.content,
         },
+        turnId,
       });
 
       deviceMessage.apiRequests = [...(runningMessage.apiRequests ?? [])];
@@ -111,10 +126,12 @@ export async function runAssistantCycle({
       agentId: handoff.agentId,
       mode: handoff.mode,
       request: handoff.request,
+      turnId,
       triggerMessageId: userMessage.id,
       userAssistantConversationId: conversationId,
       userPrompt: userMessage.content,
     },
+    turnId,
   });
 
   if (handoff.agentId === "device-agent") {

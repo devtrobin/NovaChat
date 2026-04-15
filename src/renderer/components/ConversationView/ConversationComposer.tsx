@@ -3,13 +3,14 @@ import { ConversationViewProps } from "./ConversationView.types";
 
 type ConversationComposerProps = Pick<
   ConversationViewProps,
-  "conversation" | "isSending" | "onSendMessage" | "onUpdateDraft"
+  "conversation" | "isSending" | "onSendMessage" | "onStopTurn" | "onUpdateDraft"
 >;
 
 export default function ConversationComposer({
   conversation,
   isSending,
   onSendMessage,
+  onStopTurn,
   onUpdateDraft,
 }: ConversationComposerProps) {
   return (
@@ -17,6 +18,7 @@ export default function ConversationComposer({
       <ChatInput
         isSending={isSending}
         onChange={(value) => onUpdateDraft(conversation.id, value)}
+        onStop={() => onStopTurn(conversation.id)}
         onSubmit={onSendMessage}
         value={conversation.draft ?? ""}
       />

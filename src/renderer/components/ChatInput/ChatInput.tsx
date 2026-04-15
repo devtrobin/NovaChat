@@ -3,7 +3,7 @@ import { normalizePrompt, resizeTextarea } from "./ChatInput.service";
 import { ChatInputProps } from "./ChatInput.types";
 import "./ChatInput.css";
 
-export default function ChatInput({ isSending, onChange, onSubmit, value }: ChatInputProps) {
+export default function ChatInput({ isSending, onChange, onStop, onSubmit, value }: ChatInputProps) {
   const textareaRef = React.useRef<HTMLTextAreaElement | null>(null);
 
   React.useEffect(() => {
@@ -44,9 +44,15 @@ export default function ChatInput({ isSending, onChange, onSubmit, value }: Chat
         />
         <p className="chat-input__hint">Entrer pour envoyer · Maj + Entrer pour une nouvelle ligne</p>
       </div>
-      <button className="chat-input__button" disabled={isSending} type="submit">
-        {isSending ? "Envoi..." : "Envoyer"}
-      </button>
+      {isSending ? (
+        <button className="chat-input__button chat-input__button--stop" onClick={() => void onStop()} type="button">
+          Arreter
+        </button>
+      ) : (
+        <button className="chat-input__button" type="submit">
+          Envoyer
+        </button>
+      )}
     </form>
   );
 }

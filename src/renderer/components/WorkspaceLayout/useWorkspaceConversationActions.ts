@@ -84,6 +84,11 @@ export function useWorkspaceConversationActions({
     }
   }, [activeConversation, setActiveConversationId, setConversations, setSendingConversationIds]);
 
+  const handleStopTurn = React.useCallback(async (conversationId: string) => {
+    setSendingConversationIds((current) => current.filter((id) => id !== conversationId));
+    await window.nova.ai.stopTurn({ conversationId });
+  }, [setSendingConversationIds]);
+
   const handleUpdateConversationDraft = React.useCallback((conversationId: string, draft: string) => {
     setConversations((current) => updateConversationDraft(current, conversationId, draft));
   }, [setConversations]);
@@ -99,6 +104,7 @@ export function useWorkspaceConversationActions({
     handleRenameConversation,
     handleSelectConversation,
     handleSendMessage,
+    handleStopTurn,
     handleUpdateConversationDraft,
   };
 }

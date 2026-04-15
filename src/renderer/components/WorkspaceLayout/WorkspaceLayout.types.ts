@@ -30,6 +30,7 @@ export type WorkspaceLayoutController = {
   onSelectSection: (section: WorkspaceSection) => void;
   onSelectSettingsCategory: (category: SettingsCategory) => void;
   onSendMessage: (content: string) => Promise<void>;
+  onStopTurn: (conversationId: string) => Promise<void>;
   onSubmitPermissionDecision: (payload: SubmitPermissionDecisionRequest) => Promise<void>;
   onSubmitCommandInput: (commandId: string, value: string) => Promise<void>;
   onMarkConversationAsRead: (conversationId: string) => void;

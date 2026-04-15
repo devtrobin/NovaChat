@@ -20,6 +20,7 @@ export type ConversationViewProps = {
     },
   ) => void;
   onSendMessage: (content: string) => Promise<void>;
+  onStopTurn: (conversationId: string) => Promise<void>;
   onSubmitCommandInput: (commandId: string, value: string) => Promise<void>;
   onUpdateDraft: (conversationId: string, draft: string) => void;
   searchQuery: string;

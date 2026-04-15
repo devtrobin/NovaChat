@@ -8,6 +8,7 @@ export type AgentTaskRequest = {
   agentId: AgentId;
   mode: AgentTaskMode;
   request: string;
+  turnId: string;
   triggerMessageId: string;
   userAssistantConversationId: string;
   userPrompt: string;
@@ -69,4 +70,13 @@ export type AgentWorkspaceData = {
   history: AgentHistoryEntry[];
   id: AgentId;
   permissions: AgentPermissionsFile;
+};
+
+export type ActiveAgentTask = {
+  agentId: AgentId;
+  conversationId: string;
+  request: string;
+  startedAt: string;
+  taskId: string;
+  title: string;
 };

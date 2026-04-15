@@ -3,6 +3,7 @@ import React from "react";
 import MessageList from "../../../components/MessageList/MessageList";
 import { AgentDefinition } from "../../../services/workspace/workspace.types";
 import {
+  ActiveAgentTask,
   AgentContextFile,
   AgentHistoryEntry,
   AgentPermissionDecision,
@@ -21,6 +22,8 @@ type DeviceAgentTab = "context" | "conversation" | "general" | "history" | "perm
 
 export default function DeviceAgentPage({ agent, onSavedSettings }: DeviceAgentPageProps) {
   const [activeConversationId, setActiveConversationId] = React.useState<string | null>(null);
+  const [activeTaskId, setActiveTaskId] = React.useState<string | null>(null);
+  const [activeTasks, setActiveTasks] = React.useState<ActiveAgentTask[]>([]);
   const [activeTab, setActiveTab] = React.useState<DeviceAgentTab>("general");
   const [contextDraft, setContextDraft] = React.useState<AgentContextFile | null>(null);
   const [isEnabled, setIsEnabled] = React.useState(agent.enabled);
@@ -51,6 +54,12 @@ export default function DeviceAgentPage({ agent, onSavedSettings }: DeviceAgentP
     }
   }, [agent.id]);
 
+  const loadActiveTasks = React.useCallback(async () => {
+    const tasks = await window.nova.agents.getActiveTasks(agent.id);
+    setActiveTasks(tasks);
+    setActiveTaskId((current) => tasks.some((task) => task.taskId === current) ? current : tasks[0]?.taskId ?? null);
+  }, [agent.id]);
+
   React.useEffect(() => {
     let active = true;
 
@@ -58,22 +67,35 @@ export default function DeviceAgentPage({ agent, onSavedSettings }: DeviceAgentP
       if (active) setIsBusy(false);
     });
 
-    const unsubscribe = window.nova.ai.onEvent(() => {
+      const unsubscribe = window.nova.ai.onEvent(() => {
       window.setTimeout(() => {
         if (!active) return;
         void loadWorkspace({ preserveDraft: true, silent: true });
+        void loadActiveTasks();
       }, 120);
     });
+    const intervalId = window.setInterval(() => {
+      if (!active) return;
+      void loadActiveTasks();
+    }, 1000);
 
     return () => {
       active = false;
       unsubscribe();
+      window.clearInterval(intervalId);
     };
-  }, [loadWorkspace]);
+  }, [loadActiveTasks, loadWorkspace]);
+
+  React.useEffect(() => {
+    void loadActiveTasks();
+  }, [loadActiveTasks]);
 
   const activeConversation = React.useMemo(() => (
     workspace?.conversations.conversations.find((conversation) => conversation.id === activeConversationId) ?? null
   ), [activeConversationId, workspace?.conversations.conversations]);
+  const activeTask = React.useMemo(() => (
+    activeTasks.find((task) => task.taskId === activeTaskId) ?? null
+  ), [activeTaskId, activeTasks]);
 
   async function handleSaveContext() {
     if (!contextDraft) return;
@@ -137,7 +159,20 @@ export default function DeviceAgentPage({ agent, onSavedSettings }: DeviceAgentP
 
   function handleOpenHistoryConversation(entry: AgentHistoryEntry) {
     setActiveConversationId(entry.agentConversationId);
+    setActiveTaskId(null);
     setActiveTab("conversation");
+  }
+
+  async function handleStopTask(taskId: string) {
+    setIsBusy(true);
+    setStatus("");
+    try {
+      await window.nova.agents.stopTask(taskId);
+      setStatus("Tache agent interrompue.");
+      await loadActiveTasks();
+    } finally {
+      setIsBusy(false);
+    }
   }
 
   return (
@@ -210,11 +245,40 @@ export default function DeviceAgentPage({ agent, onSavedSettings }: DeviceAgentP
                   </div>
                 </div>
                 <div className="device-agent-page__conversation-items">
+                  {activeTasks.length ? (
+                    <>
+                      <p className="device-agent-page__conversation-note">Taches actives</p>
+                      {activeTasks.map((task) => (
+                        <div
+                          key={task.taskId}
+                          className={`device-agent-page__conversation-item${task.taskId === activeTaskId ? " device-agent-page__conversation-item--active" : ""}`}
+                        >
+                          <button
+                            className="device-agent-page__conversation-select"
+                            onClick={() => {
+                              setActiveTaskId(task.taskId);
+                              setActiveConversationId(null);
+                            }}
+                            type="button"
+                          >
+                            <span>{task.title}</span>
+                            <span className="device-agent-page__conversation-meta">en cours</span>
+                          </button>
+                          <button className="device-agent-page__pill-button device-agent-page__pill-button--danger" disabled={isBusy} onClick={() => void handleStopTask(task.taskId)} type="button">
+                            Arreter
+                          </button>
+                        </div>
+                      ))}
+                    </>
+                  ) : null}
                   {workspace?.conversations.conversations.length ? workspace.conversations.conversations.map((conversation) => (
                     <button
                       key={conversation.id}
                       className={`device-agent-page__conversation-item${conversation.id === activeConversationId ? " device-agent-page__conversation-item--active" : ""}`}
-                      onClick={() => setActiveConversationId(conversation.id)}
+                      onClick={() => {
+                        setActiveConversationId(conversation.id);
+                        setActiveTaskId(null);
+                      }}
                       type="button"
                     >
                       <span>{conversation.title}</span>
@@ -226,7 +290,19 @@ export default function DeviceAgentPage({ agent, onSavedSettings }: DeviceAgentP
                 </div>
               </aside>
               <div className="device-agent-page__conversation-panel">
-                {activeConversation ? (
+                {activeTask ? (
+                  <div className="chat-page__placeholder">
+                    <p className="chat-page__placeholder-eyebrow">Tache en cours</p>
+                    <h2 className="chat-page__placeholder-title">{activeTask.title}</h2>
+                    <pre className="device-agent-page__record-command">{activeTask.request}</pre>
+                    <p className="chat-page__placeholder-text">Cette procedure agent est encore active en memoire.</p>
+                    <div className="device-agent-page__record-actions">
+                      <button className="device-agent-page__pill-button device-agent-page__pill-button--danger" disabled={isBusy} onClick={() => void handleStopTask(activeTask.taskId)} type="button">
+                        Arreter
+                      </button>
+                    </div>
+                  </div>
+                ) : activeConversation ? (
                   <MessageList messages={activeConversation.messages} />
                 ) : (
                   <div className="chat-page__placeholder">

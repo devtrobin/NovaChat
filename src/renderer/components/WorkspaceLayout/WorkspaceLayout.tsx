@@ -41,6 +41,7 @@ export default function WorkspaceLayout() {
             onOpenSettings={() => workspace.onSelectSection("settings")}
             onRenameConversation={workspace.onRenameConversation}
             onSendMessage={workspace.onSendMessage}
+            onStopTurn={workspace.onStopTurn}
             onSubmitPermissionDecision={workspace.onSubmitPermissionDecision}
             onSubmitCommandInput={workspace.onSubmitCommandInput}
             onUpdateConversationDraft={workspace.onUpdateConversationDraft}

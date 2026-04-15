@@ -1,6 +1,7 @@
 import { IpcMain } from "electron";
 import { runTurn } from "../ai/ai.orchestrator";
 import { resolvePermissionRequest } from "../ai/ai.permission.service";
+import { stopTurnByConversation } from "../ai/ai.turn-registry";
 import { killDeviceCommand, submitInputToCommand } from "../device/device.service";
 import { loadSettingsFromDisk } from "../settings/settings.service";
 import { RunTurnRequest, SubmitCommandInputRequest, SubmitPermissionDecisionRequest } from "../../shared/ai.types";
@@ -23,5 +24,9 @@ export function registerAiHandlers(ipcMain: IpcMain): void {
 
   ipcMain.handle("nova:ai:submit-permission-decision", async (_event, payload: SubmitPermissionDecisionRequest) => {
     return resolvePermissionRequest(payload.requestId, payload.decision);
+  });
+
+  ipcMain.handle("nova:ai:stop-turn", async (_event, conversationId: string) => {
+    return stopTurnByConversation(conversationId);
   });
 }
