@@ -13,6 +13,7 @@ export type ActiveAgentTask = {
   conversationId: string;
   request: string;
   startedAt: string;
+  status: "running" | "waiting-input" | "waiting-permission";
   taskId: string;
   title: string;
 };
@@ -102,6 +103,18 @@ export function registerActiveAgentTask(turnId: string, task: Omit<ActiveAgentTa
   taskToTurnId.set(activeTask.taskId, turnId);
   activeTurns.get(turnId)?.taskIds.add(activeTask.taskId);
   return activeTask;
+}
+
+export function updateActiveAgentTaskStatus(
+  taskId: string,
+  status: ActiveAgentTask["status"],
+): void {
+  const task = activeAgentTasks.get(taskId);
+  if (!task) return;
+  activeAgentTasks.set(taskId, {
+    ...task,
+    status,
+  });
 }
 
 export function completeActiveAgentTask(taskId: string): void {

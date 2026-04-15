@@ -2,6 +2,7 @@ import { PermissionDecision } from "../../shared/ai.types";
 import { ChatMessage } from "../../renderer/types/chat.types";
 import { createPermissionRequestSystemMessage, createPermissionResolutionSystemMessage } from "./ai.message-factory";
 import { Emit } from "./ai.orchestrator.types";
+import { clearPendingPermissionRequest, setPendingPermissionRequest } from "./ai.turn-registry";
 
 type InternalPermissionDecision = PermissionDecision | "cancel";
 
@@ -19,6 +20,7 @@ export async function requestDevicePermission(
   conversationId: string,
   command: string,
   emit: Emit,
+  turnId: string,
 ): Promise<{ decision: InternalPermissionDecision; requestMessage: ChatMessage }> {
   if (activeConversationRequests.has(conversationId)) {
     throw new Error("Une demande de permission est deja en attente pour cette conversation.");
@@ -41,21 +43,33 @@ export async function requestDevicePermission(
       resolve,
     });
     activeConversationRequests.set(conversationId, requestId);
+    setPendingPermissionRequest(turnId, requestId);
   });
 
   pendingPermissionRequests.delete(requestId);
   activeConversationRequests.delete(conversationId);
+  clearPendingPermissionRequest(turnId, requestId);
   emit({
     conversationId,
     messageId: requestMessage.id,
     type: "remove-message",
   });
   if (decision !== "cancel") {
+    const resolutionMessage = createPermissionResolutionSystemMessage(decision, command);
     emit({
       conversationId,
-      messages: [createPermissionResolutionSystemMessage(decision, command)],
+      messages: [resolutionMessage],
       type: "append-messages",
     });
+    if (decision === "allow" || decision === "allow-always") {
+      window.setTimeout(() => {
+        emit({
+          conversationId,
+          messageId: resolutionMessage.id,
+          type: "remove-message",
+        });
+      }, 2200);
+    }
   }
 
   return {

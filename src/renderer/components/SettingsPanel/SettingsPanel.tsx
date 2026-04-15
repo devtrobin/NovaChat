@@ -1,3 +1,4 @@
+import AgentsActivityView from "../../pages/AgentsPage/AgentsActivityView";
 import React from "react";
 import { SettingsPanelProps } from "./SettingsPanel.types";
 import {
@@ -7,9 +8,10 @@ import {
   SettingsProviderSection,
 } from "./SettingsPanel.sections";
 import { useSettingsPanelController } from "./useSettingsPanelController";
+import { buildAgentDefinitions } from "../../services/workspace/workspace.service";
 import "./SettingsPanel.css";
 
-export default function SettingsPanel({ activeCategory, onSaved }: SettingsPanelProps) {
+export default function SettingsPanel({ activeCategory, agents = [], onOpenConversation, onSaved, onSelectAgent }: SettingsPanelProps) {
   const {
     draft,
     handleConfirm,
@@ -32,10 +34,17 @@ export default function SettingsPanel({ activeCategory, onSaved }: SettingsPanel
       </header>
       <div className="settings-panel__body">
         <div className="settings-panel__panel">
+          {activeCategory === "agents-activity" ? (
+            <AgentsActivityView
+              agents={agents.length ? agents : buildAgentDefinitions(draft.agents)}
+              onOpenConversation={onOpenConversation}
+              onSelectAgent={onSelectAgent}
+            />
+          ) : null}
           {activeCategory === "local-files" ? <SettingsLocalFilesSection isBusy={isBusy} setDraft={setDraft} setStatus={resetStatus} settings={draft} /> : null}
           {activeCategory === "provider" ? <SettingsProviderSection isBusy={isBusy} setDraft={setDraft} setStatus={resetStatus} settings={draft} /> : null}
           {activeCategory === "openai" ? <SettingsOpenAISection isBusy={isBusy} onTestConnection={() => void handleTestConnection()} setDraft={setDraft} setStatus={resetStatus} settings={draft} /> : null}
-          {!["local-files", "provider", "openai"].includes(activeCategory) ? (
+          {!["agents-activity", "local-files", "provider", "openai"].includes(activeCategory) ? (
             <SettingsProviderPlaceholder activeCategory={activeCategory as Exclude<typeof activeCategory, "local-files" | "provider" | "openai">} />
           ) : null}
           {status.message ? <p className={`settings-panel__status settings-panel__status--${status.kind}`}>{status.message}</p> : null}

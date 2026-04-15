@@ -59,7 +59,7 @@ export type AgentHistoryEntry = {
   at: string;
   command: string;
   result: string;
-  status: "denied" | "error" | "success";
+  status: "denied" | "error" | "interrupted" | "success";
   triggerMessageId: string;
   userAssistantConversationId: string;
 };
@@ -77,6 +77,7 @@ export type ActiveAgentTask = {
   conversationId: string;
   request: string;
   startedAt: string;
+  status: "running" | "waiting-input" | "waiting-permission";
   taskId: string;
   title: string;
 };

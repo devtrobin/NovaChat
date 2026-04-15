@@ -150,7 +150,7 @@ type RecordAgentCommandExchangeArgs = {
   command: string;
   result: {
     output: string;
-    status: "denied" | "error" | "success";
+    status: "denied" | "error" | "interrupted" | "success";
   };
   rootDirectory: string;
   triggerMessageId: string;
@@ -203,7 +203,8 @@ function createAgentResultMessage(
   agentId: AgentId,
   command: string,
   output: string,
-  status: "denied" | "error" | "success",
+  status: "denied" | "error" | "interrupted" | "success",
+  // note: interrupted reuses error visual semantics in agent conversation
 ): ChatMessage {
   const createdAt = new Date().toISOString();
   if (agentId !== "device-agent") {
@@ -276,6 +277,7 @@ export async function recordAgentCommandExchange({
 
   const nextHistoryEntry: AgentHistoryEntry = {
     agentConversationId: nextConversation.id,
+    assistantRequest,
     at: resultMessage.createdAt,
     command,
     result: result.output,

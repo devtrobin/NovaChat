@@ -12,6 +12,7 @@ type ExecuteDeviceCommandArgs = {
   emit: Emit;
   initialMessage: ChatMessage;
   messageId: string;
+  onProgressStateChange?: (status: "running" | "waiting-input") => void;
   resultRecipient: "assistant" | "user";
   resultSender: "device";
   turnId: string;
@@ -23,6 +24,7 @@ export async function executeDeviceCommand({
   emit,
   initialMessage,
   messageId,
+  onProgressStateChange,
   resultRecipient,
   resultSender,
   turnId,
@@ -30,7 +32,7 @@ export async function executeDeviceCommand({
   throwIfTurnStopped(turnId);
   const runningCommand = startDeviceCommand(
     command,
-    emitDeviceProgress(emit, conversationId, messageId, initialMessage),
+    emitDeviceProgress(emit, conversationId, messageId, initialMessage, onProgressStateChange),
   );
   registerTurnCommand(turnId, runningCommand.commandId);
 

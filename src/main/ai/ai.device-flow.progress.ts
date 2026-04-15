@@ -7,6 +7,7 @@ export function emitDeviceProgress(
   conversationId: string,
   messageId: string,
   initialMessage: ChatMessage,
+  onProgressStateChange?: (status: "running" | "waiting-input") => void,
 ) {
   return (progress: {
     awaitingInput: boolean;
@@ -26,6 +27,7 @@ export function emitDeviceProgress(
         },
       );
     }
+    onProgressStateChange?.(progress.awaitingInput ? "waiting-input" : "running");
 
     emit({
       conversationId,

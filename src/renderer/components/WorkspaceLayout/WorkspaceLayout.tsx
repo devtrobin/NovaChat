@@ -56,7 +56,10 @@ export default function WorkspaceLayout() {
         {workspace.activeSection === "settings" ? (
           <SettingsPage
             activeCategory={workspace.activeSettingsCategory}
+            agents={workspace.agents}
+            onOpenConversation={workspace.onSelectConversation}
             onSaved={workspace.onSavedSettings}
+            onSelectAgent={workspace.onSelectAgent}
           />
         ) : null}
       </div>

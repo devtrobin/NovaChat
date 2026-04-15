@@ -19,6 +19,7 @@ import {
   TurnStoppedError,
   throwIfTurnStopped,
   unregisterAbortController,
+  updateActiveAgentTaskStatus,
 } from "../ai/ai.turn-registry";
 
 type RunAgentTaskArgs = {
@@ -65,6 +66,7 @@ export async function runAgentTask({
     conversationId: task.userAssistantConversationId,
     request: task.request,
     startedAt: new Date().toISOString(),
+    status: "running",
     title: task.userPrompt.trim().slice(0, 48) || "Tache agent",
   });
 
@@ -153,7 +155,9 @@ export async function runAgentTask({
     }
 
     if (permissionLookup.decision === null) {
-      const { decision } = await requestDevicePermission(conversationId, resolvedCommand, emit);
+      updateActiveAgentTaskStatus(activeTask.taskId, "waiting-permission");
+      const { decision } = await requestDevicePermission(conversationId, resolvedCommand, emit, turnId);
+      updateActiveAgentTaskStatus(activeTask.taskId, "running");
 
       if (decision === "cancel") {
         throw new TurnStoppedError();
@@ -219,6 +223,7 @@ export async function runAgentTask({
         emit,
         initialMessage,
         messageId,
+        onProgressStateChange: (status) => updateActiveAgentTaskStatus(activeTask.taskId, status),
         resultRecipient: "assistant",
         resultSender: "device",
         turnId,
@@ -258,6 +263,23 @@ export async function runAgentTask({
         status: deviceMessage.status === "success" ? "success" : "error",
       },
     };
+  } catch (error) {
+    if (error instanceof TurnStoppedError || (error instanceof DOMException && error.name === "AbortError")) {
+      await recordAgentCommandExchange({
+        agentId: task.agentId,
+        assistantRequest: task.request,
+        command: task.request,
+        result: {
+          output: "Interrompu par l'utilisateur.",
+          status: "interrupted",
+        },
+        rootDirectory: settings.localFiles.agentsDirectory,
+        triggerMessageId: task.triggerMessageId,
+        userAssistantConversationId: task.userAssistantConversationId,
+        userPrompt: task.userPrompt,
+      });
+    }
+    throw error;
   } finally {
     completeActiveAgentTask(activeTask.taskId);
   }

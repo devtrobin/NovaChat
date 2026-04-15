@@ -4,6 +4,7 @@ import { Conversation } from "../../types/chat.types";
 export type WorkspaceSection = "agents" | "conversations" | "settings";
 
 export type SettingsCategory =
+  | "agents-activity"
   | "anthropic"
   | "google"
   | "lmstudio"

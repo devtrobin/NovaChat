@@ -29,6 +29,14 @@ export default function AppSidebarSettingsSection({
         <div className="app-sidebar__section-body-inner">
           <div className="app-sidebar__list">
             <button
+              className={`app-sidebar__item ${activeSettingsCategory === "agents-activity" ? "app-sidebar__item--active" : ""}`}
+              onClick={() => selectCategory("agents-activity", onSelectSection, onSelectSettingsCategory)}
+              type="button"
+            >
+              <span className="app-sidebar__item-title">Activite des agents</span>
+              <span className="app-sidebar__item-meta">Taches globales en cours et arrets rapides</span>
+            </button>
+            <button
               className={`app-sidebar__item ${activeSettingsCategory === "local-files" ? "app-sidebar__item--active" : ""}`}
               onClick={() => selectCategory("local-files", onSelectSection, onSelectSettingsCategory)}
               type="button"
