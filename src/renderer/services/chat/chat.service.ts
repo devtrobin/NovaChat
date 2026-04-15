@@ -4,7 +4,7 @@ export {
   getConversationUnreadCount,
   hasConversationRunningSystemMessage,
   markConversationAsRead,
-} from "./ChatPage.state";
+} from "./chat.state";
 export {
   createConversation,
   createUserMessage,
@@ -16,5 +16,7 @@ export {
   replaceConversation,
   replaceMessage,
   replaceOrAppendMessage,
-} from "./ChatPage.conversations";
-export { loadChatPageState } from "./ChatPage.initial-state";
+  updateConversationDraft,
+} from "./chat.conversations";
+export { loadChatPageState } from "./chat.initial-state";
+export type { ChatState } from "./chat.types";

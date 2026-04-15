@@ -30,4 +30,6 @@ export type WorkspaceLayoutController = {
   onSelectSettingsCategory: (category: SettingsCategory) => void;
   onSendMessage: (content: string) => Promise<void>;
   onSubmitCommandInput: (commandId: string, value: string) => Promise<void>;
+  onMarkConversationAsRead: (conversationId: string) => void;
+  onUpdateConversationDraft: (conversationId: string, draft: string) => void;
 };

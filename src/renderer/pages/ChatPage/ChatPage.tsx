@@ -1,7 +1,6 @@
 import React from "react";
-import ChatInput from "../../components/ChatInput/ChatInput";
+import ConversationView from "../../components/ConversationView/ConversationView";
 import EmptyState from "../../components/EmptyState/EmptyState";
-import MessageList from "../../components/MessageList/MessageList";
 import TopBar from "../../components/TopBar/TopBar";
 import ChatSearchBar from "./ChatSearchBar";
 import { ChatPageProps } from "./ChatPage.types";
@@ -13,11 +12,14 @@ export default function ChatPage({
   isSending,
   onDeleteConversation,
   onKillCommand,
+  onMarkConversationAsRead,
   onOpenSettings,
   onRenameConversation,
   onSendMessage,
   onSubmitCommandInput,
+  onUpdateConversationDraft,
 }: ChatPageProps) {
+  const conversationScrollStatesRef = React.useRef<Record<string, { isAtBottom: boolean; scrollTop: number }>>({});
   const {
     goToNextSearchMatch,
     goToPreviousSearchMatch,
@@ -30,6 +32,13 @@ export default function ChatPage({
     setIsSearchOpen,
     setSearchQuery,
   } = useConversationSearch(activeConversation);
+
+  const handleConversationScrollStateChange = React.useCallback((
+    conversationId: string,
+    nextState: { isAtBottom: boolean; scrollTop: number },
+  ) => {
+    conversationScrollStatesRef.current[conversationId] = nextState;
+  }, []);
 
   return (
     <section className="chat-page">
@@ -54,21 +63,27 @@ export default function ChatPage({
           />
         ) : null}
         <div className="chat-page__panel">
-          {activeConversation && activeConversation.messages.length > 0 ? (
-            <MessageList
-              messages={activeConversation.messages}
-              onKillCommand={(commandId) => void onKillCommand(commandId)}
+          {activeConversation ? (
+            <ConversationView
+              key={activeConversation.id}
+              conversation={activeConversation}
+              initialScrollState={conversationScrollStatesRef.current[activeConversation.id]}
+              isSending={isSending}
+              onKillCommand={onKillCommand}
+              onMarkConversationAsRead={onMarkConversationAsRead}
               onOpenSettings={onOpenSettings}
-              onSubmitCommandInput={(commandId, value) => void onSubmitCommandInput(commandId, value)}
+              onScrollStateChange={handleConversationScrollStateChange}
+              onSendMessage={onSendMessage}
+              onSubmitCommandInput={onSubmitCommandInput}
+              onUpdateDraft={onUpdateConversationDraft}
               searchQuery={searchQuery}
-              selectedMessageId={selectedSearchMessageId}
+              selectedSearchMessageId={selectedSearchMessageId}
             />
           ) : (
             <EmptyState />
           )}
         </div>
       </section>
-      <ChatInput isSending={isSending} onSubmit={onSendMessage} />
     </section>
   );
 }

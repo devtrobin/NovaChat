@@ -47,7 +47,9 @@ export async function loadChatStateFromDirectory(rootDirectory: string): Promise
   const conversations = await Promise.all(
     index.conversations.map(async (conversation) => ({
       createdAt: conversation.createdAt,
+      draft: conversation.draft ?? "",
       id: conversation.id,
+      lastReadAt: conversation.lastReadAt,
       messages: await readConversationMessages(rootDirectory, conversation),
       title: conversation.title,
       updatedAt: conversation.updatedAt,

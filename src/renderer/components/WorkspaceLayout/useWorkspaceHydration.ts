@@ -1,7 +1,7 @@
 import React from "react";
 import { loadStoredChatState, saveStoredChatState } from "../../services/conversation.service";
+import { createConversation, markConversationAsRead } from "../../services/chat/chat.service";
 import { Conversation } from "../../types/chat.types";
-import { createConversation } from "../../pages/ChatPage/ChatPage.service";
 
 type UseWorkspaceHydrationArgs = {
   activeConversationId: string | null;
@@ -35,8 +35,13 @@ export function useWorkspaceHydration({
         setConversations([nextConversation]);
         setActiveConversationId(nextConversation.id);
       } else {
-        setConversations(storedState.conversations);
-        setActiveConversationId(storedState.activeConversationId ?? storedState.conversations[0]?.id ?? null);
+        const resolvedActiveConversationId = storedState.activeConversationId ?? storedState.conversations[0]?.id ?? null;
+        setConversations(
+          resolvedActiveConversationId
+            ? markConversationAsRead(storedState.conversations, resolvedActiveConversationId)
+            : storedState.conversations,
+        );
+        setActiveConversationId(resolvedActiveConversationId);
       }
       setIsHydrated(true);
     }

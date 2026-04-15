@@ -37,10 +37,12 @@ export default function WorkspaceLayout() {
             isSending={workspace.isSending}
             onDeleteConversation={workspace.onDeleteConversation}
             onKillCommand={workspace.onKillCommand}
+            onMarkConversationAsRead={workspace.onMarkConversationAsRead}
             onOpenSettings={() => workspace.onSelectSection("settings")}
             onRenameConversation={workspace.onRenameConversation}
             onSendMessage={workspace.onSendMessage}
             onSubmitCommandInput={workspace.onSubmitCommandInput}
+            onUpdateConversationDraft={workspace.onUpdateConversationDraft}
           />
         ) : null}
         {workspace.activeSection === "agents" ? (

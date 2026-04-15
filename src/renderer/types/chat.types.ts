@@ -48,6 +48,7 @@ export type Conversation = {
   id: string;
   title: string;
   createdAt: string;
+  draft?: string;
   lastReadAt?: string;
   updatedAt: string;
   messages: ChatMessage[];

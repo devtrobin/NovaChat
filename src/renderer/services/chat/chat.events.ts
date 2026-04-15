@@ -3,8 +3,8 @@ import { Conversation } from "../../types/chat.types";
 import {
   createConversationRecord,
   replaceConversation,
-} from "./ChatPage.conversation-records";
-import { removeMessage, replaceOrAppendMessage } from "./ChatPage.message-records";
+} from "./chat.conversation-records";
+import { removeMessage, replaceOrAppendMessage } from "./chat.message-records";
 
 function getTargetConversation(
   conversations: Conversation[],

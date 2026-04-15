@@ -1,7 +1,7 @@
-import { createDefaultChatState } from "../../services/conversation.service";
-import { ChatPageState } from "./ChatPage.types";
+import { createDefaultChatState } from "../conversation.service";
+import { ChatState } from "./chat.types";
 
-export function loadChatPageState(): ChatPageState {
+export function loadChatPageState(): ChatState {
   const storedState = createDefaultChatState();
 
   return {

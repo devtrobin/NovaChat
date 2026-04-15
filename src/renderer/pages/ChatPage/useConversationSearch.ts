@@ -1,6 +1,6 @@
 import React from "react";
 import { Conversation } from "../../types/chat.types";
-import { getConversationSearchMatches } from "./ChatPage.service";
+import { getConversationSearchMatches } from "../../services/chat/chat.service";
 
 type UseConversationSearchResult = {
   goToNextSearchMatch: () => void;

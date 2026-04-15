@@ -1,5 +1,5 @@
 import { Conversation } from "../../types/chat.types";
-import { deleteConversation } from "./ChatPage.deletion";
+import { deleteConversation } from "./chat.deletion";
 
 export function renameConversation(
   conversations: Conversation[],
@@ -15,6 +15,25 @@ export function renameConversation(
         }
       : conversation,
   );
+}
+
+export function updateConversationDraft(
+  conversations: Conversation[],
+  conversationId: string,
+  draft: string,
+): Conversation[] {
+  let didChange = false;
+  const nextConversations = conversations.map((conversation) => {
+    if (conversation.id !== conversationId) return conversation;
+    if ((conversation.draft ?? "") === draft) return conversation;
+    didChange = true;
+    return {
+      ...conversation,
+      draft,
+    };
+  });
+
+  return didChange ? nextConversations : conversations;
 }
 
 export function normalizeConversationTitle(value: string, fallback: string): string {

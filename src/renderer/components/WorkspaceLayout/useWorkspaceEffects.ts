@@ -4,11 +4,10 @@ import { Conversation } from "../../types/chat.types";
 import {
   applyChatTurnEvent,
   markConversationAsRead,
-} from "../../pages/ChatPage/ChatPage.service";
+} from "../../services/chat/chat.service";
 import { SettingsCategory } from "../../services/workspace/workspace.types";
 
 type UseWorkspaceEffectsArgs = {
-  activeConversation: Conversation | null;
   activeConversationId: string | null;
   activeSection: "agents" | "conversations" | "settings";
   activeSettingsCategory: SettingsCategory;
@@ -19,7 +18,6 @@ type UseWorkspaceEffectsArgs = {
 };
 
 export function useWorkspaceEffects({
-  activeConversation,
   activeConversationId,
   activeSection,
   activeSettingsCategory,
@@ -39,7 +37,7 @@ export function useWorkspaceEffects({
   React.useEffect(() => {
     if (activeSection !== "conversations" || !activeConversationId) return;
     setConversations((current) => markConversationAsRead(current, activeConversationId));
-  }, [activeConversation?.updatedAt, activeConversationId, activeSection, setConversations]);
+  }, [activeConversationId, activeSection, setConversations]);
 
   React.useEffect(() => {
     if (!isPreviewMode && activeSection === "agents") {

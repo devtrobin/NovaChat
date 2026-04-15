@@ -11,7 +11,9 @@ export function toIndex(state: PersistedChatState): ConversationsIndex {
     activeConversationId: state.activeConversationId,
     conversations: state.conversations.map((conversation) => ({
       createdAt: conversation.createdAt,
+      draft: conversation.draft ?? "",
       id: conversation.id,
+      lastReadAt: conversation.lastReadAt,
       messageIds: conversation.messages.map((message) => message.id),
       title: conversation.title,
       updatedAt: conversation.updatedAt,

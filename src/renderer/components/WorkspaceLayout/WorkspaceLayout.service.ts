@@ -37,7 +37,6 @@ export function useWorkspaceLayoutController(): WorkspaceLayoutController {
     setIsPreviewMode,
   });
   useWorkspaceEffects({
-    activeConversation,
     activeConversationId,
     activeSection,
     activeSettingsCategory,
@@ -49,9 +48,11 @@ export function useWorkspaceLayoutController(): WorkspaceLayoutController {
   const {
     handleCreateConversation,
     handleDeleteConversation,
+    handleMarkConversationAsRead,
     handleRenameConversation,
     handleSelectConversation,
     handleSendMessage,
+    handleUpdateConversationDraft,
   } = useWorkspaceConversationActions({
     activeConversation,
     setActiveConversationId,
@@ -88,6 +89,7 @@ export function useWorkspaceLayoutController(): WorkspaceLayoutController {
     onCreateConversation: handleCreateConversation,
     onDeleteConversation: handleDeleteConversation,
     onKillCommand: handleKillCommand,
+    onMarkConversationAsRead: handleMarkConversationAsRead,
     onRenameConversation: handleRenameConversation,
     onSavedSettings: handleSavedSettings,
     onSelectAgent: handleSelectAgent,
@@ -96,5 +98,6 @@ export function useWorkspaceLayoutController(): WorkspaceLayoutController {
     onSelectSettingsCategory: handleSelectSettingsCategory,
     onSendMessage: handleSendMessage,
     onSubmitCommandInput: handleSubmitCommandInput,
+    onUpdateConversationDraft: handleUpdateConversationDraft,
   };
 }

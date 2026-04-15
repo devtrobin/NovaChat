@@ -5,7 +5,7 @@ import {
 import {
   getConversationUnreadCount,
   hasConversationRunningSystemMessage,
-} from "../../pages/ChatPage/ChatPage.service";
+} from "../chat/chat.service";
 import { Conversation } from "../../types/chat.types";
 
 export const AGENTS = [

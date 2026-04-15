@@ -3,8 +3,7 @@ import { normalizePrompt, resizeTextarea } from "./ChatInput.service";
 import { ChatInputProps } from "./ChatInput.types";
 import "./ChatInput.css";
 
-export default function ChatInput({ isSending, onSubmit }: ChatInputProps) {
-  const [value, setValue] = React.useState("");
+export default function ChatInput({ isSending, onChange, onSubmit, value }: ChatInputProps) {
   const textareaRef = React.useRef<HTMLTextAreaElement | null>(null);
 
   React.useEffect(() => {
@@ -16,7 +15,7 @@ export default function ChatInput({ isSending, onSubmit }: ChatInputProps) {
   async function submitPrompt() {
     const prompt = normalizePrompt(value);
     if (!prompt || isSending) return;
-    setValue("");
+    onChange("");
     await onSubmit(prompt);
   }
 
@@ -36,7 +35,7 @@ export default function ChatInput({ isSending, onSubmit }: ChatInputProps) {
       <div className="chat-input__field-wrap">
         <textarea
           className="chat-input__field"
-          onChange={(event) => setValue(event.target.value)}
+          onChange={(event) => onChange(event.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Ecris ton message"
           ref={textareaRef}

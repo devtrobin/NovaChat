@@ -31,7 +31,7 @@ export default function AppSidebarConversationsSection({
               return (
                 <button
                   key={conversation.id}
-                  className={`app-sidebar__item ${active ? "app-sidebar__item--active" : ""}${!active && indicators.hasRunningSystemMessage ? " app-sidebar__item--pending" : ""}`}
+                  className={`app-sidebar__item ${active ? "app-sidebar__item--active" : ""}${indicators.hasRunningSystemMessage ? " app-sidebar__item--pending" : ""}`}
                   onClick={() => onSelectConversation(conversation.id)}
                   type="button"
                 >
@@ -41,7 +41,7 @@ export default function AppSidebarConversationsSection({
                   </div>
                   <div className="app-sidebar__item-row">
                     <span className="app-sidebar__item-meta">{conversation.messages.length} message{conversation.messages.length > 1 ? "s" : ""}</span>
-                    {!active && indicators.hasRunningSystemMessage ? <span className="app-sidebar__item-loader" /> : null}
+                    {indicators.hasRunningSystemMessage ? <span className="app-sidebar__item-loader" /> : null}
                   </div>
                 </button>
               );

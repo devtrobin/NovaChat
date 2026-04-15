@@ -1,6 +1,6 @@
 import React from "react";
 import { AGENTS, createConversationIndicators } from "../../services/workspace/workspace.service";
-import { loadChatPageState } from "../../pages/ChatPage/ChatPage.service";
+import { loadChatPageState } from "../../services/chat/chat.service";
 import { Conversation } from "../../types/chat.types";
 import { WorkspaceLayoutController } from "./WorkspaceLayout.types";
 

@@ -4,10 +4,12 @@ import {
   createConversation,
   deleteConversation,
   getNextActiveConversationId,
+  markConversationAsRead,
   normalizeConversationTitle,
   renameConversation,
   replaceConversation,
-} from "../../pages/ChatPage/ChatPage.service";
+  updateConversationDraft,
+} from "../../services/chat/chat.service";
 
 type UseWorkspaceConversationActionsArgs = {
   activeConversation: Conversation | null;
@@ -32,9 +34,10 @@ export function useWorkspaceConversationActions({
   }, [setActiveConversationId, setActiveSection, setConversations]);
 
   const handleSelectConversation = React.useCallback((conversationId: string) => {
+    setConversations((current) => markConversationAsRead(current, conversationId));
     setActiveConversationId(conversationId);
     setActiveSection("conversations");
-  }, [setActiveConversationId, setActiveSection]);
+  }, [setActiveConversationId, setActiveSection, setConversations]);
 
   const handleRenameConversation = React.useCallback((conversationId: string, title: string) => {
     setConversations((current) => {
@@ -54,7 +57,10 @@ export function useWorkspaceConversationActions({
   }, [setActiveConversationId, setConversations]);
 
   const handleSendMessage = React.useCallback(async (content: string) => {
-    const nextConversation: Conversation = activeConversation ?? createConversation();
+    const nextConversation: Conversation = {
+      ...(activeConversation ?? createConversation()),
+      draft: "",
+    };
 
     setIsSending(true);
     setActiveConversationId(nextConversation.id);
@@ -75,11 +81,21 @@ export function useWorkspaceConversationActions({
     }
   }, [activeConversation, setActiveConversationId, setConversations, setIsSending]);
 
+  const handleUpdateConversationDraft = React.useCallback((conversationId: string, draft: string) => {
+    setConversations((current) => updateConversationDraft(current, conversationId, draft));
+  }, [setConversations]);
+
+  const handleMarkConversationAsRead = React.useCallback((conversationId: string) => {
+    setConversations((current) => markConversationAsRead(current, conversationId));
+  }, [setConversations]);
+
   return {
     handleCreateConversation,
     handleDeleteConversation,
+    handleMarkConversationAsRead,
     handleRenameConversation,
     handleSelectConversation,
     handleSendMessage,
+    handleUpdateConversationDraft,
   };
 }

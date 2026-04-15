@@ -3,17 +3,18 @@ export {
   createConversationRecord,
   createUserMessage,
   replaceConversation,
-} from "./ChatPage.conversation-records";
+} from "./chat.conversation-records";
 export {
   removeMessage,
   replaceMessage,
   replaceOrAppendMessage,
-} from "./ChatPage.message-records";
+} from "./chat.message-records";
 export {
   deleteConversation,
-} from "./ChatPage.deletion";
+} from "./chat.deletion";
 export {
   getNextActiveConversationId,
   normalizeConversationTitle,
   renameConversation,
-} from "./ChatPage.conversation-meta";
+  updateConversationDraft,
+} from "./chat.conversation-meta";

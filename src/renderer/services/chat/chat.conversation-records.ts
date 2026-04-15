@@ -5,6 +5,7 @@ export function createConversation(): Conversation {
 
   return {
     createdAt,
+    draft: "",
     id: crypto.randomUUID(),
     lastReadAt: createdAt,
     messages: [],
@@ -18,6 +19,7 @@ export function createConversationRecord(conversationId: string): Conversation {
 
   return {
     createdAt,
+    draft: "",
     id: conversationId,
     lastReadAt: undefined,
     messages: [],

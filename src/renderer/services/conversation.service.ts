@@ -8,6 +8,7 @@ export function createDefaultConversations(): Conversation[] {
       id: "conversation-1",
       title: "Accueil",
       createdAt: now,
+      draft: "",
       updatedAt: now,
       messages: [
         {
@@ -38,6 +39,7 @@ export async function loadStoredChatState(): Promise<PersistedChatState> {
       ...storedState,
       conversations: storedState.conversations.map((conversation) => ({
         ...conversation,
+        draft: conversation.draft ?? "",
         messages: conversation.messages.filter((message) => message.from !== "system"),
       })),
     };
