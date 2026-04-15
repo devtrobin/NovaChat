@@ -1,4 +1,5 @@
 import { Conversation } from "../../types/chat.types";
+import { SubmitPermissionDecisionRequest } from "../../../shared/ai.types";
 
 export type ChatPageProps = {
   activeConversation: Conversation | null;
@@ -9,6 +10,7 @@ export type ChatPageProps = {
   onOpenSettings: () => void;
   onRenameConversation: (conversationId: string, title: string) => void;
   onSendMessage: (content: string) => Promise<void>;
+  onSubmitPermissionDecision: (payload: SubmitPermissionDecisionRequest) => Promise<void>;
   onSubmitCommandInput: (commandId: string, value: string) => Promise<void>;
   onUpdateConversationDraft: (conversationId: string, draft: string) => void;
 };

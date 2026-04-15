@@ -53,6 +53,13 @@ async function writeConversationTree(rootDirectory: string, state: PersistedChat
   await writeJsonFile(path.join(rootDirectory, "conversations.json"), toIndex(state));
 }
 
+export async function saveChatStateToDirectory(
+  state: PersistedChatState,
+  rootDirectory: string,
+): Promise<void> {
+  await writeConversationTree(rootDirectory, state);
+}
+
 export async function saveChatStateToDirectories(
   state: PersistedChatState,
   activeDirectory: string,

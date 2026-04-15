@@ -10,6 +10,7 @@ Etat attendu au moment de la redaction :
 - grosse refacto structurelle terminee
 - base stable
 - `tsc` et `lint` doivent passer
+- premiere iteration `device-agent` fonctionnelle
 
 ## What Was Just Finished
 
@@ -24,6 +25,8 @@ Chantiers recents termines :
   - `window`
 - decoupage des composants de messages
 - creation de fichiers de contexte dans `docs/`
+- premiere vue `Agents` stable
+- premiere boucle `assistant -> device-agent -> permission -> execution`
 
 ## Current Safe Assumptions
 
@@ -31,23 +34,26 @@ On peut considerer comme stables :
 - stockage local des conversations
 - settings OpenAI
 - pipeline `/cmd`
-- pipeline `assistant -> device -> assistant`
+- pipeline `assistant -> device-agent -> assistant`
 - navigation UI globale
+- workflow de permission exact par commande
+- stockage local du `device-agent`
 
 ## What Should Be Done Next
 
 Priorite produit recommandee :
-1. commencer le systeme d'agents
-2. definir le workflow de permissions autour de l'agent `device`
-3. seulement apres, reprendre du durcissement `device` si necessaire
+1. consolider `device-agent`
+2. ameliorer la lisibilite et le rafraichissement de `DeviceAgentPage`
+3. ensuite seulement etendre le systeme a d'autres agents
 
 ## Next Technical Entry Points
 
 Pour commencer le systeme d'agents :
 - [docs/AGENTS_PLAN.md](/Users/trobin/workspace/nova-chat/docs/AGENTS_PLAN.md)
 - [src/renderer/pages/AgentsPage/AgentsPage.tsx](/Users/trobin/workspace/nova-chat/src/renderer/pages/AgentsPage/AgentsPage.tsx)
-- [src/renderer/components/AppSidebar/AppSidebar.tsx](/Users/trobin/workspace/nova-chat/src/renderer/components/AppSidebar/AppSidebar.tsx)
-- [src/main/ai/ai.orchestrator.ts](/Users/trobin/workspace/nova-chat/src/main/ai/ai.orchestrator.ts)
+- [src/renderer/pages/AgentsPage/DeviceAgentPage/DeviceAgentPage.tsx](/Users/trobin/workspace/nova-chat/src/renderer/pages/AgentsPage/DeviceAgentPage/DeviceAgentPage.tsx)
+- [src/main/agents/agent-storage.service.ts](/Users/trobin/workspace/nova-chat/src/main/agents/agent-storage.service.ts)
+- [src/main/ai/ai.permission.service.ts](/Users/trobin/workspace/nova-chat/src/main/ai/ai.permission.service.ts)
 
 ## What Not To Reopen Without Reason
 
@@ -64,7 +70,7 @@ Ne reouvrir ces sujets que si le systeme d'agents casse vraiment l'architecture.
 
 Risques encore presents :
 - le contexte global du projet est large
-- le sujet agents peut reintroduire de la complexite rapidement
+- le sujet multi-agents peut reintroduire de la complexite rapidement
 - `device` reste un sujet sensible cote securite / UX
 
 ## Before Starting A New Large Task

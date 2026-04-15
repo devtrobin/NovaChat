@@ -16,6 +16,7 @@ export default function ChatPage({
   onOpenSettings,
   onRenameConversation,
   onSendMessage,
+  onSubmitPermissionDecision,
   onSubmitCommandInput,
   onUpdateConversationDraft,
 }: ChatPageProps) {
@@ -74,6 +75,7 @@ export default function ChatPage({
               onOpenSettings={onOpenSettings}
               onScrollStateChange={handleConversationScrollStateChange}
               onSendMessage={onSendMessage}
+              onSubmitPermissionDecision={onSubmitPermissionDecision}
               onSubmitCommandInput={onSubmitCommandInput}
               onUpdateDraft={onUpdateConversationDraft}
               searchQuery={searchQuery}

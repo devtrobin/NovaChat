@@ -41,7 +41,6 @@ export function useWorkspaceLayoutController(): WorkspaceLayoutController {
     activeSection,
     activeSettingsCategory,
     isPreviewMode,
-    setActiveSection,
     setActiveSettingsCategory,
     setConversations,
   });
@@ -66,6 +65,7 @@ export function useWorkspaceLayoutController(): WorkspaceLayoutController {
     handleSelectAgent,
     handleSelectSection,
     handleSelectSettingsCategory,
+    handleSubmitPermissionDecision,
     handleSubmitCommandInput,
   } = useWorkspaceLayoutHandlers({
     setActiveAgentId,
@@ -97,6 +97,7 @@ export function useWorkspaceLayoutController(): WorkspaceLayoutController {
     onSelectSection: handleSelectSection,
     onSelectSettingsCategory: handleSelectSettingsCategory,
     onSendMessage: handleSendMessage,
+    onSubmitPermissionDecision: handleSubmitPermissionDecision,
     onSubmitCommandInput: handleSubmitCommandInput,
     onUpdateConversationDraft: handleUpdateConversationDraft,
   };

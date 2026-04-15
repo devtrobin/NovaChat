@@ -28,3 +28,33 @@ export function createInternalSystemMessage(content: string): ChatMessage {
     to: "assistant",
   };
 }
+
+export function createPermissionRequestSystemMessage(command: string, requestId: string): ChatMessage {
+  return {
+    actions: [
+      {
+        id: "permission-allow",
+        label: "Oui",
+        payload: { requestId },
+      },
+      {
+        id: "permission-allow-always",
+        label: "Oui permanent",
+        payload: { requestId },
+      },
+      {
+        id: "permission-deny",
+        label: "Non",
+        payload: { requestId },
+      },
+    ],
+    apiRequests: [],
+    content: `Autoriser l'agent Device a executer cette commande ?\n${command}`,
+    createdAt: new Date().toISOString(),
+    from: "system",
+    id: crypto.randomUUID(),
+    lifecycleLog: [createLifecycleEntry("created", "Demande de permission systeme creee.")],
+    status: "pending",
+    to: "user",
+  };
+}

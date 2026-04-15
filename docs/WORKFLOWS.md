@@ -37,31 +37,36 @@ Fichiers cles :
 - [src/renderer/pages/ChatPage/ChatPage.tsx](/Users/trobin/workspace/nova-chat/src/renderer/pages/ChatPage/ChatPage.tsx)
 - [src/renderer/pages/ChatPage/ChatPage.events.ts](/Users/trobin/workspace/nova-chat/src/renderer/pages/ChatPage/ChatPage.events.ts)
 
-## 2. Assistant -> Device -> Assistant
+## 2. Assistant -> Device-Agent -> Assistant
 
 Flux :
 
 ```text
 OpenAI reply
   -> providerResponse to=device
-  -> running device message
+  -> internal agent conversation
+  -> optional permission request
   -> local command execution
-  -> device result message
+  -> device-agent result message
   -> new OpenAI cycle
 ```
 
 Etapes :
 1. OpenAI renvoie un message Nova `from=assistant` `to=device`
-2. l'orchestrateur cree une bulle device en `running`
-3. `device.service` lance la commande locale
-4. les updates de progression sont renvoyees au renderer
-5. la commande se termine
-6. la bulle devient `device -> assistant`
-7. l'orchestrateur relance un cycle IA avec ce nouveau contexte
+2. l'orchestrateur cree une nouvelle conversation `assistant <-> device-agent`
+3. `agent-storage.service.ts` journalise la demande et prepare `historique.json`
+4. si la commande est inconnue, `ai.permission.service.ts` injecte une demande utilisateur dans la conversation principale
+5. si la commande est autorisee, `device.service` la lance localement
+6. les updates de progression sont renvoyees au renderer
+7. la commande se termine
+8. le resultat devient un message `device -> assistant`
+9. l'orchestrateur relance un cycle IA avec ce nouveau contexte
 
 Fichiers cles :
 - [src/main/ai/ai.orchestrator.cycle.ts](/Users/trobin/workspace/nova-chat/src/main/ai/ai.orchestrator.cycle.ts)
 - [src/main/ai/ai.device-flow.ts](/Users/trobin/workspace/nova-chat/src/main/ai/ai.device-flow.ts)
+- [src/main/ai/ai.permission.service.ts](/Users/trobin/workspace/nova-chat/src/main/ai/ai.permission.service.ts)
+- [src/main/agents/agent-storage.service.ts](/Users/trobin/workspace/nova-chat/src/main/agents/agent-storage.service.ts)
 - [src/main/device/device.service.ts](/Users/trobin/workspace/nova-chat/src/main/device/device.service.ts)
 - [src/main/device/device.runtime.ts](/Users/trobin/workspace/nova-chat/src/main/device/device.runtime.ts)
 
@@ -140,7 +145,35 @@ Fichiers cles :
 - [src/main/ipc/settings.handlers.ts](/Users/trobin/workspace/nova-chat/src/main/ipc/settings.handlers.ts)
 - [src/main/settings/settings.service.ts](/Users/trobin/workspace/nova-chat/src/main/settings/settings.service.ts)
 
-## 7. Sidebar Navigation
+## 7. Permission Request Workflow
+
+Flux :
+
+```text
+assistant asks device-agent
+  -> command unknown
+  -> system message in main conversation
+  -> user decision
+  -> allow / allow-always / deny
+```
+
+Etapes :
+1. l'assistant delegue une commande au `device-agent`
+2. `permissions.json` est verifie
+3. si la commande exacte n'existe pas, Nova cree un message systeme structure
+4. l'utilisateur choisit :
+   - `Oui`
+   - `Oui permanent`
+   - `Non`
+5. la decision est renvoyee au `main` via `submitPermissionDecision`
+6. le `device-agent` execute, memorise ou refuse selon le cas
+
+Fichiers cles :
+- [src/main/ai/ai.permission.service.ts](/Users/trobin/workspace/nova-chat/src/main/ai/ai.permission.service.ts)
+- [src/main/ipc/ai.handlers.ts](/Users/trobin/workspace/nova-chat/src/main/ipc/ai.handlers.ts)
+- [src/renderer/components/MessageItem/MessageItemSystem.tsx](/Users/trobin/workspace/nova-chat/src/renderer/components/MessageItem/MessageItemSystem.tsx)
+
+## 8. Sidebar Navigation
 
 Le shell global est `WorkspaceLayout`.
 
@@ -153,7 +186,7 @@ Fichiers cles :
 - [src/renderer/components/WorkspaceLayout/WorkspaceLayout.tsx](/Users/trobin/workspace/nova-chat/src/renderer/components/WorkspaceLayout/WorkspaceLayout.tsx)
 - [src/renderer/components/AppSidebar/AppSidebar.tsx](/Users/trobin/workspace/nova-chat/src/renderer/components/AppSidebar/AppSidebar.tsx)
 
-## 8. Search In Active Conversation
+## 9. Search In Active Conversation
 
 Supporte :
 - `Ctrl+F` / `Cmd+F`
@@ -165,7 +198,7 @@ Fichiers cles :
 - [src/renderer/pages/ChatPage/useConversationSearch.ts](/Users/trobin/workspace/nova-chat/src/renderer/pages/ChatPage/useConversationSearch.ts)
 - [src/renderer/pages/ChatPage/ChatSearchBar.tsx](/Users/trobin/workspace/nova-chat/src/renderer/pages/ChatPage/ChatSearchBar.tsx)
 
-## 9. Useful Recovery Paths
+## 10. Useful Recovery Paths
 
 Si un bug apparait :
 - bug UI conversation : commencer par `renderer/pages/ChatPage/*`

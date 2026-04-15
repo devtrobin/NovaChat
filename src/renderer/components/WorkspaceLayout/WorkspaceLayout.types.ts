@@ -1,4 +1,5 @@
 import { AppSettings } from "../../../shared/settings.types";
+import { SubmitPermissionDecisionRequest } from "../../../shared/ai.types";
 import { Conversation } from "../../types/chat.types";
 import {
   AgentDefinition,
@@ -29,6 +30,7 @@ export type WorkspaceLayoutController = {
   onSelectSection: (section: WorkspaceSection) => void;
   onSelectSettingsCategory: (category: SettingsCategory) => void;
   onSendMessage: (content: string) => Promise<void>;
+  onSubmitPermissionDecision: (payload: SubmitPermissionDecisionRequest) => Promise<void>;
   onSubmitCommandInput: (commandId: string, value: string) => Promise<void>;
   onMarkConversationAsRead: (conversationId: string) => void;
   onUpdateConversationDraft: (conversationId: string, draft: string) => void;

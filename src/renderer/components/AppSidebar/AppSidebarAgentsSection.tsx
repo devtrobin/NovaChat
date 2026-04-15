@@ -3,19 +3,16 @@ import { AppSidebarProps } from "./AppSidebar.types";
 
 type AppSidebarAgentsSectionProps = Pick<
   AppSidebarProps,
-  "activeAgentId" | "activeSection" | "agents" | "isPreviewMode" | "onSelectAgent" | "onSelectSection"
+  "activeAgentId" | "activeSection" | "agents" | "onSelectAgent" | "onSelectSection"
 >;
 
 export default function AppSidebarAgentsSection({
   activeAgentId,
   activeSection,
   agents,
-  isPreviewMode,
   onSelectAgent,
   onSelectSection,
 }: AppSidebarAgentsSectionProps) {
-  if (!isPreviewMode) return null;
-
   return (
     <section className={`app-sidebar__section${activeSection === "agents" ? " app-sidebar__section--active" : ""}`}>
       <button className="app-sidebar__section-trigger" onClick={() => onSelectSection("agents")} type="button">

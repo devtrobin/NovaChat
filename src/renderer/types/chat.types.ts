@@ -1,5 +1,6 @@
 export type MessageSender = 'user' | 'assistant' | 'device' | 'system';
 export type MessageRecipient = 'user' | 'assistant' | 'device';
+export type SystemActionId = "open-settings" | "permission-allow" | "permission-allow-always" | "permission-deny";
 
 export type MessageStatus =
   | 'idle'
@@ -27,7 +28,12 @@ export type ApiRequestRecord = {
 
 export type ChatMessage = {
   actionLabel?: string;
-  actionType?: "open-settings";
+  actionType?: SystemActionId;
+  actions?: Array<{
+    id: SystemActionId;
+    label: string;
+    payload?: Record<string, string>;
+  }>;
   id: string;
   from: MessageSender;
   to: MessageRecipient;

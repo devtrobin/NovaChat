@@ -12,6 +12,7 @@ export default function ConversationView(props: ConversationViewProps) {
         onKillCommand={props.onKillCommand}
         onMarkConversationAsRead={props.onMarkConversationAsRead}
         onOpenSettings={props.onOpenSettings}
+        onSubmitPermissionDecision={props.onSubmitPermissionDecision}
         onScrollStateChange={props.onScrollStateChange}
         onSubmitCommandInput={props.onSubmitCommandInput}
         searchQuery={props.searchQuery}

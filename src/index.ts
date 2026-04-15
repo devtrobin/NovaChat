@@ -1,5 +1,6 @@
 import { app, BrowserWindow, ipcMain } from "electron";
 import { registerAiHandlers } from "./main/ipc/ai.handlers";
+import { registerAgentsHandlers } from "./main/ipc/agents.handlers";
 import { registerChatHandlers } from "./main/ipc/chat.handlers";
 import { registerDeviceHandlers } from "./main/ipc/device.handlers";
 import { registerSettingsHandlers } from "./main/ipc/settings.handlers";
@@ -30,4 +31,5 @@ ipcMain.handle("nova:ping", async () => {
 registerChatHandlers(ipcMain);
 registerSettingsHandlers(ipcMain);
 registerAiHandlers(ipcMain);
+registerAgentsHandlers(ipcMain);
 registerDeviceHandlers(ipcMain);

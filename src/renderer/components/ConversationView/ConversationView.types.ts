@@ -1,4 +1,5 @@
 import { Conversation } from "../../types/chat.types";
+import { SubmitPermissionDecisionRequest } from "../../../shared/ai.types";
 
 export type ConversationViewProps = {
   conversation: Conversation;
@@ -10,6 +11,7 @@ export type ConversationViewProps = {
   onKillCommand: (commandId: string) => Promise<void>;
   onMarkConversationAsRead: (conversationId: string) => void;
   onOpenSettings: () => void;
+  onSubmitPermissionDecision: (payload: SubmitPermissionDecisionRequest) => Promise<void>;
   onScrollStateChange: (
     conversationId: string,
     nextState: {

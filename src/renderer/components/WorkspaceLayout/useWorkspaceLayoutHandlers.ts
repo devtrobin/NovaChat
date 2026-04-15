@@ -1,4 +1,5 @@
 import React from "react";
+import { SubmitPermissionDecisionRequest } from "../../../shared/ai.types";
 import { AppSettings } from "../../../shared/settings.types";
 import { WorkspaceLayoutController } from "./WorkspaceLayout.types";
 
@@ -32,12 +33,17 @@ export function useWorkspaceLayoutHandlers({
     await window.nova.ai.submitCommandInput({ commandId, value });
   }, []);
 
+  const handleSubmitPermissionDecision = React.useCallback(async (payload: SubmitPermissionDecisionRequest) => {
+    await window.nova.ai.submitPermissionDecision(payload);
+  }, []);
+
   return {
     handleKillCommand,
     handleSavedSettings,
     handleSelectAgent,
     handleSelectSection: setActiveSection,
     handleSelectSettingsCategory: setActiveSettingsCategory,
+    handleSubmitPermissionDecision,
     handleSubmitCommandInput,
   };
 }

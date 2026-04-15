@@ -16,6 +16,13 @@ export type SubmitCommandInputRequest = {
   value: string;
 };
 
+export type PermissionDecision = "allow" | "allow-always" | "deny";
+
+export type SubmitPermissionDecisionRequest = {
+  decision: PermissionDecision;
+  requestId: string;
+};
+
 export type ChatTurnEvent =
   | {
       conversationId: string;

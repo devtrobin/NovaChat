@@ -52,7 +52,6 @@ export default function AppSidebar({
           activeAgentId={activeAgentId}
           activeSection={activeSection}
           agents={agents}
-          isPreviewMode={isPreviewMode}
           onSelectAgent={onSelectAgent}
           onSelectSection={onSelectSection}
         />

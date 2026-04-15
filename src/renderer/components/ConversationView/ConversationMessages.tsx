@@ -10,6 +10,7 @@ type ConversationMessagesProps = Pick<
   | "onKillCommand"
   | "onMarkConversationAsRead"
   | "onOpenSettings"
+  | "onSubmitPermissionDecision"
   | "onScrollStateChange"
   | "onSubmitCommandInput"
   | "searchQuery"
@@ -24,6 +25,7 @@ export default function ConversationMessages({
   onKillCommand,
   onMarkConversationAsRead,
   onOpenSettings,
+  onSubmitPermissionDecision,
   onScrollStateChange,
   onSubmitCommandInput,
   searchQuery,
@@ -130,6 +132,7 @@ export default function ConversationMessages({
         messages={conversation.messages}
         onKillCommand={(commandId) => void onKillCommand(commandId)}
         onOpenSettings={onOpenSettings}
+        onSubmitPermissionDecision={(payload) => void onSubmitPermissionDecision(payload)}
         onSubmitCommandInput={(commandId, value) => void onSubmitCommandInput(commandId, value)}
         searchQuery={searchQuery}
       />

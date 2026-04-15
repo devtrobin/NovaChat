@@ -5,9 +5,9 @@
 Le but est d'introduire un vrai systeme d'agents specialises, sans casser l'architecture actuelle.
 
 L'idee generale :
-- un agent principal parle a l'utilisateur
-- un agent specialise `device` gere les actions machine
-- plus tard, un workflow de permissions se branchera dessus
+- un assistant principal parle a l'utilisateur
+- un agent specialise `device-agent` gere les actions machine
+- les permissions utilisateur passent par un message systeme structure
 
 ## Why Agents
 
@@ -38,7 +38,7 @@ Ne doit pas :
 Mission :
 - preparer ou executer les commandes locales
 - interpreter les retours machine
-- plus tard demander une autorisation explicite si necessaire
+- demander une autorisation explicite si necessaire
 
 Ne doit pas :
 - prendre le controle de la conversation utilisateur
@@ -46,15 +46,20 @@ Ne doit pas :
 
 ## Current Reality
 
-Aujourd'hui il n'y a pas encore de vrai systeme multi-agents.
+Aujourd'hui, une premiere iteration fonctionnelle existe deja.
 
-Ce qui existe deja et servira de base :
-- `assistant -> device`
-- `device -> assistant`
+Ce qui existe :
+- `assistant -> device-agent`
+- `device-agent -> assistant`
 - `/cmd`
-- events de chat structures
-- types partages `from` / `to`
-- UI `AgentsPage` deja presente comme placeholder
+- messages systeme structures pour les permissions
+- page `Agents`
+- `DeviceAgentPage` avec onglets `General`, `Conversation`, `Contexte`
+- stockage local dedie :
+  - `contexte.json`
+  - `permissions.json`
+  - `historique.json`
+  - `conversations/`
 
 ## Likely Target Architecture
 
@@ -75,7 +80,7 @@ Ce qui est prevu plus tard :
 - une liste d'agents
 - une fiche de configuration par agent
 - une vue du role / mission / tools / statut
-- potentiellement des permissions et regles propres a chaque agent
+- des permissions et regles plus fines par agent
 
 ## Data Needed Per Agent
 
@@ -98,13 +103,27 @@ Le systeme d'agents devra respecter les decisions deja prises :
 - messages Nova structures
 - workflow `device` tracable dans les logs
 
+## Current Device Workflow
+
+Workflow actuel :
+1. l'utilisateur parle a l'assistant principal
+2. l'assistant peut repondre avec `to:"device"`
+3. Nova cree une nouvelle conversation `assistant <-> device-agent`
+4. le `device-agent` verifie `permissions.json`
+5. si la commande est inconnue, Nova injecte un message systeme dans la conversation principale
+6. l'utilisateur choisit `Oui`, `Oui permanent` ou `Non`
+7. le resultat est renvoye a l'assistant principal
+8. l'execution est enregistree dans `historique.json`
+
 ## Do Later, Not Now
 
 Ne pas melanger tout de suite avec :
 - resume LLM de conversation
 - multi-provider complet
-- policy tres complexe
-- UX avancée des permissions
+- permissions par pattern
+- agent device autonome avec son propre appel LLM
 
-L'objectif du prochain chantier est :
-**poser proprement le premier workflow agent sans reouvrir une refacto globale.**
+Les prochaines etapes naturelles sont :
+- donner au `device-agent` sa propre generation de commande
+- rafraichir `DeviceAgentPage` en live
+- etendre ensuite le systeme a d'autres agents

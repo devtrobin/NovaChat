@@ -10,7 +10,14 @@
   - `WORKFLOWS.md`
   - `HANDOFF.md`
   - `DEV_RULES.md`
-- support `previewMode` pour masquer ou afficher la zone `Agents`
+- premiere iteration fonctionnelle de `device-agent`
+- stockage local agent :
+  - `contexte.json`
+  - `permissions.json`
+  - `historique.json`
+  - `conversations/`
+- workflow de permission structure avec `Oui`, `Oui permanent`, `Non`
+- `DeviceAgentPage` avec onglets `General`, `Conversation`, `Contexte`
 - recherche dans la conversation active avec raccourcis clavier
 - pipeline `/cmd` cote utilisateur
 - affichage des indicateurs de non-lu dans la sidebar
@@ -18,6 +25,7 @@
 - traces `message.json`, `log.json`, `apis.json` par message
 
 ### Changed
+- la section `Agents` n'est plus reservee au mode preview
 - refacto majeure du renderer autour de `WorkspaceLayout`
 - refacto de la navigation gauche vers `AppSidebar`
 - remplacement de l'ancien systeme modal settings par `SettingsPage` / `SettingsPanel`

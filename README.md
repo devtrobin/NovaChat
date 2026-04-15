@@ -1,6 +1,6 @@
 # Nova Chat
 
-Nova Chat est une application desktop Electron + React pensée comme une interface de chat type ChatGPT, avec un thème Nova sombre, une persistance locale des conversations, une configuration OpenAI et un canal `device` permettant a l'agent de demander l'execution de commandes locales.
+Nova Chat est une application desktop Electron + React pensee comme une interface de chat type ChatGPT, avec une persistance locale complete, une configuration provider, un canal `device` et maintenant un premier agent interne `device-agent` capable d'executer des commandes locales avec workflow de permission.
 
 ![Capture de Nova Chat](docs/screenshot.png)
 
@@ -11,6 +11,10 @@ Nova Chat est une application desktop Electron + React pensée comme une interfa
 - Parametres OpenAI sauvegardes localement
 - Appel OpenAI via `Responses API`
 - Execution de commandes locales via le canal `device`
+- Premiere vue `Agents` avec page dediee `Device`
+- Workflow `assistant -> device-agent -> system -> utilisateur`
+- Permissions exactes stockees localement pour les commandes device
+- Historique local des executions de l'agent device
 - Boucle d'orchestration cote Electron :
   - `assistant -> device`
   - execution locale
@@ -42,7 +46,7 @@ npm start
 
 Depuis l'application :
 
-1. Ouvrir les parametres via la roue dentee en bas a gauche
+1. Ouvrir `Parametres` dans la navigation de gauche
 2. Renseigner :
    - `OpenAI API Key`
    - `Model`
@@ -58,9 +62,18 @@ https://api.openai.com/v1
 
 ## Stockage local
 
-Les donnees sont ecrites dans le dossier `userData` d'Electron :
+Les donnees sont ecrites dans les chemins configures dans `Parametres > Fichier local` :
 
-- conversations : `conversations.json`
+- conversations utilisateur :
+  - `conversations.json`
+  - un dossier par conversation
+  - un dossier par message avec `message.json`, `log.json`, `apis.json`
+- agents :
+  - un dossier par agent
+  - `contexte.json`
+  - `permissions.json`
+  - `historique.json`
+  - `conversations/`
 - parametres : `settings.json`
 
 Sur macOS, avec la configuration actuelle du projet, cela donne generalement :
@@ -80,8 +93,10 @@ Le renderer n'appelle pas OpenAI directement. Il envoie l'etat de conversation a
 
 1. charge la configuration active
 2. appelle le provider IA
-3. execute une commande locale si l'agent cible `device`
-4. renvoie au renderer uniquement les nouveaux messages et mises a jour
+3. delegue au `device-agent` si l'assistant cible `device`
+4. demande une permission utilisateur si la commande est inconnue
+5. execute la commande locale si elle est autorisee
+6. renvoie au renderer uniquement les nouveaux messages et mises a jour
 
 ## Compatibilite
 
@@ -99,10 +114,15 @@ Le projet est fonctionnel pour :
 - sauvegarder les conversations localement
 - tester et enregistrer une configuration provider
 - executer des commandes locales via `device`
+- afficher une vue `Agents` stable
+- visualiser l'agent `Device`
+- stocker le contexte, les permissions et l'historique du `device-agent`
+- demander une validation utilisateur pour une commande inconnue
 
 Les ameliorations naturelles ensuite seraient :
 
-- prompt agent configurable depuis les parametres
+- capacite du `device-agent` a concevoir lui-meme une commande
+- rafraichissement live de `DeviceAgentPage`
 - support de providers locaux type Ollama
 - streaming
 - garde-fous supplementaires sur les commandes device

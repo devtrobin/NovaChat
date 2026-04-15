@@ -15,7 +15,10 @@ Le projet sait deja faire :
 - gerer `/cmd` pour l'utilisateur
 - afficher les logs et traces API par message
 - naviguer entre `Conversations`, `Agents`, `Parametres`
-- masquer `Agents` quand `previewMode` est desactive
+- stocker un espace local dedie par agent
+- afficher et editer le contexte du `device-agent`
+- journaliser les conversations internes assistant <-> device-agent
+- demander une permission utilisateur pour toute commande inconnue
 
 ## Current UI
 
@@ -54,8 +57,9 @@ Supporte :
 
 Limites actuelles :
 - la policy `device` reste simple
-- pas encore de workflow de permissions utilisateur avance
-- le systeme d'agents n'est pas encore en place
+- permissions exactes seulement, pas encore de patterns
+- une seule demande de permission active par conversation principale
+- le `device-agent` n'a pas encore son propre appel LLM
 
 ## Refactor Status
 
@@ -82,7 +86,7 @@ Ces fichiers ne sont pas consideres comme bloquants.
 ## Known Product Gaps
 
 Sujets volontairement repousses :
-- vrai systeme d'agents
+- extension du systeme d'agents au-dela de `device-agent`
 - permissions evoluees sur `device`
 - provider local reel
 - resume intelligent de conversation
@@ -91,8 +95,8 @@ Sujets volontairement repousses :
 ## Recommended Next Steps
 
 Ordre recommande :
-1. construire le systeme d'agents
-2. brancher le workflow de permissions dessus
+1. consolider `device-agent`
+2. lui donner sa propre conception de commande
 3. durcir les actions `device`
 4. ajouter plus tard un provider local
 

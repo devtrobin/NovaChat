@@ -102,3 +102,8 @@ export async function getConversationsPathFromSettings(): Promise<string> {
   const settings = await loadSettingsFromDisk();
   return settings.localFiles.conversationsDirectory;
 }
+
+export async function getAgentsPathFromSettings(): Promise<string> {
+  const settings = await loadSettingsFromDisk();
+  return settings.localFiles.agentsDirectory;
+}

@@ -1,5 +1,12 @@
 import { PersistedChatState } from "./types/chat.types";
-import { ChatTurnEvent, RunTurnRequest, RunTurnResult, SubmitCommandInputRequest } from "../shared/ai.types";
+import {
+  ChatTurnEvent,
+  RunTurnRequest,
+  RunTurnResult,
+  SubmitCommandInputRequest,
+  SubmitPermissionDecisionRequest,
+} from "../shared/ai.types";
+import { AgentContextFile, AgentWorkspaceData } from "../shared/agent.types";
 import { AppSettings, SettingsTestResult } from "../shared/settings.types";
 
 export { };
@@ -18,10 +25,15 @@ declare global {
         save: (settings: AppSettings) => Promise<AppSettings>;
         test: (settings: AppSettings) => Promise<SettingsTestResult>;
       };
+      agents: {
+        loadWorkspace: (agentId: string) => Promise<AgentWorkspaceData>;
+        saveContext: (agentId: string, context: AgentContextFile) => Promise<AgentContextFile>;
+      };
       ai: {
         killCommand: (commandId: string) => Promise<void>;
         onEvent: (listener: (event: ChatTurnEvent) => void) => () => void;
         runTurn: (request: RunTurnRequest) => Promise<RunTurnResult>;
+        submitPermissionDecision: (payload: SubmitPermissionDecisionRequest) => Promise<boolean>;
         submitCommandInput: (payload: SubmitCommandInputRequest) => Promise<boolean>;
       };
     };

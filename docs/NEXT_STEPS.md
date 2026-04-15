@@ -5,17 +5,17 @@
 Priorites recommandees a court terme :
 
 1. systeme d'agents
-2. workflow de permissions autour de l'agent `device`
-3. construction de la vue `Agents`
+2. raffraichissement live de `DeviceAgentPage`
+3. conception de commande par le `device-agent`
 
 ## Soon
 
 Apres la premiere iteration agents :
 
 1. durcir les actions `device`
-2. mieux visualiser les details d'execution
-3. enrichir la policy de commandes
-4. formaliser les permissions sensibles
+2. enrichir la policy de commandes
+3. passer des commandes exactes aux patterns
+4. etendre le systeme a d'autres agents
 
 ## Later
 
@@ -34,14 +34,14 @@ Ne pas repartir tout de suite sur :
 - redesign complet du shell
 - migration de stockage
 - systeme de permissions complet avant le systeme d'agents
+- nouvelle refacto structurelle globale
 
 ## Next Concrete Work Item
 
 Point d'entree recommande :
-- definir les premiers agents
-  - assistant principal
-  - device agent
+- consolider le `device-agent`
+- afficher ses conversations internes en temps reel
 
 Puis :
-- afficher ces agents dans `AgentsPage`
-- brancher une premiere orchestration simple cote `main`
+- lui donner son propre contexte final
+- puis brancher un deuxieme agent si necessaire

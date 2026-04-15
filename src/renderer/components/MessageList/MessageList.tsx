@@ -8,6 +8,7 @@ export default function MessageList({
   messages,
   onKillCommand,
   onOpenSettings,
+  onSubmitPermissionDecision,
   onSubmitCommandInput,
   searchQuery,
 }: MessageListProps) {
@@ -20,6 +21,7 @@ export default function MessageList({
             message={message}
             onKillCommand={onKillCommand}
             onOpenSettings={onOpenSettings}
+            onSubmitPermissionDecision={onSubmitPermissionDecision}
             onSubmitCommandInput={onSubmitCommandInput}
             searchQuery={searchQuery}
           />

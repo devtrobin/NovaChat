@@ -7,6 +7,7 @@ Nova Chat est une application desktop Electron + React qui :
 - persiste localement les conversations et les settings
 - appelle un provider IA depuis le process `main`
 - peut executer des commandes locales via un canal `device`
+- expose une vue `Agents` avec un premier `device-agent`
 
 Le renderer ne parle jamais directement a OpenAI ni au shell local.
 
@@ -23,9 +24,11 @@ Renderer
 Flux standard :
 1. le renderer envoie la conversation + le nouveau message
 2. le `main` orchestre le tour IA
-3. si l'assistant demande `device`, le `main` execute la commande
-4. le `main` renvoie des events `append/replace/remove`
-5. le renderer met a jour la conversation locale
+3. si l'assistant demande `device`, le `main` delegue au `device-agent`
+4. le `device-agent` verifie `permissions.json` et peut demander une validation utilisateur
+5. la commande locale est executee si elle est autorisee
+6. le `main` renvoie des events `append/replace/remove`
+7. le renderer met a jour la conversation locale
 
 ## Main Folders
 
@@ -34,7 +37,12 @@ Flux standard :
 - `ai/`
   - orchestration du tour IA
   - appel provider OpenAI
-  - boucle `assistant -> device -> assistant`
+  - boucle `assistant -> device-agent -> assistant`
+  - workflow de permissions utilisateur
+- `agents/`
+  - stockage du contexte agent
+  - stockage des permissions agent
+  - historique et conversations internes agent
 - `chat/`
   - lecture/ecriture des conversations sur disque
 - `device/`
@@ -61,7 +69,8 @@ Flux standard :
 - `pages/ChatPage`
   - page de chat
 - `pages/AgentsPage`
-  - placeholder agents
+  - pages dediees par agent
+  - `DeviceAgentPage` aujourd'hui
 - `pages/SettingsPage`
   - page parametres
 - `services/workspace`
@@ -86,7 +95,6 @@ App
 `WorkspaceLayout` porte :
 - la navigation de haut niveau
 - la conversation active
-- le mode preview
 - les handlers transmis aux pages
 
 ## AI Architecture
@@ -98,7 +106,9 @@ Sous-modules importants :
 - `ai.orchestrator.commands.ts`
   - gestion de `/cmd`
 - `ai.orchestrator.cycle.ts`
-  - cycle assistant / device / assistant
+  - cycle assistant / device-agent / assistant
+- `ai.permission.service.ts`
+  - demandes de permission et resolution utilisateur
 - `ai.orchestrator.errors.ts`
   - classification et rendu des erreurs
 - `openai.service.ts`
@@ -143,6 +153,16 @@ Le stockage est gere par :
 - `chat-storage.reader.ts`
 - `chat-storage.writer.ts`
 
+Stockage agent :
+- un dossier par agent dans `localFiles.agentsDirectory`
+- `contexte.json`
+- `permissions.json`
+- `historique.json`
+- `conversations/`
+
+Le stockage agent est gere par :
+- [src/main/agents/agent-storage.service.ts](/Users/trobin/workspace/nova-chat/src/main/agents/agent-storage.service.ts)
+
 ## Settings
 
 Type racine :
@@ -168,6 +188,7 @@ Noms a retenir :
 - `WorkspaceLayout`
 - `AppSidebar`
 - `SettingsPanel`
+- `DeviceAgentPage`
 
 ## What Not To Do
 

@@ -8,7 +8,13 @@ import "./MessageItem.css";
 
 export default function MessageItem(props: MessageItemProps) {
   if (isSystemMessage(props.message)) {
-    return <MessageItemSystem message={props.message} onOpenSettings={props.onOpenSettings} />;
+    return (
+      <MessageItemSystem
+        message={props.message}
+        onOpenSettings={props.onOpenSettings}
+        onSubmitPermissionDecision={props.onSubmitPermissionDecision}
+      />
+    );
   }
 
   if (isDeviceMessage(props.message)) {

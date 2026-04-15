@@ -94,6 +94,24 @@
   text-underline-offset: 3px;
 }
 
+.message-item__system-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.message-item__system-chip {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: rgba(9, 13, 19, 0.92);
+  color: var(--color-text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+}
+
 .message-item__author {
   color: var(--color-text-strong);
   font-size: 13px;
