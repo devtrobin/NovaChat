@@ -1,6 +1,6 @@
 import { PermissionDecision } from "../../shared/ai.types";
 import { ChatMessage } from "../../renderer/types/chat.types";
-import { createPermissionRequestSystemMessage } from "./ai.message-factory";
+import { createPermissionRequestSystemMessage, createPermissionResolutionSystemMessage } from "./ai.message-factory";
 import { Emit } from "./ai.orchestrator.types";
 
 type PendingPermissionRequest = {
@@ -47,6 +47,11 @@ export async function requestDevicePermission(
     conversationId,
     messageId: requestMessage.id,
     type: "remove-message",
+  });
+  emit({
+    conversationId,
+    messages: [createPermissionResolutionSystemMessage(decision, command)],
+    type: "append-messages",
   });
 
   return {

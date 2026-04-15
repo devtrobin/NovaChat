@@ -1,5 +1,5 @@
-export type MessageSender = 'user' | 'assistant' | 'device' | 'system';
-export type MessageRecipient = 'user' | 'assistant' | 'device';
+export type MessageSender = 'user' | 'assistant' | 'agent' | 'device' | 'system';
+export type MessageRecipient = 'user' | 'assistant' | 'agent' | 'device';
 export type SystemActionId = "open-settings" | "permission-allow" | "permission-allow-always" | "permission-deny";
 
 export type MessageStatus =
@@ -34,6 +34,7 @@ export type ChatMessage = {
     label: string;
     payload?: Record<string, string>;
   }>;
+  agentId?: string;
   id: string;
   from: MessageSender;
   to: MessageRecipient;

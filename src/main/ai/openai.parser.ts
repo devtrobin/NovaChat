@@ -12,7 +12,7 @@ export function parseProviderResponse(value: string): ProviderResponse | null {
   return parseProviderResponseObject(value);
 }
 
-function stripCodeFences(value: string): string {
+export function stripCodeFences(value: string): string {
   return value.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
 }
 
@@ -29,20 +29,39 @@ function parseProviderResponseObject(value: string): ProviderResponse | null {
     const maybeResponse = parsed as Partial<ProviderResponse>;
     if (
       maybeResponse.from !== "assistant"
-      || (maybeResponse.to !== "user" && maybeResponse.to !== "device")
-      || typeof maybeResponse.content !== "string"
-      || !maybeResponse.content.trim()
     ) {
       continue;
     }
 
-    return {
-      content: maybeResponse.to === "device"
-        ? normalizeDeviceCommand(maybeResponse.content)
-        : maybeResponse.content.trim(),
-      from: "assistant",
-      to: maybeResponse.to,
-    };
+    if (
+      maybeResponse.to === "agent"
+      && (maybeResponse.agentId === "device-agent" || maybeResponse.agentId === "diagnostic-agent")
+      && typeof maybeResponse.content === "string"
+      && maybeResponse.content.trim()
+    ) {
+      return {
+        agentId: maybeResponse.agentId,
+        content: maybeResponse.agentId === "device-agent"
+          ? normalizeDeviceCommand(maybeResponse.content)
+          : maybeResponse.content.trim(),
+        from: "assistant",
+        to: "agent",
+      };
+    }
+
+    if (
+      (maybeResponse.to === "user" || maybeResponse.to === "device")
+      && typeof maybeResponse.content === "string"
+      && maybeResponse.content.trim()
+    ) {
+      return {
+        content: maybeResponse.to === "device"
+          ? normalizeDeviceCommand(maybeResponse.content)
+          : maybeResponse.content.trim(),
+        from: "assistant",
+        to: maybeResponse.to,
+      };
+    }
   }
 
   return null;
@@ -69,7 +88,7 @@ function extractJsonObject(value: string): string | null {
   return value.slice(start, end + 1).trim();
 }
 
-function normalizeDeviceCommand(command: string): string {
+export function normalizeDeviceCommand(command: string): string {
   const trimmed = command.trim();
   const shellWrappedMatch = trimmed.match(
     /^(?:bash|zsh|sh)\s+-lc\s+(['"])([\s\S]*)\1$/i,

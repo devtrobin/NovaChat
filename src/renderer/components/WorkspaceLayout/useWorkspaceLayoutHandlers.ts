@@ -1,9 +1,10 @@
 import React from "react";
 import { SubmitPermissionDecisionRequest } from "../../../shared/ai.types";
-import { AppSettings } from "../../../shared/settings.types";
+import { AgentSettingsMap, AppSettings } from "../../../shared/settings.types";
 import { WorkspaceLayoutController } from "./WorkspaceLayout.types";
 
 type UseWorkspaceLayoutHandlersArgs = {
+  setAgentSettings: React.Dispatch<React.SetStateAction<AgentSettingsMap>>;
   setActiveAgentId: React.Dispatch<React.SetStateAction<string | null>>;
   setActiveSection: React.Dispatch<React.SetStateAction<WorkspaceLayoutController["activeSection"]>>;
   setActiveSettingsCategory: React.Dispatch<React.SetStateAction<WorkspaceLayoutController["activeSettingsCategory"]>>;
@@ -11,14 +12,16 @@ type UseWorkspaceLayoutHandlersArgs = {
 };
 
 export function useWorkspaceLayoutHandlers({
+  setAgentSettings,
   setActiveAgentId,
   setActiveSection,
   setActiveSettingsCategory,
   setIsPreviewMode,
 }: UseWorkspaceLayoutHandlersArgs) {
   const handleSavedSettings = React.useCallback((settings: AppSettings) => {
+    setAgentSettings(settings.agents);
     setIsPreviewMode(settings.previewMode);
-  }, [setIsPreviewMode]);
+  }, [setAgentSettings, setIsPreviewMode]);
 
   const handleSelectAgent = React.useCallback((agentId: string) => {
     setActiveAgentId(agentId);

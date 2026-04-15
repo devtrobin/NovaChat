@@ -1,46 +1,75 @@
+import { AppSettings } from "../../../../shared/settings.types";
 import React from "react";
 import MessageList from "../../../components/MessageList/MessageList";
 import { AgentDefinition } from "../../../services/workspace/workspace.types";
-import { AgentContextFile, AgentWorkspaceData } from "../../../../shared/agent.types";
+import {
+  AgentContextFile,
+  AgentHistoryEntry,
+  AgentPermissionDecision,
+  AgentPermissionRule,
+  AgentWorkspaceData,
+} from "../../../../shared/agent.types";
 import "../../ChatPage/ChatPage.css";
 import "./DeviceAgentPage.css";
 
 type DeviceAgentPageProps = {
   agent: AgentDefinition;
+  onSavedSettings: (settings: AppSettings) => void;
 };
 
-type DeviceAgentTab = "context" | "conversation" | "general";
+type DeviceAgentTab = "context" | "conversation" | "general" | "history" | "permissions";
 
-export default function DeviceAgentPage({ agent }: DeviceAgentPageProps) {
+export default function DeviceAgentPage({ agent, onSavedSettings }: DeviceAgentPageProps) {
   const [activeConversationId, setActiveConversationId] = React.useState<string | null>(null);
   const [activeTab, setActiveTab] = React.useState<DeviceAgentTab>("general");
   const [contextDraft, setContextDraft] = React.useState<AgentContextFile | null>(null);
+  const [isEnabled, setIsEnabled] = React.useState(agent.enabled);
   const [isBusy, setIsBusy] = React.useState(true);
   const [status, setStatus] = React.useState("");
   const [workspace, setWorkspace] = React.useState<AgentWorkspaceData | null>(null);
 
+  const loadWorkspace = React.useCallback(async (options?: { preserveDraft?: boolean; silent?: boolean }) => {
+    if (!options?.silent) setIsBusy(true);
+    if (!options?.preserveDraft) setStatus("");
+
+    try {
+      const nextWorkspace = await window.nova.agents.loadWorkspace(agent.id);
+      const settings = await window.nova.settings.load();
+      setWorkspace(nextWorkspace);
+      setIsEnabled(settings.agents[agent.id]?.enabled ?? true);
+      if (!options?.preserveDraft) {
+        setContextDraft(nextWorkspace.context);
+      }
+      setActiveConversationId((current) => {
+        if (current && nextWorkspace.conversations.conversations.some((conversation) => conversation.id === current)) {
+          return current;
+        }
+        return nextWorkspace.conversations.activeConversationId ?? nextWorkspace.conversations.conversations[0]?.id ?? null;
+      });
+    } finally {
+      if (!options?.silent) setIsBusy(false);
+    }
+  }, [agent.id]);
+
   React.useEffect(() => {
     let active = true;
 
-    async function loadWorkspace() {
-      setIsBusy(true);
-      setStatus("");
-      try {
-        const nextWorkspace = await window.nova.agents.loadWorkspace(agent.id);
-        if (!active) return;
-        setWorkspace(nextWorkspace);
-        setContextDraft(nextWorkspace.context);
-        setActiveConversationId(nextWorkspace.conversations.activeConversationId ?? nextWorkspace.conversations.conversations[0]?.id ?? null);
-      } finally {
-        if (active) setIsBusy(false);
-      }
-    }
+    void loadWorkspace().catch(() => {
+      if (active) setIsBusy(false);
+    });
 
-    void loadWorkspace();
+    const unsubscribe = window.nova.ai.onEvent(() => {
+      window.setTimeout(() => {
+        if (!active) return;
+        void loadWorkspace({ preserveDraft: true, silent: true });
+      }, 120);
+    });
+
     return () => {
       active = false;
+      unsubscribe();
     };
-  }, [agent.id]);
+  }, [loadWorkspace]);
 
   const activeConversation = React.useMemo(() => (
     workspace?.conversations.conversations.find((conversation) => conversation.id === activeConversationId) ?? null
@@ -60,6 +89,57 @@ export default function DeviceAgentPage({ agent }: DeviceAgentPageProps) {
     }
   }
 
+  async function handleSetEnabled(nextEnabled: boolean) {
+    setIsBusy(true);
+    setStatus("");
+    try {
+      const settings = await window.nova.settings.load();
+      const savedSettings = await window.nova.settings.save({
+        ...settings,
+        agents: {
+          ...settings.agents,
+          [agent.id]: {
+            enabled: nextEnabled,
+          },
+        },
+      });
+      onSavedSettings(savedSettings);
+      setIsEnabled(savedSettings.agents[agent.id]?.enabled ?? nextEnabled);
+      setStatus(`Agent ${nextEnabled ? "active" : "desactive"}.`);
+    } finally {
+      setIsBusy(false);
+    }
+  }
+
+  async function handleSetPermission(command: string, decision: AgentPermissionDecision) {
+    setIsBusy(true);
+    setStatus("");
+    try {
+      const permissions = await window.nova.agents.savePermission(agent.id, command, decision, true);
+      setWorkspace((current) => current ? { ...current, permissions } : current);
+      setStatus(`Permission ${decision === "allow" ? "autorisee" : "refusee"} pour la commande selectionnee.`);
+    } finally {
+      setIsBusy(false);
+    }
+  }
+
+  async function handleDeletePermission(command: string) {
+    setIsBusy(true);
+    setStatus("");
+    try {
+      const permissions = await window.nova.agents.deletePermission(agent.id, command);
+      setWorkspace((current) => current ? { ...current, permissions } : current);
+      setStatus("Permission supprimee.");
+    } finally {
+      setIsBusy(false);
+    }
+  }
+
+  function handleOpenHistoryConversation(entry: AgentHistoryEntry) {
+    setActiveConversationId(entry.agentConversationId);
+    setActiveTab("conversation");
+  }
+
   return (
     <section className="chat-page chat-page--static">
       <header className="chat-page__section-header">
@@ -71,15 +151,11 @@ export default function DeviceAgentPage({ agent }: DeviceAgentPageProps) {
       <section className="chat-page__content">
         <div className="chat-page__panel device-agent-page">
           <nav className="device-agent-page__tabs">
-            <button className={`device-agent-page__tab${activeTab === "general" ? " device-agent-page__tab--active" : ""}`} onClick={() => setActiveTab("general")} type="button">
-              General
-            </button>
-            <button className={`device-agent-page__tab${activeTab === "conversation" ? " device-agent-page__tab--active" : ""}`} onClick={() => setActiveTab("conversation")} type="button">
-              Conversation
-            </button>
-            <button className={`device-agent-page__tab${activeTab === "context" ? " device-agent-page__tab--active" : ""}`} onClick={() => setActiveTab("context")} type="button">
-              Contexte
-            </button>
+            <TabButton activeTab={activeTab} onSelect={setActiveTab} value="general">General</TabButton>
+            <TabButton activeTab={activeTab} onSelect={setActiveTab} value="conversation">Conversation</TabButton>
+            <TabButton activeTab={activeTab} onSelect={setActiveTab} value="context">Contexte</TabButton>
+            <TabButton activeTab={activeTab} onSelect={setActiveTab} value="permissions">Permissions</TabButton>
+            <TabButton activeTab={activeTab} onSelect={setActiveTab} value="history">Historique</TabButton>
           </nav>
 
           {activeTab === "general" ? (
@@ -89,10 +165,37 @@ export default function DeviceAgentPage({ agent }: DeviceAgentPageProps) {
                 <h2 className="chat-page__placeholder-title">{workspace?.context.name ?? agent.name}</h2>
                 <p className="chat-page__placeholder-eyebrow">Description</p>
                 <p className="chat-page__placeholder-text">{workspace?.context.description ?? agent.description}</p>
+                <p className="chat-page__placeholder-eyebrow">Mission</p>
+                <p className="chat-page__placeholder-text">{agent.mission}</p>
+                <p className="chat-page__placeholder-eyebrow">Capacites</p>
+                <p className="chat-page__placeholder-text">{agent.capabilities.join(" · ")}</p>
                 <p className="chat-page__placeholder-eyebrow">Fonctionnalites</p>
                 <p className="chat-page__placeholder-text">{agent.features.join(" · ")}</p>
                 <p className="chat-page__placeholder-eyebrow">Processus</p>
                 <p className="chat-page__placeholder-text">{agent.processes.join(" → ")}</p>
+                <p className="chat-page__placeholder-eyebrow">Outils</p>
+                <p className="chat-page__placeholder-text">{agent.tools.join(" · ")}</p>
+                <p className="chat-page__placeholder-eyebrow">Etat</p>
+                <p className="chat-page__placeholder-text">
+                  Agent {isEnabled ? "actif" : "desactive"} ·{" "}
+                  {workspace?.permissions.rules.length ?? 0} permission{(workspace?.permissions.rules.length ?? 0) > 1 ? "s" : ""} memorisee{(workspace?.permissions.rules.length ?? 0) > 1 ? "s" : ""} ·{" "}
+                  {workspace?.history.length ?? 0} execution{(workspace?.history.length ?? 0) > 1 ? "s" : ""} journalisee{(workspace?.history.length ?? 0) > 1 ? "s" : ""}
+                </p>
+                <label className="settings-panel__field">
+                  <span className="settings-panel__label">Activation</span>
+                  <div className="device-agent-page__toggle-row">
+                    <input
+                      checked={isEnabled}
+                      disabled={isBusy}
+                      onChange={(event) => void handleSetEnabled(event.target.checked)}
+                      type="checkbox"
+                    />
+                    <span className="chat-page__placeholder-text">
+                      {isEnabled ? "L'assistant peut deleguer a cet agent." : "Aucune nouvelle delegation vers cet agent."}
+                    </span>
+                  </div>
+                </label>
+                {status ? <p className="settings-panel__status settings-panel__status--success">{status}</p> : null}
               </div>
             </section>
           ) : null}
@@ -101,8 +204,10 @@ export default function DeviceAgentPage({ agent }: DeviceAgentPageProps) {
             <section className="device-agent-page__conversation">
               <aside className="device-agent-page__conversation-list">
                 <div className="device-agent-page__conversation-head">
-                  <h3 className="device-agent-page__conversation-title">Conversations internes</h3>
-                  <p className="device-agent-page__conversation-note">Lecture seule pour l&apos;instant</p>
+                  <div>
+                    <h3 className="device-agent-page__conversation-title">Conversations internes</h3>
+                    <p className="device-agent-page__conversation-note">Lecture seule. Rafraichissement live pendant les executions.</p>
+                  </div>
                 </div>
                 <div className="device-agent-page__conversation-items">
                   {workspace?.conversations.conversations.length ? workspace.conversations.conversations.map((conversation) => (
@@ -182,8 +287,144 @@ export default function DeviceAgentPage({ agent }: DeviceAgentPageProps) {
               </div>
             </section>
           ) : null}
+
+          {activeTab === "permissions" ? (
+            <section className="device-agent-page__panel">
+              <div className="device-agent-page__context-head">
+                <div>
+                  <h3 className="device-agent-page__conversation-title">Permissions</h3>
+                  <p className="device-agent-page__conversation-note">Regles exactes memorisees dans <code>permissions.json</code>.</p>
+                </div>
+              </div>
+              <div className="device-agent-page__records">
+                {workspace?.permissions.rules.length ? workspace.permissions.rules.map((rule) => (
+                  <PermissionCard
+                    key={rule.command}
+                    isBusy={isBusy}
+                    onAllow={() => void handleSetPermission(rule.command, "allow")}
+                    onDelete={() => void handleDeletePermission(rule.command)}
+                    onDeny={() => void handleSetPermission(rule.command, "deny")}
+                    rule={rule}
+                  />
+                )) : (
+                  <p className="device-agent-page__empty-state">Aucune permission memorisee pour le moment.</p>
+                )}
+                {status ? <p className="settings-panel__status settings-panel__status--success">{status}</p> : null}
+              </div>
+            </section>
+          ) : null}
+
+          {activeTab === "history" ? (
+            <section className="device-agent-page__panel">
+              <div className="device-agent-page__context-head">
+                <div>
+                  <h3 className="device-agent-page__conversation-title">Historique</h3>
+                  <p className="device-agent-page__conversation-note">Executions journalisees dans <code>historique.json</code>.</p>
+                </div>
+              </div>
+              <div className="device-agent-page__records">
+                {workspace?.history.length ? workspace.history.map((entry) => (
+                  <HistoryCard key={`${entry.at}-${entry.agentConversationId}`} entry={entry} onOpenConversation={handleOpenHistoryConversation} />
+                )) : (
+                  <p className="device-agent-page__empty-state">Aucune execution enregistree pour le moment.</p>
+                )}
+              </div>
+            </section>
+          ) : null}
         </div>
       </section>
     </section>
   );
+}
+
+function TabButton({
+  activeTab,
+  children,
+  onSelect,
+  value,
+}: {
+  activeTab: DeviceAgentTab;
+  children: React.ReactNode;
+  onSelect: (tab: DeviceAgentTab) => void;
+  value: DeviceAgentTab;
+}) {
+  return (
+    <button className={`device-agent-page__tab${activeTab === value ? " device-agent-page__tab--active" : ""}`} onClick={() => onSelect(value)} type="button">
+      {children}
+    </button>
+  );
+}
+
+function PermissionCard({
+  isBusy,
+  onAllow,
+  onDelete,
+  onDeny,
+  rule,
+}: {
+  isBusy: boolean;
+  onAllow: () => void;
+  onDelete: () => void;
+  onDeny: () => void;
+  rule: AgentPermissionRule;
+}) {
+  return (
+    <article className="device-agent-page__record-card">
+      <div className="device-agent-page__record-head">
+        <span className={`device-agent-page__badge device-agent-page__badge--${rule.decision}`}>
+          {rule.decision === "allow" ? "Autorisee" : "Refusee"}
+        </span>
+        <span className="device-agent-page__record-date">{formatDate(rule.createdAt)}</span>
+      </div>
+      <pre className="device-agent-page__record-command">{rule.command}</pre>
+      <div className="device-agent-page__record-actions">
+        <button className="device-agent-page__pill-button" disabled={isBusy} onClick={onAllow} type="button">Autoriser</button>
+        <button className="device-agent-page__pill-button" disabled={isBusy} onClick={onDeny} type="button">Refuser</button>
+        <button className="device-agent-page__pill-button device-agent-page__pill-button--danger" disabled={isBusy} onClick={onDelete} type="button">Supprimer</button>
+      </div>
+    </article>
+  );
+}
+
+function HistoryCard({
+  entry,
+  onOpenConversation,
+}: {
+  entry: AgentHistoryEntry;
+  onOpenConversation: (entry: AgentHistoryEntry) => void;
+}) {
+  return (
+    <article className="device-agent-page__record-card">
+      <div className="device-agent-page__record-head">
+        <span className={`device-agent-page__badge device-agent-page__badge--${entry.status}`}>
+          {entry.status === "success" ? "Succes" : entry.status === "denied" ? "Refus" : "Erreur"}
+        </span>
+        <span className="device-agent-page__record-date">{formatDate(entry.at)}</span>
+      </div>
+      <pre className="device-agent-page__record-command">{entry.command}</pre>
+      <p className="device-agent-page__record-meta">
+        Conversation agent : <code>{entry.agentConversationId}</code>
+      </p>
+      <p className="device-agent-page__record-meta">
+        Conversation principale : <code>{entry.userAssistantConversationId}</code>
+      </p>
+      <p className="device-agent-page__record-meta">
+        Message declencheur : <code>{entry.triggerMessageId}</code>
+      </p>
+      <pre className="device-agent-page__record-result">{truncate(entry.result)}</pre>
+      <div className="device-agent-page__record-actions">
+        <button className="device-agent-page__pill-button" onClick={() => onOpenConversation(entry)} type="button">
+          Ouvrir la conversation agent
+        </button>
+      </div>
+    </article>
+  );
+}
+
+function formatDate(value: string): string {
+  return new Date(value).toLocaleString("fr-FR");
+}
+
+function truncate(value: string): string {
+  return value.length > 900 ? `${value.slice(0, 900)}\n\n[sortie tronquee: ${value.length - 900} caracteres masques]` : value;
 }

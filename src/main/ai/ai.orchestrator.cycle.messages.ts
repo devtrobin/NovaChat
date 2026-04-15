@@ -38,6 +38,27 @@ export function createDeviceRequestMessage(command: string, apiRecords: ApiReque
   return message;
 }
 
+export function createAgentRequestMessage(
+  agentId: "device-agent" | "diagnostic-agent",
+  request: string,
+  apiRecords: ApiRequestRecord[],
+): ChatMessage {
+  const content = agentId === "diagnostic-agent"
+    ? "Tache en cours: analyse diagnostique en cours..."
+    : "Tache en cours: coordination avec l'agent Device...";
+  const message = createSystemMessage(content);
+  message.agentId = agentId;
+  message.apiRequests = [...apiRecords];
+  appendLifecycleLog(message, "api-response-attached", "Trace API associee a la delegation agent.");
+  appendLifecycleLog(
+    message,
+    "assistant-requested-agent",
+    `L'assistant a delegue une tache a ${agentId}.`,
+    { agentId, request, from: "assistant", to: "agent" },
+  );
+  return message;
+}
+
 export function createThinkingSystemMessage(): ChatMessage {
   return createSystemMessage("Tache en cours: generation de la reponse...");
 }

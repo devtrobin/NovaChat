@@ -1,4 +1,4 @@
-import { AGENTS } from "../../services/workspace/workspace.service";
+import { buildAgentDefinitions } from "../../services/workspace/workspace.service";
 import { WorkspaceLayoutController } from "./WorkspaceLayout.types";
 import { useWorkspaceConversationActions } from "./useWorkspaceConversationActions";
 import { useWorkspaceEffects } from "./useWorkspaceEffects";
@@ -13,6 +13,7 @@ export function useWorkspaceLayoutController(): WorkspaceLayoutController {
     activeConversationId,
     activeSection,
     activeSettingsCategory,
+    agentSettings,
     conversationIndicators,
     conversations,
     isHydrated,
@@ -23,6 +24,7 @@ export function useWorkspaceLayoutController(): WorkspaceLayoutController {
     setActiveConversationId,
     setActiveSection,
     setActiveSettingsCategory,
+    setAgentSettings,
     setConversations,
     setIsHydrated,
     setIsPreviewMode,
@@ -31,6 +33,7 @@ export function useWorkspaceLayoutController(): WorkspaceLayoutController {
     activeConversationId,
     conversations,
     isHydrated,
+    setAgentSettings,
     setActiveConversationId,
     setConversations,
     setIsHydrated,
@@ -68,6 +71,7 @@ export function useWorkspaceLayoutController(): WorkspaceLayoutController {
     handleSubmitPermissionDecision,
     handleSubmitCommandInput,
   } = useWorkspaceLayoutHandlers({
+    setAgentSettings,
     setActiveAgentId,
     setActiveSection,
     setActiveSettingsCategory,
@@ -80,7 +84,7 @@ export function useWorkspaceLayoutController(): WorkspaceLayoutController {
     activeConversationId,
     activeSection,
     activeSettingsCategory,
-    agents: [...AGENTS],
+    agents: buildAgentDefinitions(agentSettings),
     conversationIndicators,
     conversations,
     isHydrated,

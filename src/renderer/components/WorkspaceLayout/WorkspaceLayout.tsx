@@ -47,7 +47,10 @@ export default function WorkspaceLayout() {
           />
         ) : null}
         {workspace.activeSection === "agents" ? (
-          <AgentsPage activeAgent={workspace.agents.find((agent) => agent.id === workspace.activeAgentId) ?? null} />
+          <AgentsPage
+            activeAgent={workspace.agents.find((agent) => agent.id === workspace.activeAgentId) ?? null}
+            onSavedSettings={workspace.onSavedSettings}
+          />
         ) : null}
         {workspace.activeSection === "settings" ? (
           <SettingsPage

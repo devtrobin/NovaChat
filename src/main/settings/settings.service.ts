@@ -1,7 +1,7 @@
 import { app } from "electron";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { AppSettings } from "../../shared/settings.types";
+import { AgentSettingsMap, AppSettings } from "../../shared/settings.types";
 
 function getApplicationDirectory(): string {
   return app.isPackaged ? path.dirname(process.execPath) : process.cwd();
@@ -26,6 +26,7 @@ export function getReferenceAgentsDirectory(): string {
 export function createDefaultSettings(): AppSettings {
   return {
     activeProvider: "openai",
+    agents: createDefaultAgentSettings(),
     localFiles: {
       agentsDirectory: getReferenceAgentsDirectory(),
       conversationsDirectory: getReferenceConversationsDirectory(),
@@ -41,6 +42,13 @@ export function createDefaultSettings(): AppSettings {
   };
 }
 
+function createDefaultAgentSettings(): AgentSettingsMap {
+  return {
+    "device-agent": { enabled: true },
+    "diagnostic-agent": { enabled: true },
+  };
+}
+
 function mergeSettings(partial: unknown): AppSettings {
   const defaults = createDefaultSettings();
   const parsed = (partial ?? {}) as Partial<AppSettings>;
@@ -48,6 +56,18 @@ function mergeSettings(partial: unknown): AppSettings {
   return {
     ...defaults,
     ...parsed,
+    agents: {
+      ...defaults.agents,
+      ...parsed.agents,
+      "device-agent": {
+        ...defaults.agents["device-agent"],
+        ...parsed.agents?.["device-agent"],
+      },
+      "diagnostic-agent": {
+        ...defaults.agents["diagnostic-agent"],
+        ...parsed.agents?.["diagnostic-agent"],
+      },
+    },
     localFiles: {
       ...defaults.localFiles,
       ...parsed.localFiles,

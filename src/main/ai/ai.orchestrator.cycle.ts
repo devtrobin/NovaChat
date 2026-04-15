@@ -1,14 +1,8 @@
 import { ApiRequestRecord, ChatMessage } from "../../renderer/types/chat.types";
+import { AgentId, AgentTaskRequest } from "../../shared/agent.types";
 import { AppSettings } from "../../shared/settings.types";
-import {
-  getAgentPermission,
-  recordAgentCommandExchange,
-  saveAgentPermission,
-} from "../agents/agent-storage.service";
+import { runAgentTask } from "../agents/agent-orchestrator.service";
 import { Emit } from "./ai.orchestrator.types";
-import { executeDeviceCommand } from "./ai.device-flow";
-import { createDeviceImmediateErrorMessage } from "./ai.message-factory";
-import { requestDevicePermission } from "./ai.permission.service";
 import { appendLifecycleLog } from "./ai.orchestrator.runtime";
 import { generateOpenAIReply } from "./openai.service";
 import {
@@ -37,9 +31,13 @@ export async function runAssistantCycle({
   userMessage,
 }: RunAssistantCycleArgs): Promise<
   | { kind: "assistant"; message: ChatMessage }
-  | { deviceMessage: ChatMessage; kind: "device" }
+  | { kind: "agent"; message: ChatMessage }
 > {
-  const { apiRecords, providerResponse } = await generateOpenAIReply(settings.openai, turnMessages);
+  const { apiRecords, providerResponse } = await generateOpenAIReply(
+    settings.openai,
+    turnMessages,
+    getEnabledAgents(settings),
+  );
   emit({
     conversationId,
     message: appendUserApiTrace(userMessage, apiRecords, step),
@@ -48,138 +46,85 @@ export async function runAssistantCycle({
   });
 
   if (providerResponse.to === "user") {
+    if (shouldForceDiagnosticAgentHandoff(settings, turnMessages, userMessage.content, providerResponse.content)) {
+      const handoff = createForcedDiagnosticHandoff(apiRecords, userMessage.content);
+      const runningMessage = createDeviceRequestMessage(`Agent ${handoff.agentId}: ${handoff.previewContent}`, handoff.apiRecords);
+
+      const { deviceMessage } = await runAgentTask({
+        conversationId,
+        emit,
+        initialMessage: runningMessage,
+        messageId: runningMessage.id,
+        settings,
+        task: {
+          agentId: handoff.agentId,
+          mode: handoff.mode,
+          request: handoff.request,
+          triggerMessageId: userMessage.id,
+          userAssistantConversationId: conversationId,
+          userPrompt: userMessage.content,
+        },
+      });
+
+      deviceMessage.apiRequests = [...(runningMessage.apiRequests ?? [])];
+      appendLifecycleLog(deviceMessage, "assistant-agent-cycle-complete", `Cycle assistant -> ${handoff.agentId} termine.`);
+      turnMessages.push(deviceMessage);
+      return { kind: "agent", message: deviceMessage };
+    }
+
     return { kind: "assistant", message: createAssistantResponseMessage(providerResponse.content, apiRecords) };
   }
 
-  const runningMessage = createDeviceRequestMessage(providerResponse.content, apiRecords);
-  emit({ conversationId, messages: [runningMessage], type: "append-messages" });
+  const handoff = resolveAgentHandoff({
+    apiRecords,
+    providerResponse,
+  });
+  if (!isAgentEnabled(settings, handoff.agentId)) {
+    return {
+      kind: "assistant",
+      message: createAssistantResponseMessage(
+        `L'agent ${formatAgentLabel(handoff.agentId)} est actuellement desactive. Je poursuis sans delegation.`,
+        apiRecords,
+      ),
+    };
+  }
+  const previousAgentMessage = findPreviousAgentMessage(turnMessages, handoff.agentId);
+  if (previousAgentMessage) {
+    return {
+      kind: "assistant",
+      message: createAssistantResponseMessage(previousAgentMessage.content, apiRecords),
+    };
+  }
 
-  let deviceMessage: ChatMessage;
-  const permissionLookup = await getAgentPermission(
-    settings.localFiles.agentsDirectory,
-    "device-agent",
-    providerResponse.content,
-  );
+  const runningMessage = createDeviceRequestMessage(`Agent ${handoff.agentId}: ${handoff.previewContent}`, handoff.apiRecords);
+  if (handoff.agentId === "device-agent") {
+    emit({ conversationId, messages: [runningMessage], type: "append-messages" });
+  }
 
-  if (permissionLookup.decision === "deny") {
-    deviceMessage = createDeviceImmediateErrorMessage(
-      providerResponse.content,
-      runningMessage.id,
-      new Error("Commande refusee par une permission enregistree."),
-    );
-    emit({
-      conversationId,
-      message: deviceMessage,
-      messageId: runningMessage.id,
-      type: "replace-message",
-    });
-    await recordAgentCommandExchange({
-      agentId: "device-agent",
-      command: providerResponse.content,
-      result: {
-        output: deviceMessage.result ?? "",
-        status: "denied",
-      },
-      rootDirectory: settings.localFiles.agentsDirectory,
+  const { deviceMessage } = await runAgentTask({
+    conversationId,
+    emit,
+    initialMessage: runningMessage,
+    messageId: runningMessage.id,
+    settings,
+    task: {
+      agentId: handoff.agentId,
+      mode: handoff.mode,
+      request: handoff.request,
       triggerMessageId: userMessage.id,
       userAssistantConversationId: conversationId,
       userPrompt: userMessage.content,
-    });
-    deviceMessage.apiRequests = [...(runningMessage.apiRequests ?? [])];
-    appendLifecycleLog(deviceMessage, "assistant-device-cycle-complete", "Cycle assistant -> device termine.");
-    turnMessages.push(deviceMessage);
-    return { deviceMessage, kind: "device" };
-  }
-
-  if (permissionLookup.decision === null) {
-    const { decision } = await requestDevicePermission(conversationId, providerResponse.content, emit);
-
-    if (decision === "allow-always") {
-      await saveAgentPermission(
-        settings.localFiles.agentsDirectory,
-        "device-agent",
-        providerResponse.content,
-        "allow",
-        true,
-      );
-    }
-
-    if (decision === "deny") {
-      await saveAgentPermission(
-        settings.localFiles.agentsDirectory,
-        "device-agent",
-        providerResponse.content,
-        "deny",
-        true,
-      );
-      deviceMessage = createDeviceImmediateErrorMessage(
-        providerResponse.content,
-        runningMessage.id,
-        new Error("Commande refusee par l'utilisateur."),
-      );
-      emit({
-        conversationId,
-        message: deviceMessage,
-        messageId: runningMessage.id,
-        type: "replace-message",
-      });
-      await recordAgentCommandExchange({
-        agentId: "device-agent",
-        command: providerResponse.content,
-        result: {
-          output: deviceMessage.result ?? "",
-          status: "denied",
-        },
-        rootDirectory: settings.localFiles.agentsDirectory,
-        triggerMessageId: userMessage.id,
-        userAssistantConversationId: conversationId,
-        userPrompt: userMessage.content,
-      });
-      deviceMessage.apiRequests = [...(runningMessage.apiRequests ?? [])];
-      appendLifecycleLog(deviceMessage, "assistant-device-cycle-complete", "Cycle assistant -> device termine.");
-      turnMessages.push(deviceMessage);
-      return { deviceMessage, kind: "device" };
-    }
-  }
-
-  try {
-    deviceMessage = await executeDeviceCommand({
-      command: providerResponse.content,
-      conversationId,
-      emit,
-      initialMessage: runningMessage,
-      messageId: runningMessage.id,
-      resultRecipient: "assistant",
-      resultSender: "device",
-    });
-  } catch (error) {
-    deviceMessage = createDeviceImmediateErrorMessage(providerResponse.content, runningMessage.id, error);
-    emit({
-      conversationId,
-      message: deviceMessage,
-      messageId: runningMessage.id,
-      type: "replace-message",
-    });
-  }
-
-  await recordAgentCommandExchange({
-    agentId: "device-agent",
-    command: providerResponse.content,
-    result: {
-      output: deviceMessage.result ?? "",
-      status: deviceMessage.status === "success" ? "success" : "error",
     },
-    rootDirectory: settings.localFiles.agentsDirectory,
-    triggerMessageId: userMessage.id,
-    userAssistantConversationId: conversationId,
-    userPrompt: userMessage.content,
   });
 
+  if (handoff.agentId === "device-agent") {
+    emit({ conversationId, messageId: runningMessage.id, type: "remove-message" });
+  }
   deviceMessage.apiRequests = [...(runningMessage.apiRequests ?? [])];
-  appendLifecycleLog(deviceMessage, "assistant-device-cycle-complete", "Cycle assistant -> device termine.");
+  appendLifecycleLog(deviceMessage, "assistant-agent-cycle-complete", `Cycle assistant -> ${handoff.agentId} termine.`);
   turnMessages.push(deviceMessage);
 
-  return { deviceMessage, kind: "device" };
+  return { kind: "agent", message: deviceMessage };
 }
 
 export function restartAssistantThinking(
@@ -213,4 +158,113 @@ export function appendApiErrorTrace(
   userMessage.apiRequests = [...(userMessage.apiRequests ?? []), ...apiRecords];
   appendLifecycleLog(userMessage, "api-response-error", details);
   return { ...userMessage };
+}
+
+type ResolvedAgentHandoff = {
+  agentId: "device-agent" | "diagnostic-agent";
+  apiRecords: ApiRequestRecord[];
+  mode: AgentTaskRequest["mode"];
+  previewContent: string;
+  request: string;
+};
+
+function resolveAgentHandoff(args: {
+  apiRecords: ApiRequestRecord[];
+  providerResponse: Exclude<Awaited<ReturnType<typeof generateOpenAIReply>>["providerResponse"], { to: "user" }>;
+}): ResolvedAgentHandoff {
+  const agentId = args.providerResponse.to === "agent" ? args.providerResponse.agentId : "device-agent";
+  const content = args.providerResponse.content;
+  const goal = agentId === "device-agent" ? extractDeviceGoal(content) : null;
+  if (!goal) {
+    return {
+      agentId,
+      apiRecords: args.apiRecords,
+      mode: agentId === "device-agent" ? "command" : "analysis",
+      previewContent: content,
+      request: content,
+    };
+  }
+
+  return {
+    agentId,
+    apiRecords: args.apiRecords,
+    mode: "goal",
+    previewContent: `GOAL: ${goal}`,
+    request: goal,
+  };
+}
+
+function extractDeviceGoal(value: string): string | null {
+  const match = value.trim().match(/^(?:goal|objective|task)\s*:\s*([\s\S]+)$/i);
+  return match?.[1]?.trim() ? match[1].trim() : null;
+}
+
+function shouldForceDiagnosticAgentHandoff(
+  settings: AppSettings,
+  turnMessages: ChatMessage[],
+  userPrompt: string,
+  assistantReply: string,
+): boolean {
+  if (!isAgentEnabled(settings, "diagnostic-agent")) {
+    return false;
+  }
+  const normalizedPrompt = userPrompt.trim().toLowerCase();
+  const normalizedReply = assistantReply.trim().toLowerCase();
+  const diagnosticSignals = [
+    "diagnostic",
+    "debug",
+    "debugging",
+    "h a n d o f f".replace(/\s/g, ""),
+    "handoff",
+    "workflow",
+    "piste",
+    "analyse",
+    "analyser",
+    "echec",
+    "erreur",
+    "bug",
+    "investigation",
+  ];
+
+  const promptLooksDiagnostic = diagnosticSignals.some((signal) => normalizedPrompt.includes(signal));
+  if (!promptLooksDiagnostic) return false;
+  if (turnMessages.some((message) => message.from === "agent" && message.agentId === "diagnostic-agent")) {
+    return false;
+  }
+
+  const replyAlreadyMentionsDiagnosticAgent = normalizedReply.includes("diagnostic-agent") || normalizedReply.includes("agent diagnostic");
+  return !replyAlreadyMentionsDiagnosticAgent;
+}
+
+function isAgentEnabled(settings: AppSettings, agentId: AgentId): boolean {
+  return settings.agents[agentId]?.enabled ?? true;
+}
+
+function getEnabledAgents(settings: AppSettings): AgentId[] {
+  return (Object.entries(settings.agents) as Array<[AgentId, { enabled: boolean }]>)
+    .filter(([, state]) => state.enabled)
+    .map(([agentId]) => agentId);
+}
+
+function formatAgentLabel(agentId: AgentId): string {
+  return agentId === "device-agent" ? "Device" : "Diagnostic";
+}
+
+function createForcedDiagnosticHandoff(apiRecords: ApiRequestRecord[], userPrompt: string): ResolvedAgentHandoff {
+  return {
+    agentId: "diagnostic-agent",
+    apiRecords,
+    mode: "analysis",
+    previewContent: userPrompt,
+    request: userPrompt,
+  };
+}
+
+function findPreviousAgentMessage(
+  turnMessages: ChatMessage[],
+  agentId: "device-agent" | "diagnostic-agent",
+): ChatMessage | null {
+  return [...turnMessages]
+    .reverse()
+    .find((message) => message.from === "agent" && message.agentId === agentId) ?? null;
 }

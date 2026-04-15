@@ -7,7 +7,7 @@ import {
   SubmitCommandInputRequest,
   SubmitPermissionDecisionRequest,
 } from "./shared/ai.types";
-import { AgentContextFile, AgentWorkspaceData } from "./shared/agent.types";
+import { AgentContextFile, AgentId, AgentPermissionDecision, AgentPermissionsFile, AgentWorkspaceData } from "./shared/agent.types";
 import { AppSettings, SettingsTestResult } from "./shared/settings.types";
 
 type AIEventListener = (event: ChatTurnEvent) => void;
@@ -25,9 +25,13 @@ contextBridge.exposeInMainWorld("nova", {
     test: (settings: AppSettings): Promise<SettingsTestResult> => ipcRenderer.invoke("nova:settings:test", settings),
   },
   agents: {
-    loadWorkspace: (agentId: string): Promise<AgentWorkspaceData> => ipcRenderer.invoke("nova:agents:load-workspace", agentId),
-    saveContext: (agentId: string, context: AgentContextFile): Promise<AgentContextFile> =>
+    loadWorkspace: (agentId: AgentId): Promise<AgentWorkspaceData> => ipcRenderer.invoke("nova:agents:load-workspace", agentId),
+    saveContext: (agentId: AgentId, context: AgentContextFile): Promise<AgentContextFile> =>
       ipcRenderer.invoke("nova:agents:save-context", { agentId, context }),
+    savePermission: (agentId: AgentId, command: string, decision: AgentPermissionDecision, remember: boolean): Promise<AgentPermissionsFile> =>
+      ipcRenderer.invoke("nova:agents:save-permission", { agentId, command, decision, remember }),
+    deletePermission: (agentId: AgentId, command: string): Promise<AgentPermissionsFile> =>
+      ipcRenderer.invoke("nova:agents:delete-permission", { agentId, command }),
   },
   ai: {
     killCommand: (commandId: string): Promise<void> => ipcRenderer.invoke("nova:ai:kill-command", commandId),

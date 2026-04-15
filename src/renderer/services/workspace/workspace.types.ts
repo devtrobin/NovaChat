@@ -1,3 +1,4 @@
+import { AgentId } from "../../../shared/agent.types";
 import { Conversation } from "../../types/chat.types";
 
 export type WorkspaceSection = "agents" | "conversations" | "settings";
@@ -13,12 +14,16 @@ export type SettingsCategory =
   | "provider";
 
 export type AgentDefinition = {
+  capabilities: readonly string[];
   context: string;
   description: string;
+  enabled: boolean;
   features: readonly string[];
-  id: string;
+  id: AgentId;
+  mission: string;
   name: string;
   processes: readonly string[];
+  tools: readonly string[];
 };
 
 export type ConversationIndicator = {

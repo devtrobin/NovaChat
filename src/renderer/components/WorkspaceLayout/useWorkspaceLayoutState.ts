@@ -1,17 +1,23 @@
 import React from "react";
-import { AGENTS, createConversationIndicators } from "../../services/workspace/workspace.service";
+import { createConversationIndicators } from "../../services/workspace/workspace.service";
 import { loadChatPageState } from "../../services/chat/chat.service";
 import { Conversation } from "../../types/chat.types";
 import { WorkspaceLayoutController } from "./WorkspaceLayout.types";
+import { AgentSettingsMap } from "../../../shared/settings.types";
 
 export function useWorkspaceLayoutState() {
   const initialState = React.useMemo(() => loadChatPageState(), []);
+  const defaultAgentSettings = React.useMemo<AgentSettingsMap>(() => ({
+    "device-agent": { enabled: true },
+    "diagnostic-agent": { enabled: true },
+  }), []);
   const [conversations, setConversations] = React.useState<Conversation[]>(initialState.conversations);
   const [activeConversationId, setActiveConversationId] = React.useState<string | null>(
     initialState.activeConversationId,
   );
   const [activeSection, setActiveSection] = React.useState<"agents" | "conversations" | "settings">("conversations");
-  const [activeAgentId, setActiveAgentId] = React.useState<string | null>(AGENTS[0]?.id ?? null);
+  const [activeAgentId, setActiveAgentId] = React.useState<string | null>("device-agent");
+  const [agentSettings, setAgentSettings] = React.useState<AgentSettingsMap>(defaultAgentSettings);
   const [activeSettingsCategory, setActiveSettingsCategory] = React.useState<WorkspaceLayoutController["activeSettingsCategory"]>("local-files");
   const [sendingConversationIds, setSendingConversationIds] = React.useState<string[]>([]);
   const [isHydrated, setIsHydrated] = React.useState(false);
@@ -26,6 +32,7 @@ export function useWorkspaceLayoutState() {
 
   return {
     activeAgentId,
+    agentSettings,
     activeConversation,
     activeConversationId,
     activeSection,
@@ -37,6 +44,7 @@ export function useWorkspaceLayoutState() {
     isSending,
     sendingConversationIds,
     setActiveAgentId,
+    setAgentSettings,
     setActiveConversationId,
     setActiveSection,
     setActiveSettingsCategory,

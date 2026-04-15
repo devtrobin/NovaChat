@@ -29,7 +29,10 @@ export default function AppSidebarAgentsSection({
                 onClick={() => onSelectAgent(agent.id)}
                 type="button"
               >
-                <span className="app-sidebar__item-title">{agent.name}</span>
+                <span className="app-sidebar__item-title">
+                  {agent.name}
+                  {!agent.enabled ? " · desactive" : ""}
+                </span>
                 <span className="app-sidebar__item-meta">{agent.description}</span>
               </button>
             ))}

@@ -67,7 +67,7 @@ export async function runTurn(
       }
 
       systemMessage = restartAssistantThinking(request.conversationId, emit, systemMessage.id);
-      if (cycleResult.deviceMessage.lifecycleLog?.some((entry) => entry.event === "device-killed")) {
+      if (cycleResult.message.lifecycleLog?.some((entry) => entry.event === "device-killed")) {
         appendInterruptedCommandContext(turnMessages);
       }
     }

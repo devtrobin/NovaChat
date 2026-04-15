@@ -1,4 +1,5 @@
 import React from "react";
+import { AgentSettingsMap } from "../../../shared/settings.types";
 import { loadStoredChatState, saveStoredChatState } from "../../services/conversation.service";
 import { createConversation, markConversationAsRead } from "../../services/chat/chat.service";
 import { Conversation } from "../../types/chat.types";
@@ -7,6 +8,7 @@ type UseWorkspaceHydrationArgs = {
   activeConversationId: string | null;
   conversations: Conversation[];
   isHydrated: boolean;
+  setAgentSettings: React.Dispatch<React.SetStateAction<AgentSettingsMap>>;
   setActiveConversationId: React.Dispatch<React.SetStateAction<string | null>>;
   setConversations: React.Dispatch<React.SetStateAction<Conversation[]>>;
   setIsHydrated: React.Dispatch<React.SetStateAction<boolean>>;
@@ -17,6 +19,7 @@ export function useWorkspaceHydration({
   activeConversationId,
   conversations,
   isHydrated,
+  setAgentSettings,
   setActiveConversationId,
   setConversations,
   setIsHydrated,
@@ -29,6 +32,7 @@ export function useWorkspaceHydration({
       const storedState = await loadStoredChatState();
       const settings = await window.nova.settings.load();
       if (!active) return;
+      setAgentSettings(settings.agents);
       setIsPreviewMode(settings.previewMode);
       if (storedState.conversations.length === 0) {
         const nextConversation = createConversation();
@@ -50,7 +54,7 @@ export function useWorkspaceHydration({
     return () => {
       active = false;
     };
-  }, [setActiveConversationId, setConversations, setIsHydrated, setIsPreviewMode]);
+  }, [setActiveConversationId, setAgentSettings, setConversations, setIsHydrated, setIsPreviewMode]);
 
   React.useEffect(() => {
     if (!isHydrated) return;

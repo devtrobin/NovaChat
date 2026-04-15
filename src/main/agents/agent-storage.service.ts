@@ -4,12 +4,14 @@ import { readJsonFile, writeJsonFile } from "../chat/chat-storage.io";
 import {
   AgentContextFile,
   AgentHistoryEntry,
+  AgentId,
   AgentPermissionLookup,
   AgentPermissionsFile,
   AgentWorkspaceData,
 } from "../../shared/agent.types";
 import { ChatMessage, Conversation, PersistedChatState } from "../../renderer/types/chat.types";
 import { toIndex } from "../chat/chat-storage.serialization";
+import { createDefaultAgentContext } from "./agent-prompt.service";
 
 function getAgentDirectory(rootDirectory: string, agentId: string): string {
   return path.join(rootDirectory, agentId);
@@ -31,23 +33,6 @@ function getAgentConversationsDirectory(rootDirectory: string, agentId: string):
   return path.join(getAgentDirectory(rootDirectory, agentId), "conversations");
 }
 
-function createDefaultAgentContext(agentId: string): AgentContextFile {
-  if (agentId === "device-agent") {
-    return {
-      description: "Execution des commandes et interactions device.",
-      instructions:
-        "Tu es l'agent Device de Nova. Tu aides l'assistant principal a preparer et executer des commandes locales. Tu dois verifier les permissions avant toute execution et journaliser clairement les actions techniques.",
-      name: "Device",
-    };
-  }
-
-  return {
-    description: "Agent Nova.",
-    instructions: "Contexte non defini.",
-    name: agentId,
-  };
-}
-
 function createDefaultPermissions(): AgentPermissionsFile {
   return {
     rules: [],
@@ -65,7 +50,7 @@ function createDefaultConversations(): PersistedChatState {
   };
 }
 
-async function ensureAgentWorkspace(rootDirectory: string, agentId: string): Promise<AgentWorkspaceData> {
+async function ensureAgentWorkspace(rootDirectory: string, agentId: AgentId): Promise<AgentWorkspaceData> {
   const context = (await readJsonFile<AgentContextFile>(getAgentContextPath(rootDirectory, agentId)))
     ?? createDefaultAgentContext(agentId);
   const permissions = (await readJsonFile<AgentPermissionsFile>(getAgentPermissionsPath(rootDirectory, agentId)))
@@ -92,13 +77,13 @@ async function ensureAgentWorkspace(rootDirectory: string, agentId: string): Pro
   };
 }
 
-export async function loadAgentWorkspace(rootDirectory: string, agentId: string): Promise<AgentWorkspaceData> {
+export async function loadAgentWorkspace(rootDirectory: string, agentId: AgentId): Promise<AgentWorkspaceData> {
   return ensureAgentWorkspace(rootDirectory, agentId);
 }
 
 export async function saveAgentContext(
   rootDirectory: string,
-  agentId: string,
+  agentId: AgentId,
   context: AgentContextFile,
 ): Promise<AgentContextFile> {
   await writeJsonFile(getAgentContextPath(rootDirectory, agentId), context);
@@ -107,7 +92,7 @@ export async function saveAgentContext(
 
 export async function getAgentPermission(
   rootDirectory: string,
-  agentId: string,
+  agentId: AgentId,
   command: string,
 ): Promise<AgentPermissionLookup> {
   const workspace = await ensureAgentWorkspace(rootDirectory, agentId);
@@ -121,7 +106,7 @@ export async function getAgentPermission(
 
 export async function saveAgentPermission(
   rootDirectory: string,
-  agentId: string,
+  agentId: AgentId,
   command: string,
   decision: "allow" | "deny",
   remember: boolean,
@@ -145,8 +130,23 @@ export async function saveAgentPermission(
   return nextPermissions;
 }
 
+export async function deleteAgentPermission(
+  rootDirectory: string,
+  agentId: AgentId,
+  command: string,
+): Promise<AgentPermissionsFile> {
+  const workspace = await ensureAgentWorkspace(rootDirectory, agentId);
+  const nextPermissions: AgentPermissionsFile = {
+    rules: workspace.permissions.rules.filter((rule) => rule.command !== command),
+  };
+
+  await writeJsonFile(getAgentPermissionsPath(rootDirectory, agentId), nextPermissions);
+  return nextPermissions;
+}
+
 type RecordAgentCommandExchangeArgs = {
-  agentId: string;
+  agentId: AgentId;
+  assistantRequest: string;
   command: string;
   result: {
     output: string;
@@ -175,11 +175,16 @@ function createAgentConversation(title: string): Conversation {
   };
 }
 
-function createAssistantToAgentMessage(command: string): ChatMessage {
+function createAssistantToAgentMessage(assistantRequest: string, command: string): ChatMessage {
   const createdAt = new Date().toISOString();
+  const isGoalRequest = /^goal\s*:/i.test(assistantRequest.trim());
+  const content = isGoalRequest
+    ? `Objectif delegue par l'assistant:\n${assistantRequest.replace(/^goal\s*:\s*/i, "").trim()}\n\nCommande retenue:\n${command}`
+    : `Execute la commande suivante sur le device:\n${command}`;
+
   return {
     apiRequests: [],
-    content: `Execute la commande suivante sur le device:\n${command}`,
+    content,
     createdAt,
     from: "assistant",
     id: crypto.randomUUID(),
@@ -194,8 +199,34 @@ function createAssistantToAgentMessage(command: string): ChatMessage {
   };
 }
 
-function createAgentResultMessage(command: string, output: string, status: "denied" | "error" | "success"): ChatMessage {
+function createAgentResultMessage(
+  agentId: AgentId,
+  command: string,
+  output: string,
+  status: "denied" | "error" | "success",
+): ChatMessage {
   const createdAt = new Date().toISOString();
+  if (agentId !== "device-agent") {
+    return {
+      agentId,
+      apiRequests: [],
+      content: output,
+      createdAt,
+      from: "agent",
+      id: crypto.randomUUID(),
+      lifecycleLog: [
+        {
+          at: createdAt,
+          details: `Resultat ${agentId} -> assistant cree.`,
+          event: "created",
+          metadata: { status },
+        },
+      ],
+      status: status === "success" ? "success" : "error",
+      to: "assistant",
+    };
+  }
+
   return {
     apiRequests: [],
     content: command,
@@ -219,6 +250,7 @@ function createAgentResultMessage(command: string, output: string, status: "deni
 
 export async function recordAgentCommandExchange({
   agentId,
+  assistantRequest,
   command,
   result,
   rootDirectory,
@@ -228,8 +260,8 @@ export async function recordAgentCommandExchange({
 }: RecordAgentCommandExchangeArgs): Promise<{ agentConversationId: string }> {
   const workspace = await ensureAgentWorkspace(rootDirectory, agentId);
   const conversation = createAgentConversation(createAgentConversationTitle(userPrompt));
-  const assistantMessage = createAssistantToAgentMessage(command);
-  const resultMessage = createAgentResultMessage(command, result.output, result.status);
+  const assistantMessage = createAssistantToAgentMessage(assistantRequest, command);
+  const resultMessage = createAgentResultMessage(agentId, command, result.output, result.status);
   const nextConversation: Conversation = {
     ...conversation,
     messages: [assistantMessage, resultMessage],

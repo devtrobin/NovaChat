@@ -1,4 +1,7 @@
 export type AIProviderId = "anthropic" | "google" | "lmstudio" | "mistral" | "ollama" | "openai";
+export type AgentId = "device-agent" | "diagnostic-agent";
+
+export type AgentSettingsMap = Record<AgentId, { enabled: boolean }>;
 
 export type LocalFilesSettings = {
   agentsDirectory: string;
@@ -15,6 +18,7 @@ export type OpenAISettings = {
 
 export type AppSettings = {
   activeProvider: AIProviderId;
+  agents: AgentSettingsMap;
   localFiles: LocalFilesSettings;
   openai: OpenAISettings;
   previewMode: boolean;

@@ -49,7 +49,12 @@ export function createDeviceResultMessage(
   };
 }
 
-export function createDeviceImmediateErrorMessage(command: string, id: string, error: unknown): ChatMessage {
+export function createDeviceImmediateErrorMessage(
+  command: string,
+  id: string,
+  error: unknown,
+  to: "assistant" | "user" = "user",
+): ChatMessage {
   const displayMessage = error instanceof DevicePolicyError
     ? `Commande refusee par la policy device: ${error.message}`
     : error instanceof Error
@@ -73,6 +78,6 @@ export function createDeviceImmediateErrorMessage(command: string, id: string, e
     ],
     result: displayMessage,
     status: "error",
-    to: "user",
+    to,
   };
 }

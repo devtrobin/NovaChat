@@ -28,6 +28,7 @@
 
 .device-agent-page__panel {
   min-height: 0;
+  overflow: auto;
 }
 
 .device-agent-page__conversation {
@@ -107,6 +108,113 @@
   display: grid;
   gap: 18px;
   padding: 0 22px 22px;
+}
+
+.device-agent-page__toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.device-agent-page__records {
+  display: grid;
+  gap: 16px;
+  padding: 0 22px 22px;
+}
+
+.device-agent-page__record-card {
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--color-line-soft);
+  border-radius: 18px;
+  padding: 18px;
+  background: rgba(9, 14, 22, 0.68);
+}
+
+.device-agent-page__record-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.device-agent-page__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 88px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.device-agent-page__badge--allow,
+.device-agent-page__badge--success {
+  background: rgba(34, 197, 94, 0.16);
+  color: #9be6b3;
+}
+
+.device-agent-page__badge--deny,
+.device-agent-page__badge--denied {
+  background: rgba(239, 68, 68, 0.18);
+  color: #ffb1b1;
+}
+
+.device-agent-page__badge--error {
+  background: rgba(249, 115, 22, 0.18);
+  color: #ffc18f;
+}
+
+.device-agent-page__record-date,
+.device-agent-page__record-meta,
+.device-agent-page__empty-state {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 13px;
+}
+
+.device-agent-page__record-command,
+.device-agent-page__record-result {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(4, 8, 14, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: var(--color-text);
+  font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.device-agent-page__record-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.device-agent-page__pill-button {
+  border: 1px solid var(--color-line-soft);
+  border-radius: 999px;
+  padding: 9px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--color-text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+}
+
+.device-agent-page__pill-button--danger {
+  border-color: rgba(239, 68, 68, 0.18);
+  color: #ffb1b1;
+}
+
+.device-agent-page__pill-button:disabled {
+  opacity: 0.7;
+  cursor: default;
 }
 
 .device-agent-page__textarea {

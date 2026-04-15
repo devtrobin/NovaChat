@@ -6,7 +6,7 @@ import {
   SubmitCommandInputRequest,
   SubmitPermissionDecisionRequest,
 } from "../shared/ai.types";
-import { AgentContextFile, AgentWorkspaceData } from "../shared/agent.types";
+import { AgentContextFile, AgentId, AgentPermissionDecision, AgentPermissionsFile, AgentWorkspaceData } from "../shared/agent.types";
 import { AppSettings, SettingsTestResult } from "../shared/settings.types";
 
 export { };
@@ -26,8 +26,15 @@ declare global {
         test: (settings: AppSettings) => Promise<SettingsTestResult>;
       };
       agents: {
-        loadWorkspace: (agentId: string) => Promise<AgentWorkspaceData>;
-        saveContext: (agentId: string, context: AgentContextFile) => Promise<AgentContextFile>;
+        loadWorkspace: (agentId: AgentId) => Promise<AgentWorkspaceData>;
+        saveContext: (agentId: AgentId, context: AgentContextFile) => Promise<AgentContextFile>;
+        savePermission: (
+          agentId: AgentId,
+          command: string,
+          decision: AgentPermissionDecision,
+          remember: boolean,
+        ) => Promise<AgentPermissionsFile>;
+        deletePermission: (agentId: AgentId, command: string) => Promise<AgentPermissionsFile>;
       };
       ai: {
         killCommand: (commandId: string) => Promise<void>;

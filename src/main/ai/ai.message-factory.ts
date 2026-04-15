@@ -11,6 +11,7 @@ export {
 export {
   createInternalSystemMessage,
   createPermissionRequestSystemMessage,
+  createPermissionResolutionSystemMessage,
   createSystemMessage,
 } from "./ai.message-factory.system";
 export { createUserMessage } from "./ai.message-factory.user";

@@ -1,6 +1,34 @@
 import { PersistedChatState } from "../renderer/types/chat.types";
 
+export type AgentId = "device-agent" | "diagnostic-agent";
 export type AgentPermissionDecision = "allow" | "deny";
+export type AgentTaskMode = "analysis" | "command" | "goal";
+
+export type AgentTaskRequest = {
+  agentId: AgentId;
+  mode: AgentTaskMode;
+  request: string;
+  triggerMessageId: string;
+  userAssistantConversationId: string;
+  userPrompt: string;
+};
+
+export type AgentTaskResult =
+  | {
+      agentConversationId: string;
+      kind: "completed";
+      output: string;
+      request: string;
+      resolvedCommand: string;
+      status: "error" | "success";
+    }
+  | {
+      agentConversationId: string;
+      kind: "permission-denied";
+      output: string;
+      request: string;
+      resolvedCommand: string;
+    };
 
 export type AgentContextFile = {
   description: string;
@@ -26,6 +54,7 @@ export type AgentPermissionLookup = {
 
 export type AgentHistoryEntry = {
   agentConversationId: string;
+  assistantRequest?: string;
   at: string;
   command: string;
   result: string;
@@ -38,6 +67,6 @@ export type AgentWorkspaceData = {
   context: AgentContextFile;
   conversations: PersistedChatState;
   history: AgentHistoryEntry[];
-  id: string;
+  id: AgentId;
   permissions: AgentPermissionsFile;
 };

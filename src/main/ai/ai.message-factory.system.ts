@@ -49,12 +49,31 @@ export function createPermissionRequestSystemMessage(command: string, requestId:
       },
     ],
     apiRequests: [],
-    content: `Autoriser l'agent Device a executer cette commande ?\n${command}`,
+    content: `Permission requise pour Device.\nL'assistant principal souhaite executer une commande locale.\n\n${command}`,
     createdAt: new Date().toISOString(),
     from: "system",
     id: crypto.randomUUID(),
     lifecycleLog: [createLifecycleEntry("created", "Demande de permission systeme creee.")],
     status: "pending",
+    to: "user",
+  };
+}
+
+export function createPermissionResolutionSystemMessage(decision: "allow" | "allow-always" | "deny", command: string): ChatMessage {
+  const content = decision === "allow"
+    ? `Permission accordee une fois.\nLa commande va etre executee.\n\n${command}`
+    : decision === "allow-always"
+      ? `Permission accordee de maniere permanente.\nLa commande a ete memorisee dans les permissions.\n\n${command}`
+      : `Permission refusee.\nLa commande ne sera pas executee.\n\n${command}`;
+
+  return {
+    apiRequests: [],
+    content,
+    createdAt: new Date().toISOString(),
+    from: "system",
+    id: crypto.randomUUID(),
+    lifecycleLog: [createLifecycleEntry("created", "Resolution de permission systeme creee.")],
+    status: "idle",
     to: "user",
   };
 }
