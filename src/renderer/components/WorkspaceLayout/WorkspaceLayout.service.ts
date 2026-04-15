@@ -18,6 +18,7 @@ export function useWorkspaceLayoutController(): WorkspaceLayoutController {
     isHydrated,
     isPreviewMode,
     isSending,
+    setSendingConversationIds,
     setActiveAgentId,
     setActiveConversationId,
     setActiveSection,
@@ -25,7 +26,6 @@ export function useWorkspaceLayoutController(): WorkspaceLayoutController {
     setConversations,
     setIsHydrated,
     setIsPreviewMode,
-    setIsSending,
   } = useWorkspaceLayoutState();
   useWorkspaceHydration({
     activeConversationId,
@@ -58,7 +58,7 @@ export function useWorkspaceLayoutController(): WorkspaceLayoutController {
     setActiveConversationId,
     setActiveSection,
     setConversations,
-    setIsSending,
+    setSendingConversationIds,
   });
   const {
     handleKillCommand,

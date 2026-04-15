@@ -7,6 +7,5 @@ export function loadChatPageState(): ChatState {
   return {
     activeConversationId: storedState.activeConversationId,
     conversations: storedState.conversations,
-    isSending: false,
   };
 }

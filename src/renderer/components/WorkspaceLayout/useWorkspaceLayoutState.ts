@@ -13,11 +13,12 @@ export function useWorkspaceLayoutState() {
   const [activeSection, setActiveSection] = React.useState<"agents" | "conversations" | "settings">("conversations");
   const [activeAgentId, setActiveAgentId] = React.useState<string | null>(AGENTS[0]?.id ?? null);
   const [activeSettingsCategory, setActiveSettingsCategory] = React.useState<WorkspaceLayoutController["activeSettingsCategory"]>("local-files");
-  const [isSending, setIsSending] = React.useState(initialState.isSending);
+  const [sendingConversationIds, setSendingConversationIds] = React.useState<string[]>([]);
   const [isHydrated, setIsHydrated] = React.useState(false);
   const [isPreviewMode, setIsPreviewMode] = React.useState(false);
 
   const activeConversation = conversations.find((item) => item.id === activeConversationId) ?? null;
+  const isSending = activeConversationId ? sendingConversationIds.includes(activeConversationId) : false;
   const conversationIndicators = React.useMemo(
     () => createConversationIndicators(conversations),
     [conversations],
@@ -34,6 +35,7 @@ export function useWorkspaceLayoutState() {
     isHydrated,
     isPreviewMode,
     isSending,
+    sendingConversationIds,
     setActiveAgentId,
     setActiveConversationId,
     setActiveSection,
@@ -41,6 +43,6 @@ export function useWorkspaceLayoutState() {
     setConversations,
     setIsHydrated,
     setIsPreviewMode,
-    setIsSending,
+    setSendingConversationIds,
   };
 }

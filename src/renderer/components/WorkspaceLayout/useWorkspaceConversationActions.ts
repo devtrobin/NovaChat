@@ -16,7 +16,7 @@ type UseWorkspaceConversationActionsArgs = {
   setActiveConversationId: React.Dispatch<React.SetStateAction<string | null>>;
   setActiveSection: React.Dispatch<React.SetStateAction<"agents" | "conversations" | "settings">>;
   setConversations: React.Dispatch<React.SetStateAction<Conversation[]>>;
-  setIsSending: React.Dispatch<React.SetStateAction<boolean>>;
+  setSendingConversationIds: React.Dispatch<React.SetStateAction<string[]>>;
 };
 
 export function useWorkspaceConversationActions({
@@ -24,7 +24,7 @@ export function useWorkspaceConversationActions({
   setActiveConversationId,
   setActiveSection,
   setConversations,
-  setIsSending,
+  setSendingConversationIds,
 }: UseWorkspaceConversationActionsArgs) {
   const handleCreateConversation = React.useCallback(() => {
     const nextConversation = createConversation();
@@ -61,25 +61,28 @@ export function useWorkspaceConversationActions({
       ...(activeConversation ?? createConversation()),
       draft: "",
     };
+    const nextConversationId = nextConversation.id;
 
-    setIsSending(true);
-    setActiveConversationId(nextConversation.id);
+    setSendingConversationIds((current) => (
+      current.includes(nextConversationId) ? current : [...current, nextConversationId]
+    ));
+    setActiveConversationId(nextConversationId);
     setConversations((current) => {
-      const exists = current.some((item) => item.id === nextConversation.id);
+      const exists = current.some((item) => item.id === nextConversationId);
       return exists ? replaceConversation(current, nextConversation) : [nextConversation, ...current];
     });
 
     try {
       await window.nova.ai.runTurn({
-        conversationId: nextConversation.id,
+        conversationId: nextConversationId,
         messages: nextConversation.messages,
         title: nextConversation.title,
         userInput: content,
       });
     } finally {
-      setIsSending(false);
+      setSendingConversationIds((current) => current.filter((conversationId) => conversationId !== nextConversationId));
     }
-  }, [activeConversation, setActiveConversationId, setConversations, setIsSending]);
+  }, [activeConversation, setActiveConversationId, setConversations, setSendingConversationIds]);
 
   const handleUpdateConversationDraft = React.useCallback((conversationId: string, draft: string) => {
     setConversations((current) => updateConversationDraft(current, conversationId, draft));
