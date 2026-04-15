@@ -1,6 +1,7 @@
 export type AIProviderId = "anthropic" | "google" | "lmstudio" | "mistral" | "ollama" | "openai";
 
 export type LocalFilesSettings = {
+  agentsDirectory: string;
   conversationsDirectory: string;
   settingsPath: string;
 };

@@ -13,9 +13,12 @@ export type SettingsCategory =
   | "provider";
 
 export type AgentDefinition = {
+  context: string;
   description: string;
+  features: readonly string[];
   id: string;
   name: string;
+  processes: readonly string[];
 };
 
 export type ConversationIndicator = {

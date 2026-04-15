@@ -19,10 +19,15 @@ export function getReferenceConversationsDirectory(): string {
   return path.join(getApplicationDirectory(), "conversations");
 }
 
+export function getReferenceAgentsDirectory(): string {
+  return path.join(getApplicationDirectory(), "agents");
+}
+
 export function createDefaultSettings(): AppSettings {
   return {
     activeProvider: "openai",
     localFiles: {
+      agentsDirectory: getReferenceAgentsDirectory(),
       conversationsDirectory: getReferenceConversationsDirectory(),
       settingsPath: getReferenceSettingsPath(),
     },

@@ -18,7 +18,7 @@ export default function SettingsLocalFilesSection({
     <div className="settings-panel__form">
       <div className="settings-panel__section-head">
         <h3 className="settings-panel__section-title">Fichier local</h3>
-        <p className="settings-panel__section-text">Definis ou Nova enregistre les conversations et la configuration active.</p>
+        <p className="settings-panel__section-text">Definis ou Nova enregistre les conversations, les agents et la configuration active.</p>
       </div>
       <label className="settings-panel__field">
         <span className="settings-panel__label">Fichier de configuration</span>
@@ -33,6 +33,13 @@ export default function SettingsLocalFilesSection({
           setDraft((current) => current ? { ...current, localFiles: { ...current.localFiles, conversationsDirectory: event.target.value } } : current);
           setStatus();
         }} placeholder="/chemin/vers/dossier-conversations" type="text" value={settings.localFiles.conversationsDirectory} />
+      </label>
+      <label className="settings-panel__field">
+        <span className="settings-panel__label">Dossier des agents</span>
+        <input className="settings-panel__input" disabled={isBusy} onChange={(event) => {
+          setDraft((current) => current ? { ...current, localFiles: { ...current.localFiles, agentsDirectory: event.target.value } } : current);
+          setStatus();
+        }} placeholder="/chemin/vers/dossier-agents" type="text" value={settings.localFiles.agentsDirectory} />
       </label>
       <label className="settings-panel__checkbox">
         <input checked={settings.previewMode} disabled={isBusy} onChange={(event) => {

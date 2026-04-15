@@ -9,8 +9,24 @@ import {
 import { Conversation } from "../../types/chat.types";
 
 export const AGENTS = [
-  { description: "Pilotage global de la conversation Nova.", id: "main-agent", name: "Assistant principal" },
-  { description: "Execution des commandes et interactions device.", id: "device-agent", name: "Device" },
+  {
+    context: "Agent specialise dans l'execution locale, l'analyse machine et les interactions terminales.",
+    description: "Execution des commandes et interactions device.",
+    features: [
+      "execution de commandes",
+      "saisie interactive",
+      "journalisation locale",
+      "diagnostic terminal",
+    ],
+    id: "device-agent",
+    name: "Device",
+    processes: [
+      "prepare une action terminale",
+      "execute la commande sur le device",
+      "collecte la sortie et les erreurs",
+      "remonte un resultat exploitable",
+    ],
+  },
 ] as const;
 
 export const PREVIEW_PROVIDER_CATEGORIES: SettingsCategory[] = [
