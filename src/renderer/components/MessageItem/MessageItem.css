@@ -21,6 +21,19 @@
   justify-self: start;
 }
 
+.message-item--delegation {
+  max-width: min(720px, 100%);
+  border-style: dashed;
+  border-color: rgba(66, 153, 225, 0.28);
+  background: linear-gradient(180deg, rgba(15, 26, 41, 0.92), rgba(12, 20, 31, 0.96));
+}
+
+.message-item--agent-reply {
+  max-width: min(760px, 100%);
+  background: linear-gradient(180deg, rgba(16, 25, 38, 0.96), rgba(12, 18, 29, 0.98));
+  border-color: rgba(93, 173, 226, 0.18);
+}
+
 .message-item--user {
   background: var(--color-user);
   border-color: var(--color-accent-soft);
@@ -199,6 +212,30 @@
   animation: message-cursor-blink 1s step-end infinite;
 }
 
+.message-item__detail-toggle {
+  justify-self: start;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--color-accent);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+}
+
+.message-item__detail-panel {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(7, 11, 18, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: #cdd6e3;
+  font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
 .message-item__console-bar {
   display: flex;
   align-items: center;
@@ -251,6 +288,11 @@
 .message-item__console-status-pill--success {
   background: rgba(34, 197, 94, 0.16);
   color: #94e4b1;
+}
+
+.message-item__console-status-pill--partial-success {
+  background: rgba(245, 158, 11, 0.16);
+  color: #ffd38f;
 }
 
 .message-item__console-status-pill--error {

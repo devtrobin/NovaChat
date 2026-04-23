@@ -1,5 +1,6 @@
 export type MessageSender = 'user' | 'assistant' | 'agent' | 'device' | 'system';
 export type MessageRecipient = 'user' | 'assistant' | 'agent' | 'device';
+export type ConversationOrigin = 'assistant' | 'assistant-test' | 'user';
 export type SystemActionId = "open-settings" | "permission-allow" | "permission-allow-always" | "permission-deny";
 
 export type MessageStatus =
@@ -7,6 +8,7 @@ export type MessageStatus =
   | 'streaming'
   | 'error'
   | 'pending'
+  | 'partial-success'
   | 'running'
   | 'success'
   | 'waiting-input';
@@ -57,6 +59,7 @@ export type Conversation = {
   createdAt: string;
   draft?: string;
   lastReadAt?: string;
+  origin?: ConversationOrigin;
   updatedAt: string;
   messages: ChatMessage[];
 };

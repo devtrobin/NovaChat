@@ -1,8 +1,8 @@
 import { ChatMessage } from "../../renderer/types/chat.types";
 import { RunTurnRequest, RunTurnResult } from "../../shared/ai.types";
+import { AgentId } from "../../shared/agent.types";
 import { AppSettings } from "../../shared/settings.types";
 import {
-  createSystemMessage,
   createInterruptedSystemMessage,
   createUserMessage,
 } from "./ai.message-factory";
@@ -17,6 +17,7 @@ import {
   restartAssistantThinking,
   runAssistantCycle,
 } from "./ai.orchestrator.cycle";
+import { createPipelineSystemMessage, PipelineStage } from "./ai.orchestrator.cycle.messages";
 import { handleMissingOpenAIConfig, handleTurnError } from "./ai.orchestrator.errors";
 import { finishTurn, startTurn, TurnStoppedError } from "./ai.turn-registry";
 
@@ -42,7 +43,7 @@ export async function runTurn(
     });
   }
 
-  let systemMessage = createSystemMessage("Tache en cours: generation de la reponse...");
+  let systemMessage = createPipelineSystemMessage("nova-thinking");
   emit({
     conversationId: request.conversationId,
     messages: [userMessage, systemMessage],
@@ -51,12 +52,18 @@ export async function runTurn(
 
   const turnMessages: ChatMessage[] = [...request.messages, userMessage];
   const turnId = startTurn(request.conversationId);
+  const updatePipelineStage = (stage: PipelineStage, agentId?: AgentId) => {
+    emit({ conversationId: request.conversationId, messageId: systemMessage.id, type: "remove-message" });
+    systemMessage = createPipelineSystemMessage(stage, agentId);
+    emit({ conversationId: request.conversationId, messages: [systemMessage], type: "append-messages" });
+  };
 
   try {
     for (let step = 0; step < 4; step += 1) {
       const cycleResult = await runAssistantCycle({
         conversationId: request.conversationId,
         emit,
+        onPipelineStageChange: updatePipelineStage,
         settings,
         step,
         turnId,
@@ -70,7 +77,13 @@ export async function runTurn(
         return { ok: true };
       }
 
-      systemMessage = restartAssistantThinking(request.conversationId, emit, systemMessage.id);
+      systemMessage = restartAssistantThinking(
+        request.conversationId,
+        emit,
+        systemMessage.id,
+        "analyzing-agent-result",
+        cycleResult.message.agentId as AgentId | undefined,
+      );
       if (cycleResult.message.lifecycleLog?.some((entry) => entry.event === "device-killed")) {
         appendInterruptedCommandContext(turnMessages);
       }

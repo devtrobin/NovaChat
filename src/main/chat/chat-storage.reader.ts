@@ -40,24 +40,77 @@ async function readConversationMessages(rootDirectory: string, conversation: Con
   );
 }
 
-export async function loadChatStateFromDirectory(rootDirectory: string): Promise<PersistedChatState | null> {
-  const index = await readJsonFile<ConversationsIndex>(path.join(rootDirectory, "conversations.json"));
-  if (!index) return null;
-
-  const conversations = await Promise.all(
-    index.conversations.map(async (conversation) => ({
-      createdAt: conversation.createdAt,
-      draft: conversation.draft ?? "",
-      id: conversation.id,
-      lastReadAt: conversation.lastReadAt,
-      messages: await readConversationMessages(rootDirectory, conversation),
-      title: conversation.title,
-      updatedAt: conversation.updatedAt,
-    })),
-  );
+function createFallbackConversationEntry(
+  conversationId: string,
+  messages: ChatMessage[],
+): ConversationIndexEntry {
+  const orderedMessages = [...messages].sort((left, right) => left.createdAt.localeCompare(right.createdAt));
+  const createdAt = orderedMessages[0]?.createdAt ?? new Date().toISOString();
+  const updatedAt = orderedMessages[orderedMessages.length - 1]?.createdAt ?? createdAt;
+  const seedMessage = orderedMessages.find((message) => typeof message.content === "string" && message.content.trim())
+    ?? orderedMessages[0]
+    ?? null;
 
   return {
-    activeConversationId: index.activeConversationId,
+    createdAt,
+    draft: "",
+    id: conversationId,
+    messageIds: orderedMessages.map((message) => message.id),
+    origin: "assistant",
+    title: seedMessage?.content?.trim().slice(0, 48) || conversationId,
+    updatedAt,
+  };
+}
+
+export async function loadChatStateFromDirectory(rootDirectory: string): Promise<PersistedChatState | null> {
+  const index = await readJsonFile<ConversationsIndex>(path.join(rootDirectory, "conversations.json"));
+  const directoryEntries = await readdir(rootDirectory, { withFileTypes: true }).catch(
+    (): Dirent[] => [],
+  );
+  const indexedConversations = new Map(index?.conversations.map((conversation) => [conversation.id, conversation]) ?? []);
+  const discoveredConversationIds = directoryEntries
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name);
+
+  const allConversationIds = [
+    ...new Set([
+      ...indexedConversations.keys(),
+      ...discoveredConversationIds,
+    ]),
+  ];
+
+  if (!index && allConversationIds.length === 0) return null;
+
+  const conversations = await Promise.all(
+    allConversationIds.map(async (conversationId) => {
+      const indexedConversation = indexedConversations.get(conversationId);
+      const lookupEntry = indexedConversation ?? {
+        createdAt: "",
+        id: conversationId,
+        messageIds: [],
+        title: conversationId,
+        updatedAt: "",
+      };
+      const messages = await readConversationMessages(rootDirectory, lookupEntry);
+      const conversation = indexedConversation ?? createFallbackConversationEntry(conversationId, messages);
+
+      return {
+        createdAt: conversation.createdAt,
+        draft: conversation.draft ?? "",
+        id: conversation.id,
+        lastReadAt: conversation.lastReadAt,
+        messages,
+        origin: conversation.origin ?? "assistant",
+        title: conversation.title,
+        updatedAt: conversation.updatedAt,
+      };
+    }),
+  );
+
+  conversations.sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
+
+  return {
+    activeConversationId: index?.activeConversationId ?? conversations[0]?.id ?? null,
     conversations,
   };
 }

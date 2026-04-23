@@ -150,12 +150,12 @@ export default function AgentsActivityView({
                 <pre className="agents-page__activity-request">{entry.assistantRequest ?? entry.command}</pre>
                 <div className="agents-page__history-links">
                   <span className="agents-page__history-link-label">Conversation source</span>
-                  {onOpenConversation ? (
+                  {onOpenConversation && entry.userAssistantConversationId ? (
                     <button className="agents-page__history-link" onClick={() => onOpenConversation(entry.userAssistantConversationId)} type="button">
                       Ouvrir la conversation source
                     </button>
                   ) : (
-                    <code>{entry.userAssistantConversationId}</code>
+                    <code>{entry.userAssistantConversationId || "source indisponible"}</code>
                   )}
                 </div>
               </article>
@@ -180,6 +180,7 @@ function formatDate(value: string): string {
 
 function formatStatus(status: ActivityHistoryEntry["status"]): string {
   if (status === "success") return "Termine";
+  if (status === "partial-success") return "Partiel";
   if (status === "denied") return "Refuse";
   if (status === "interrupted") return "Interrompu";
   return "Erreur";

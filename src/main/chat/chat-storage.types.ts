@@ -4,6 +4,7 @@ export type ConversationIndexEntry = {
   id: string;
   lastReadAt?: string;
   messageIds: string[];
+  origin?: "assistant" | "assistant-test" | "user";
   title: string;
   updatedAt: string;
 };

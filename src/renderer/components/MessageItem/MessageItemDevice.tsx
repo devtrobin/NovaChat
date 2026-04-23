@@ -26,6 +26,7 @@ export default function MessageItemDevice({
   const isRunningCommand = message.to === "device" && message.status === "running";
   const isWaitingForInput = message.to === "device" && message.status === "waiting-input";
   const statusLabel = isWaitingForInput ? "input" : isRunningCommand ? "running" : message.status ?? "idle";
+  const statusText = statusLabel === "partial-success" ? "partial" : statusLabel;
   const fromLabel = message.from === "user"
     ? "user command"
     : message.from === "device"
@@ -38,7 +39,7 @@ export default function MessageItemDevice({
         <div className="message-item__console-head">
           <span className="message-item__console-label">{fromLabel}</span>
           <span className={`message-item__console-status-pill message-item__console-status-pill--${statusLabel}`}>
-            {statusLabel}
+            {statusText}
           </span>
         </div>
         <div className="message-item__console-actions">

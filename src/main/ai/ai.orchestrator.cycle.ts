@@ -11,17 +11,20 @@ import {
   unregisterAbortController,
 } from "./ai.turn-registry";
 import {
+  createAgentRequestMessage,
   appendUserApiTrace,
   createAssistantResponseMessage,
-  createDeviceRequestMessage,
   createInterruptedCommandContextMessage,
+  createPipelineSystemMessage,
   createThinkingSystemMessage,
+  PipelineStage,
 } from "./ai.orchestrator.cycle.messages";
 
 type RunAssistantCycleArgs = {
   conversationId: string;
   emit: Emit;
   settings: AppSettings;
+  onPipelineStageChange?: (stage: PipelineStage, agentId?: AgentId) => void;
   step: number;
   turnId: string;
   turnMessages: ChatMessage[];
@@ -32,6 +35,7 @@ export async function runAssistantCycle({
   conversationId,
   emit,
   settings,
+  onPipelineStageChange,
   step,
   turnId,
   turnMessages,
@@ -41,6 +45,7 @@ export async function runAssistantCycle({
   | { kind: "agent"; message: ChatMessage }
 > {
   throwIfTurnStopped(turnId);
+  onPipelineStageChange?.(step === 0 ? "nova-thinking" : "final-response");
   const controller = new AbortController();
   registerAbortController(turnId, controller);
   const { apiRecords, providerResponse } = await generateOpenAIReply(
@@ -59,15 +64,17 @@ export async function runAssistantCycle({
   });
 
   if (providerResponse.to === "user") {
-    if (shouldForceDiagnosticAgentHandoff(settings, turnMessages, userMessage.content, providerResponse.content)) {
+    if (shouldForceDiagnosticAgentHandoff(settings, step, turnMessages, userMessage.content, providerResponse.content)) {
       const handoff = createForcedDiagnosticHandoff(apiRecords, userMessage.content);
-      const runningMessage = createDeviceRequestMessage(`Agent ${handoff.agentId}: ${handoff.previewContent}`, handoff.apiRecords);
+      const delegationMessage = createAgentRequestMessage(handoff.agentId, handoff.request, handoff.apiRecords);
+      onPipelineStageChange?.("requesting-agent", handoff.agentId);
+      emit({ conversationId, messages: [delegationMessage], type: "append-messages" });
 
       const { deviceMessage } = await runAgentTask({
         conversationId,
         emit,
-        initialMessage: runningMessage,
-        messageId: runningMessage.id,
+        messageId: delegationMessage.id,
+        onPipelineStageChange,
         settings,
         task: {
           agentId: handoff.agentId,
@@ -81,8 +88,9 @@ export async function runAssistantCycle({
         turnId,
       });
 
-      deviceMessage.apiRequests = [...(runningMessage.apiRequests ?? [])];
+      deviceMessage.apiRequests = [...(delegationMessage.apiRequests ?? [])];
       appendLifecycleLog(deviceMessage, "assistant-agent-cycle-complete", `Cycle assistant -> ${handoff.agentId} termine.`);
+      emit({ conversationId, messages: [deviceMessage], type: "append-messages" });
       turnMessages.push(deviceMessage);
       return { kind: "agent", message: deviceMessage };
     }
@@ -103,24 +111,16 @@ export async function runAssistantCycle({
       ),
     };
   }
-  const previousAgentMessage = findPreviousAgentMessage(turnMessages, handoff.agentId);
-  if (previousAgentMessage) {
-    return {
-      kind: "assistant",
-      message: createAssistantResponseMessage(previousAgentMessage.content, apiRecords),
-    };
-  }
 
-  const runningMessage = createDeviceRequestMessage(`Agent ${handoff.agentId}: ${handoff.previewContent}`, handoff.apiRecords);
-  if (handoff.agentId === "device-agent") {
-    emit({ conversationId, messages: [runningMessage], type: "append-messages" });
-  }
+  const delegationMessage = createAgentRequestMessage(handoff.agentId, handoff.request, handoff.apiRecords);
+  onPipelineStageChange?.("requesting-agent", handoff.agentId);
+  emit({ conversationId, messages: [delegationMessage], type: "append-messages" });
 
   const { deviceMessage } = await runAgentTask({
     conversationId,
     emit,
-    initialMessage: runningMessage,
-    messageId: runningMessage.id,
+    messageId: delegationMessage.id,
+    onPipelineStageChange,
     settings,
     task: {
       agentId: handoff.agentId,
@@ -134,10 +134,8 @@ export async function runAssistantCycle({
     turnId,
   });
 
-  if (handoff.agentId === "device-agent") {
-    emit({ conversationId, messageId: runningMessage.id, type: "remove-message" });
-  }
-  deviceMessage.apiRequests = [...(runningMessage.apiRequests ?? [])];
+  emit({ conversationId, messages: [deviceMessage], type: "append-messages" });
+  deviceMessage.apiRequests = [...(delegationMessage.apiRequests ?? [])];
   appendLifecycleLog(deviceMessage, "assistant-agent-cycle-complete", `Cycle assistant -> ${handoff.agentId} termine.`);
   turnMessages.push(deviceMessage);
 
@@ -148,13 +146,17 @@ export function restartAssistantThinking(
   conversationId: string,
   emit: Emit,
   previousSystemMessageId: string,
+  stage: PipelineStage = "final-response",
+  agentId?: AgentId,
 ): ChatMessage {
   emit({
     conversationId,
     messageId: previousSystemMessageId,
     type: "remove-message",
   });
-  const nextSystemMessage = createThinkingSystemMessage();
+  const nextSystemMessage = stage === "nova-thinking"
+    ? createThinkingSystemMessage()
+    : createPipelineSystemMessage(stage, agentId);
   emit({
     conversationId,
     messages: [nextSystemMessage],
@@ -191,7 +193,9 @@ function resolveAgentHandoff(args: {
 }): ResolvedAgentHandoff {
   const agentId = args.providerResponse.to === "agent" ? args.providerResponse.agentId : "device-agent";
   const content = args.providerResponse.content;
-  const goal = agentId === "device-agent" ? extractDeviceGoal(content) : null;
+  const goal = agentId === "device-agent"
+    ? extractDeviceGoal(content) ?? (!isLikelyShellCommand(content) ? content.trim() : null)
+    : null;
   if (!goal) {
     return {
       agentId,
@@ -216,12 +220,30 @@ function extractDeviceGoal(value: string): string | null {
   return match?.[1]?.trim() ? match[1].trim() : null;
 }
 
+function isLikelyShellCommand(value: string): boolean {
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+  if (/\n/.test(trimmed)) return true;
+  if (/[`$][({]/.test(trimmed)) return true;
+  if (/\b(?:awk|cat|cut|df|echo|find|free|grep|head|ifconfig|ip|ls|nmap|ping|ps|route|sed|sw_vers|sysctl|tail|top|uname|vm_stat)\b/.test(trimmed)) {
+    return true;
+  }
+  if (/[|&;<>]/.test(trimmed)) return true;
+  if (/^(?:\w+=.+\s+)+(?:[A-Za-z_./-]+)/.test(trimmed)) return true;
+  if (/^[./~A-Za-z0-9_-]+\s+[-]/.test(trimmed)) return true;
+  return false;
+}
+
 function shouldForceDiagnosticAgentHandoff(
   settings: AppSettings,
+  step: number,
   turnMessages: ChatMessage[],
   userPrompt: string,
   assistantReply: string,
 ): boolean {
+  if (step > 0) {
+    return false;
+  }
   if (!isAgentEnabled(settings, "diagnostic-agent")) {
     return false;
   }
@@ -245,6 +267,9 @@ function shouldForceDiagnosticAgentHandoff(
 
   const promptLooksDiagnostic = diagnosticSignals.some((signal) => normalizedPrompt.includes(signal));
   if (!promptLooksDiagnostic) return false;
+  if (turnMessages.some((message) => message.from === "device" || message.agentId === "device-agent")) {
+    return false;
+  }
   if (turnMessages.some((message) => message.from === "agent" && message.agentId === "diagnostic-agent")) {
     return false;
   }
@@ -275,13 +300,4 @@ function createForcedDiagnosticHandoff(apiRecords: ApiRequestRecord[], userPromp
     previewContent: userPrompt,
     request: userPrompt,
   };
-}
-
-function findPreviousAgentMessage(
-  turnMessages: ChatMessage[],
-  agentId: "device-agent" | "diagnostic-agent",
-): ChatMessage | null {
-  return [...turnMessages]
-    .reverse()
-    .find((message) => message.from === "agent" && message.agentId === agentId) ?? null;
 }

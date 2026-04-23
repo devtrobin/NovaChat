@@ -27,6 +27,7 @@ export function createDefaultSettings(): AppSettings {
   return {
     activeProvider: "openai",
     agents: createDefaultAgentSettings(),
+    hideInternalConversations: false,
     localFiles: {
       agentsDirectory: getReferenceAgentsDirectory(),
       conversationsDirectory: getReferenceConversationsDirectory(),

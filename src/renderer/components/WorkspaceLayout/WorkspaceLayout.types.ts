@@ -17,6 +17,7 @@ export type WorkspaceLayoutController = {
   agents: AgentDefinition[];
   conversationIndicators: Record<string, ConversationIndicator>;
   conversations: Conversation[];
+  hideInternalConversations: boolean;
   isHydrated: boolean;
   isPreviewMode: boolean;
   isSending: boolean;

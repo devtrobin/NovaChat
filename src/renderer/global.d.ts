@@ -7,7 +7,15 @@ import {
   SubmitCommandInputRequest,
   SubmitPermissionDecisionRequest,
 } from "../shared/ai.types";
-import { ActiveAgentTask, AgentContextFile, AgentId, AgentPermissionDecision, AgentPermissionsFile, AgentWorkspaceData } from "../shared/agent.types";
+import {
+  ActiveAgentTask,
+  AgentContextFile,
+  AgentDirectConversationResult,
+  AgentId,
+  AgentPermissionDecision,
+  AgentPermissionsFile,
+  AgentWorkspaceData,
+} from "../shared/agent.types";
 import { AppSettings, SettingsTestResult } from "../shared/settings.types";
 
 export { };
@@ -38,6 +46,12 @@ declare global {
         deletePermission: (agentId: AgentId, command: string) => Promise<AgentPermissionsFile>;
         getActiveTasks: (agentId: AgentId) => Promise<ActiveAgentTask[]>;
         stopTask: (taskId: string) => Promise<boolean>;
+        createDirectConversation: (agentId: AgentId, title: string) => Promise<AgentDirectConversationResult>;
+        sendDirectMessage: (
+          agentId: AgentId,
+          prompt: string,
+          conversationId?: string | null,
+        ) => Promise<AgentDirectConversationResult>;
       };
       ai: {
         killCommand: (commandId: string) => Promise<void>;

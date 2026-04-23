@@ -8,6 +8,7 @@ type UseWorkspaceLayoutHandlersArgs = {
   setActiveAgentId: React.Dispatch<React.SetStateAction<string | null>>;
   setActiveSection: React.Dispatch<React.SetStateAction<WorkspaceLayoutController["activeSection"]>>;
   setActiveSettingsCategory: React.Dispatch<React.SetStateAction<WorkspaceLayoutController["activeSettingsCategory"]>>;
+  setHideInternalConversations: React.Dispatch<React.SetStateAction<boolean>>;
   setIsPreviewMode: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
@@ -16,12 +17,14 @@ export function useWorkspaceLayoutHandlers({
   setActiveAgentId,
   setActiveSection,
   setActiveSettingsCategory,
+  setHideInternalConversations,
   setIsPreviewMode,
 }: UseWorkspaceLayoutHandlersArgs) {
   const handleSavedSettings = React.useCallback((settings: AppSettings) => {
     setAgentSettings(settings.agents);
+    setHideInternalConversations(settings.hideInternalConversations);
     setIsPreviewMode(settings.previewMode);
-  }, [setAgentSettings, setIsPreviewMode]);
+  }, [setAgentSettings, setHideInternalConversations, setIsPreviewMode]);
 
   const handleSelectAgent = React.useCallback((agentId: string) => {
     setActiveAgentId(agentId);

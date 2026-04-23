@@ -14,6 +14,19 @@ export function createAssistantMessage(content: string): ChatMessage {
   };
 }
 
+export function createAssistantDelegationMessage(
+  content: string,
+  to: "agent" | "device",
+  agentId?: "device-agent" | "diagnostic-agent",
+): ChatMessage {
+  const message = createAssistantMessage(content);
+  message.to = to;
+  if (agentId) {
+    message.agentId = agentId;
+  }
+  return message;
+}
+
 export function createAssistantErrorMessage(content: string): ChatMessage {
   return createAssistantMessage(content);
 }

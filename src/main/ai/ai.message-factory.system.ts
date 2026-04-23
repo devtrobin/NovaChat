@@ -29,7 +29,11 @@ export function createInternalSystemMessage(content: string): ChatMessage {
   };
 }
 
-export function createPermissionRequestSystemMessage(command: string, requestId: string): ChatMessage {
+export function createPermissionRequestSystemMessage(
+  command: string,
+  requestId: string,
+  summary?: string,
+): ChatMessage {
   return {
     actions: [
       {
@@ -49,7 +53,13 @@ export function createPermissionRequestSystemMessage(command: string, requestId:
       },
     ],
     apiRequests: [],
-    content: `Permission requise pour Device.\nL'assistant principal souhaite executer une commande locale.\n\n${command}`,
+    content: [
+      "Permission requise pour Device.",
+      summary ? `Action demandee : ${summary}` : "L'assistant principal souhaite executer une commande locale.",
+      "",
+      "Commande proposee :",
+      formatCommandPreview(command),
+    ].join("\n"),
     createdAt: new Date().toISOString(),
     from: "system",
     id: crypto.randomUUID(),
@@ -59,12 +69,34 @@ export function createPermissionRequestSystemMessage(command: string, requestId:
   };
 }
 
-export function createPermissionResolutionSystemMessage(decision: "allow" | "allow-always" | "deny", command: string): ChatMessage {
+export function createPermissionResolutionSystemMessage(
+  decision: "allow" | "allow-always" | "deny",
+  command: string,
+  summary?: string,
+): ChatMessage {
   const content = decision === "allow"
-    ? `Permission accordee une fois.\nLa commande va etre executee.\n\n${command}`
+    ? [
+        "Permission accordee une fois.",
+        summary ? `Action : ${summary}` : "La commande va etre executee.",
+        "",
+        "Commande :",
+        formatCommandPreview(command),
+      ].join("\n")
     : decision === "allow-always"
-      ? `Permission accordee de maniere permanente.\nLa commande a ete memorisee dans les permissions.\n\n${command}`
-      : `Permission refusee.\nLa commande ne sera pas executee.\n\n${command}`;
+      ? [
+        "Permission accordee de maniere permanente.",
+        summary ? `Action : ${summary}` : "La commande a ete memorisee dans les permissions.",
+        "",
+        "Commande :",
+        formatCommandPreview(command),
+      ].join("\n")
+      : [
+        "Permission refusee.",
+        summary ? `Action : ${summary}` : "La commande ne sera pas executee.",
+        "",
+        "Commande :",
+        formatCommandPreview(command),
+      ].join("\n");
 
   return {
     apiRequests: [],
@@ -89,4 +121,20 @@ export function createInterruptedSystemMessage(): ChatMessage {
     status: "idle",
     to: "user",
   };
+}
+
+function formatCommandPreview(command: string): string {
+  const compact = command
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (compact.length <= 260) {
+    return compact;
+  }
+
+  return `${compact.slice(0, 257)}...`;
 }

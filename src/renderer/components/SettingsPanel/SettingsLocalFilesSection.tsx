@@ -48,6 +48,13 @@ export default function SettingsLocalFilesSection({
         }} type="checkbox" />
         <span>Mode preview</span>
       </label>
+      <label className="settings-panel__checkbox">
+        <input checked={!settings.hideInternalConversations} disabled={isBusy} onChange={(event) => {
+          setDraft((current) => current ? { ...current, hideInternalConversations: !event.target.checked } : current);
+          setStatus();
+        }} type="checkbox" />
+        <span>Afficher les conversations internes assistant ↔ agents</span>
+      </label>
       <p className="settings-panel__hint">Nova conserve un point d&apos;ancrage local pour retrouver la configuration au redemarrage.</p>
     </div>
   );

@@ -1,5 +1,6 @@
 export {
   attachAssistantApiTrace,
+  createAssistantDelegationMessage,
   createAssistantErrorMessage,
   createAssistantMessage,
 } from "./ai.message-factory.assistant";

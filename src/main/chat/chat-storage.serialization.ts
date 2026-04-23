@@ -14,7 +14,8 @@ export function toIndex(state: PersistedChatState): ConversationsIndex {
       draft: conversation.draft ?? "",
       id: conversation.id,
       lastReadAt: conversation.lastReadAt,
-      messageIds: conversation.messages.map((message) => message.id),
+      messageIds: [...new Set(conversation.messages.map((message) => message.id))],
+      origin: conversation.origin,
       title: conversation.title,
       updatedAt: conversation.updatedAt,
     })),
@@ -51,10 +52,26 @@ export function orderMessages(
   messages: ChatMessage[],
   conversation: ConversationIndexEntry,
 ): ChatMessage[] {
-  const orderedMessages = messages.sort((left, right) => left.createdAt.localeCompare(right.createdAt));
-  const orderedByIndex = conversation.messageIds
+  const dedupedMessages = dedupeMessages(messages);
+  const orderedMessages = dedupedMessages.sort((left, right) => left.createdAt.localeCompare(right.createdAt));
+  const orderedByIndex = dedupeMessageIds(conversation.messageIds)
     .map((messageId) => orderedMessages.find((message) => message.id === messageId))
     .filter((message): message is NonNullable<typeof message> => Boolean(message));
 
   return orderedByIndex.length > 0 ? orderedByIndex : orderedMessages;
+}
+
+function dedupeMessages(messages: ChatMessage[]): ChatMessage[] {
+  const seen = new Set<string>();
+  return messages.filter((message) => {
+    if (seen.has(message.id)) {
+      return false;
+    }
+    seen.add(message.id);
+    return true;
+  });
+}
+
+function dedupeMessageIds(messageIds: string[]): string[] {
+  return [...new Set(messageIds)];
 }

@@ -21,13 +21,14 @@ export async function requestDevicePermission(
   command: string,
   emit: Emit,
   turnId: string,
+  summary?: string,
 ): Promise<{ decision: InternalPermissionDecision; requestMessage: ChatMessage }> {
   if (activeConversationRequests.has(conversationId)) {
     throw new Error("Une demande de permission est deja en attente pour cette conversation.");
   }
 
   const requestId = crypto.randomUUID();
-  const requestMessage = createPermissionRequestSystemMessage(command, requestId);
+  const requestMessage = createPermissionRequestSystemMessage(command, requestId, summary);
 
   emit({
     conversationId,
@@ -55,14 +56,14 @@ export async function requestDevicePermission(
     type: "remove-message",
   });
   if (decision !== "cancel") {
-    const resolutionMessage = createPermissionResolutionSystemMessage(decision, command);
+    const resolutionMessage = createPermissionResolutionSystemMessage(decision, command, summary);
     emit({
       conversationId,
       messages: [resolutionMessage],
       type: "append-messages",
     });
     if (decision === "allow" || decision === "allow-always") {
-      window.setTimeout(() => {
+      setTimeout(() => {
         emit({
           conversationId,
           messageId: resolutionMessage.id,

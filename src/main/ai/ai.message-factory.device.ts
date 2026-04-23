@@ -44,9 +44,45 @@ export function createDeviceResultMessage(
       createLifecycleEntry("created", "Resultat device cree."),
     ],
     result: result.output,
-    status: result.ok ? "success" : "error",
+    status: classifyDeviceResultStatus(result),
     to,
   };
+}
+
+function classifyDeviceResultStatus(result: DeviceCommandResult): ChatMessage["status"] {
+  if (result.ok) {
+    return "success";
+  }
+
+  if (hasPartialSuccessOutput(result.output)) {
+    return "partial-success";
+  }
+
+  return "error";
+}
+
+function hasPartialSuccessOutput(output: string): boolean {
+  const normalized = output.trim();
+  if (!normalized) return false;
+
+  const positiveSignals = [
+    /Host is up/i,
+    /Nmap scan report/i,
+    /Network:/i,
+    /IP\s+.*MAC/i,
+    /Total:/i,
+    /Available:/i,
+    /free/i,
+  ];
+  if (positiveSignals.some((pattern) => pattern.test(normalized))) {
+    return true;
+  }
+
+  const usefulLineCount = normalized
+    .split("\n")
+    .filter((line) => line.trim() && !/^(error|traceback|usage|command not found)/i.test(line.trim()))
+    .length;
+  return usefulLineCount >= 4;
 }
 
 export function createDeviceImmediateErrorMessage(

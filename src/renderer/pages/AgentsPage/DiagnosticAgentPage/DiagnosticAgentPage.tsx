@@ -1,6 +1,5 @@
 import { AppSettings } from "../../../../shared/settings.types";
 import React from "react";
-import MessageList from "../../../components/MessageList/MessageList";
 import { AgentDefinition } from "../../../services/workspace/workspace.types";
 import { ActiveAgentTask, AgentContextFile, AgentWorkspaceData } from "../../../../shared/agent.types";
 import "../../ChatPage/ChatPage.css";
@@ -11,11 +10,9 @@ type DiagnosticAgentPageProps = {
   onSavedSettings: (settings: AppSettings) => void;
 };
 
-type DiagnosticAgentTab = "context" | "conversation" | "general";
+type DiagnosticAgentTab = "context" | "general";
 
 export default function DiagnosticAgentPage({ agent, onSavedSettings }: DiagnosticAgentPageProps) {
-  const [activeConversationId, setActiveConversationId] = React.useState<string | null>(null);
-  const [activeTaskId, setActiveTaskId] = React.useState<string | null>(null);
   const [activeTab, setActiveTab] = React.useState<DiagnosticAgentTab>("general");
   const [activeTasks, setActiveTasks] = React.useState<ActiveAgentTask[]>([]);
   const [contextDraft, setContextDraft] = React.useState<AgentContextFile | null>(null);
@@ -24,40 +21,35 @@ export default function DiagnosticAgentPage({ agent, onSavedSettings }: Diagnost
   const [status, setStatus] = React.useState("");
   const [workspace, setWorkspace] = React.useState<AgentWorkspaceData | null>(null);
 
+  const loadWorkspace = React.useCallback(async (options?: { preserveDraft?: boolean; silent?: boolean }) => {
+    if (!options?.silent) setIsBusy(true);
+    if (!options?.preserveDraft) setStatus("");
+    const nextWorkspace = await window.nova.agents.loadWorkspace(agent.id);
+    const settings = await window.nova.settings.load();
+    setWorkspace(nextWorkspace);
+    setIsEnabled(settings.agents[agent.id]?.enabled ?? true);
+    if (!options?.preserveDraft) {
+      setContextDraft(nextWorkspace.context);
+    }
+    if (!options?.silent) setIsBusy(false);
+  }, [agent.id]);
+
+  const loadActiveTasks = React.useCallback(async () => {
+    const tasks = await window.nova.agents.getActiveTasks(agent.id);
+    setActiveTasks(tasks);
+  }, [agent.id]);
+
   React.useEffect(() => {
     let active = true;
 
-    async function loadWorkspace() {
-      setIsBusy(true);
-      setStatus("");
-      try {
-        const nextWorkspace = await window.nova.agents.loadWorkspace(agent.id);
-        const settings = await window.nova.settings.load();
-        if (!active) return;
-        setWorkspace(nextWorkspace);
-        setIsEnabled(settings.agents[agent.id]?.enabled ?? true);
-        setContextDraft(nextWorkspace.context);
-        setActiveConversationId(
-          nextWorkspace.conversations.activeConversationId ?? nextWorkspace.conversations.conversations[0]?.id ?? null,
-        );
-      } finally {
-        if (active) setIsBusy(false);
-      }
-    }
-
-    async function loadActiveTasks() {
-      const tasks = await window.nova.agents.getActiveTasks(agent.id);
-      if (!active) return;
-      setActiveTasks(tasks);
-      setActiveTaskId((current) => tasks.some((task) => task.taskId === current) ? current : tasks[0]?.taskId ?? null);
-    }
-
-    void loadWorkspace();
+    void loadWorkspace().catch(() => {
+      if (active) setIsBusy(false);
+    });
     void loadActiveTasks();
     const unsubscribe = window.nova.ai.onEvent(() => {
       window.setTimeout(() => {
         if (!active) return;
-        void loadWorkspace();
+        void loadWorkspace({ preserveDraft: true, silent: true });
         void loadActiveTasks();
       }, 120);
     });
@@ -70,12 +62,7 @@ export default function DiagnosticAgentPage({ agent, onSavedSettings }: Diagnost
       unsubscribe();
       window.clearInterval(intervalId);
     };
-  }, [agent.id]);
-
-  const activeConversation = React.useMemo(() => (
-    workspace?.conversations.conversations.find((conversation) => conversation.id === activeConversationId) ?? null
-  ), [activeConversationId, workspace?.conversations.conversations]);
-  const activeTask = React.useMemo(() => activeTasks.find((task) => task.taskId === activeTaskId) ?? null, [activeTaskId, activeTasks]);
+  }, [loadActiveTasks, loadWorkspace]);
 
   async function handleSaveContext() {
     if (!contextDraft) return;
@@ -140,9 +127,6 @@ export default function DiagnosticAgentPage({ agent, onSavedSettings }: Diagnost
             <button className={`device-agent-page__tab${activeTab === "general" ? " device-agent-page__tab--active" : ""}`} onClick={() => setActiveTab("general")} type="button">
               General
             </button>
-            <button className={`device-agent-page__tab${activeTab === "conversation" ? " device-agent-page__tab--active" : ""}`} onClick={() => setActiveTab("conversation")} type="button">
-              Conversation
-            </button>
             <button className={`device-agent-page__tab${activeTab === "context" ? " device-agent-page__tab--active" : ""}`} onClick={() => setActiveTab("context")} type="button">
               Contexte
             </button>
@@ -159,6 +143,10 @@ export default function DiagnosticAgentPage({ agent, onSavedSettings }: Diagnost
                 <p className="chat-page__placeholder-text">{agent.capabilities.join(" · ")}</p>
                 <p className="chat-page__placeholder-eyebrow">Outils</p>
                 <p className="chat-page__placeholder-text">{agent.tools.join(" · ")}</p>
+                <p className="chat-page__placeholder-eyebrow">Etat</p>
+                <p className="chat-page__placeholder-text">
+                  Agent {isEnabled ? "actif" : "desactive"} · {activeTasks.length} tache{activeTasks.length > 1 ? "s" : ""} active{activeTasks.length > 1 ? "s" : ""}
+                </p>
                 <p className="chat-page__placeholder-eyebrow">Activation</p>
                 <div className="device-agent-page__toggle-row">
                   <input
@@ -171,85 +159,29 @@ export default function DiagnosticAgentPage({ agent, onSavedSettings }: Diagnost
                     {isEnabled ? "L'assistant peut deleguer a cet agent." : "Aucune nouvelle delegation vers cet agent."}
                   </span>
                 </div>
-                {status ? <p className="settings-panel__status settings-panel__status--success">{status}</p> : null}
-              </div>
-            </section>
-          ) : null}
-
-          {activeTab === "conversation" ? (
-            <section className="device-agent-page__conversation">
-              <aside className="device-agent-page__conversation-list">
-                <div className="device-agent-page__conversation-head">
-                  <div>
-                    <h3 className="device-agent-page__conversation-title">Conversations internes</h3>
-                    <p className="device-agent-page__conversation-note">Lecture seule pour retracer les echanges avec l&apos;assistant principal.</p>
-                  </div>
-                </div>
-                <div className="device-agent-page__conversation-items">
-                  {activeTasks.length ? (
-                    <>
-                      <p className="device-agent-page__conversation-note">Taches actives</p>
+                {activeTasks.length ? (
+                  <>
+                    <p className="chat-page__placeholder-eyebrow">Taches actives</p>
+                    <div className="device-agent-page__records">
                       {activeTasks.map((task) => (
-                        <div key={task.taskId} className={`device-agent-page__conversation-item${task.taskId === activeTaskId ? " device-agent-page__conversation-item--active" : ""}`}>
-                          <button
-                            className="device-agent-page__conversation-select"
-                            onClick={() => {
-                              setActiveTaskId(task.taskId);
-                              setActiveConversationId(null);
-                            }}
-                            type="button"
-                          >
-                            <span>{task.title}</span>
-                            <span className="device-agent-page__conversation-meta">en cours</span>
-                          </button>
-                          <button className="device-agent-page__pill-button device-agent-page__pill-button--danger" disabled={isBusy} onClick={() => void handleStopTask(task.taskId)} type="button">
-                            Arreter
-                          </button>
-                        </div>
+                        <article className="device-agent-page__record-card" key={task.taskId}>
+                          <div className="device-agent-page__record-head">
+                            <span className="device-agent-page__badge device-agent-page__badge--success">En cours</span>
+                            <span className="device-agent-page__record-date">{formatDate(task.startedAt)}</span>
+                          </div>
+                          <p className="device-agent-page__record-meta">{task.title}</p>
+                          <pre className="device-agent-page__record-command">{task.request}</pre>
+                          <div className="device-agent-page__record-actions">
+                            <button className="device-agent-page__pill-button device-agent-page__pill-button--danger" disabled={isBusy} onClick={() => void handleStopTask(task.taskId)} type="button">
+                              Arreter
+                            </button>
+                          </div>
+                        </article>
                       ))}
-                    </>
-                  ) : null}
-                  {workspace?.conversations.conversations.length ? workspace.conversations.conversations.map((conversation) => (
-                    <button
-                      key={conversation.id}
-                      className={`device-agent-page__conversation-item${conversation.id === activeConversationId ? " device-agent-page__conversation-item--active" : ""}`}
-                      onClick={() => {
-                        setActiveConversationId(conversation.id);
-                        setActiveTaskId(null);
-                      }}
-                      type="button"
-                    >
-                      <span>{conversation.title}</span>
-                      <span className="device-agent-page__conversation-meta">{conversation.messages.length} message{conversation.messages.length > 1 ? "s" : ""}</span>
-                    </button>
-                  )) : (
-                    <p className="device-agent-page__conversation-empty">Aucune conversation interne pour le moment.</p>
-                  )}
-                </div>
-              </aside>
-              <div className="device-agent-page__conversation-panel">
-                {activeTask ? (
-                  <div className="chat-page__placeholder">
-                    <p className="chat-page__placeholder-eyebrow">Tache en cours</p>
-                    <h2 className="chat-page__placeholder-title">{activeTask.title}</h2>
-                    <pre className="device-agent-page__record-command">{activeTask.request}</pre>
-                    <div className="device-agent-page__record-actions">
-                      <button className="device-agent-page__pill-button device-agent-page__pill-button--danger" disabled={isBusy} onClick={() => void handleStopTask(activeTask.taskId)} type="button">
-                        Arreter
-                      </button>
                     </div>
-                  </div>
-                ) : activeConversation ? (
-                  <MessageList messages={activeConversation.messages} />
-                ) : (
-                  <div className="chat-page__placeholder">
-                    <p className="chat-page__placeholder-eyebrow">Conversation</p>
-                    <h2 className="chat-page__placeholder-title">Aucune conversation</h2>
-                    <p className="chat-page__placeholder-text">
-                      Les echanges entre l&apos;assistant principal et l&apos;agent Diagnostic apparaitront ici.
-                    </p>
-                  </div>
-                )}
+                  </>
+                ) : null}
+                {status ? <p className="settings-panel__status settings-panel__status--success">{status}</p> : null}
               </div>
             </section>
           ) : null}
@@ -304,4 +236,8 @@ export default function DiagnosticAgentPage({ agent, onSavedSettings }: Diagnost
       </section>
     </section>
   );
+}
+
+function formatDate(value: string): string {
+  return new Date(value).toLocaleString("fr-FR");
 }

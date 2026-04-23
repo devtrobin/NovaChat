@@ -187,6 +187,11 @@
   color: #9be6b3;
 }
 
+.agents-page__history-badge--partial-success {
+  background: rgba(245, 158, 11, 0.16);
+  color: #ffd38f;
+}
+
 .agents-page__history-badge--running {
   background: rgba(59, 130, 246, 0.16);
   color: #a9cfff;

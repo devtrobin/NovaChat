@@ -8,7 +8,15 @@ import {
   SubmitCommandInputRequest,
   SubmitPermissionDecisionRequest,
 } from "./shared/ai.types";
-import { ActiveAgentTask, AgentContextFile, AgentId, AgentPermissionDecision, AgentPermissionsFile, AgentWorkspaceData } from "./shared/agent.types";
+import {
+  ActiveAgentTask,
+  AgentContextFile,
+  AgentDirectConversationResult,
+  AgentId,
+  AgentPermissionDecision,
+  AgentPermissionsFile,
+  AgentWorkspaceData,
+} from "./shared/agent.types";
 import { AppSettings, SettingsTestResult } from "./shared/settings.types";
 
 type AIEventListener = (event: ChatTurnEvent) => void;
@@ -35,6 +43,14 @@ contextBridge.exposeInMainWorld("nova", {
       ipcRenderer.invoke("nova:agents:delete-permission", { agentId, command }),
     getActiveTasks: (agentId: AgentId): Promise<ActiveAgentTask[]> => ipcRenderer.invoke("nova:agents:get-active-tasks", agentId),
     stopTask: (taskId: string): Promise<boolean> => ipcRenderer.invoke("nova:agents:stop-task", taskId),
+    createDirectConversation: (agentId: AgentId, title: string): Promise<AgentDirectConversationResult> =>
+      ipcRenderer.invoke("nova:agents:create-direct-conversation", { agentId, title }),
+    sendDirectMessage: (
+      agentId: AgentId,
+      prompt: string,
+      conversationId?: string | null,
+    ): Promise<AgentDirectConversationResult> =>
+      ipcRenderer.invoke("nova:agents:send-direct-message", { agentId, conversationId, prompt }),
   },
   ai: {
     killCommand: (commandId: string): Promise<void> => ipcRenderer.invoke("nova:ai:kill-command", commandId),

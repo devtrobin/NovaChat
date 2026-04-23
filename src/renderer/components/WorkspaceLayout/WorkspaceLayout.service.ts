@@ -1,4 +1,5 @@
 import { buildAgentDefinitions } from "../../services/workspace/workspace.service";
+import { Conversation } from "../../types/chat.types";
 import { WorkspaceLayoutController } from "./WorkspaceLayout.types";
 import { useWorkspaceConversationActions } from "./useWorkspaceConversationActions";
 import { useWorkspaceEffects } from "./useWorkspaceEffects";
@@ -16,6 +17,7 @@ export function useWorkspaceLayoutController(): WorkspaceLayoutController {
     agentSettings,
     conversationIndicators,
     conversations,
+    hideInternalConversations,
     isHydrated,
     isPreviewMode,
     isSending,
@@ -26,6 +28,7 @@ export function useWorkspaceLayoutController(): WorkspaceLayoutController {
     setActiveSettingsCategory,
     setAgentSettings,
     setConversations,
+    setHideInternalConversations,
     setIsHydrated,
     setIsPreviewMode,
   } = useWorkspaceLayoutState();
@@ -36,6 +39,7 @@ export function useWorkspaceLayoutController(): WorkspaceLayoutController {
     setAgentSettings,
     setActiveConversationId,
     setConversations,
+    setHideInternalConversations,
     setIsHydrated,
     setIsPreviewMode,
   });
@@ -76,18 +80,24 @@ export function useWorkspaceLayoutController(): WorkspaceLayoutController {
     setActiveAgentId,
     setActiveSection,
     setActiveSettingsCategory,
+    setHideInternalConversations,
     setIsPreviewMode,
   });
 
+  const visibleConversation = hideInternalConversations
+    ? filterInternalConversationMessages(activeConversation)
+    : activeConversation;
+
   return {
     activeAgentId,
-    activeConversation,
+    activeConversation: visibleConversation,
     activeConversationId,
     activeSection,
     activeSettingsCategory,
     agents: buildAgentDefinitions(agentSettings),
     conversationIndicators,
     conversations,
+    hideInternalConversations,
     isHydrated,
     isPreviewMode,
     isSending,
@@ -106,5 +116,30 @@ export function useWorkspaceLayoutController(): WorkspaceLayoutController {
     onSubmitPermissionDecision: handleSubmitPermissionDecision,
     onSubmitCommandInput: handleSubmitCommandInput,
     onUpdateConversationDraft: handleUpdateConversationDraft,
+  };
+}
+
+function filterInternalConversationMessages(conversation: Conversation | null): Conversation | null {
+  if (!conversation) {
+    return null;
+  }
+
+  return {
+    ...conversation,
+    messages: conversation.messages.filter((message) => {
+      if (message.from === "assistant" && (message.to === "agent" || message.to === "device")) {
+        return false;
+      }
+
+      if (message.from === "agent") {
+        return false;
+      }
+
+      if (message.from === "device") {
+        return false;
+      }
+
+      return true;
+    }),
   };
 }

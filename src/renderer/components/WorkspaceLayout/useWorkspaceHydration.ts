@@ -11,6 +11,7 @@ type UseWorkspaceHydrationArgs = {
   setAgentSettings: React.Dispatch<React.SetStateAction<AgentSettingsMap>>;
   setActiveConversationId: React.Dispatch<React.SetStateAction<string | null>>;
   setConversations: React.Dispatch<React.SetStateAction<Conversation[]>>;
+  setHideInternalConversations: React.Dispatch<React.SetStateAction<boolean>>;
   setIsHydrated: React.Dispatch<React.SetStateAction<boolean>>;
   setIsPreviewMode: React.Dispatch<React.SetStateAction<boolean>>;
 };
@@ -22,6 +23,7 @@ export function useWorkspaceHydration({
   setAgentSettings,
   setActiveConversationId,
   setConversations,
+  setHideInternalConversations,
   setIsHydrated,
   setIsPreviewMode,
 }: UseWorkspaceHydrationArgs) {
@@ -33,6 +35,7 @@ export function useWorkspaceHydration({
       const settings = await window.nova.settings.load();
       if (!active) return;
       setAgentSettings(settings.agents);
+      setHideInternalConversations(settings.hideInternalConversations);
       setIsPreviewMode(settings.previewMode);
       if (storedState.conversations.length === 0) {
         const nextConversation = createConversation();
@@ -54,7 +57,7 @@ export function useWorkspaceHydration({
     return () => {
       active = false;
     };
-  }, [setActiveConversationId, setAgentSettings, setConversations, setIsHydrated, setIsPreviewMode]);
+  }, [setActiveConversationId, setAgentSettings, setConversations, setHideInternalConversations, setIsHydrated, setIsPreviewMode]);
 
   React.useEffect(() => {
     if (!isHydrated) return;

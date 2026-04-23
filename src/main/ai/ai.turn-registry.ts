@@ -19,6 +19,7 @@ export type ActiveAgentTask = {
 };
 
 type ActiveTurn = {
+  agentConversationIds: Map<AgentId, string>;
   commandIds: Set<string>;
   controllers: Set<AbortController>;
   conversationId: string;
@@ -36,6 +37,7 @@ const taskToTurnId = new Map<string, string>();
 export function startTurn(conversationId: string): string {
   const turnId = crypto.randomUUID();
   activeTurns.set(turnId, {
+    agentConversationIds: new Map(),
     commandIds: new Set(),
     controllers: new Set(),
     conversationId,
@@ -103,6 +105,14 @@ export function registerActiveAgentTask(turnId: string, task: Omit<ActiveAgentTa
   taskToTurnId.set(activeTask.taskId, turnId);
   activeTurns.get(turnId)?.taskIds.add(activeTask.taskId);
   return activeTask;
+}
+
+export function getAgentConversationId(turnId: string, agentId: AgentId): string | null {
+  return activeTurns.get(turnId)?.agentConversationIds.get(agentId) ?? null;
+}
+
+export function setAgentConversationId(turnId: string, agentId: AgentId, conversationId: string): void {
+  activeTurns.get(turnId)?.agentConversationIds.set(agentId, conversationId);
 }
 
 export function updateActiveAgentTaskStatus(

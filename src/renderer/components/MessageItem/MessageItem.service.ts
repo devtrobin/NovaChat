@@ -20,7 +20,11 @@ export function getExecutionMetadata(message: ChatMessage) {
 }
 
 export function isDeviceMessage(message: ChatMessage): boolean {
-  return message.to === "device" || message.from === "device";
+  return message.from === "device"
+    || (
+      message.to === "device"
+      && (Boolean(message.commandId) || message.status === "running" || message.status === "waiting-input")
+    );
 }
 
 export function isSystemMessage(message: ChatMessage): boolean {

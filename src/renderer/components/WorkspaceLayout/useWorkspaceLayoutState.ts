@@ -21,6 +21,7 @@ export function useWorkspaceLayoutState() {
   const [activeSettingsCategory, setActiveSettingsCategory] = React.useState<WorkspaceLayoutController["activeSettingsCategory"]>("local-files");
   const [sendingConversationIds, setSendingConversationIds] = React.useState<string[]>([]);
   const [isHydrated, setIsHydrated] = React.useState(false);
+  const [hideInternalConversations, setHideInternalConversations] = React.useState(false);
   const [isPreviewMode, setIsPreviewMode] = React.useState(false);
 
   const activeConversation = conversations.find((item) => item.id === activeConversationId) ?? null;
@@ -39,6 +40,7 @@ export function useWorkspaceLayoutState() {
     activeSettingsCategory,
     conversationIndicators,
     conversations,
+    hideInternalConversations,
     isHydrated,
     isPreviewMode,
     isSending,
@@ -49,6 +51,7 @@ export function useWorkspaceLayoutState() {
     setActiveSection,
     setActiveSettingsCategory,
     setConversations,
+    setHideInternalConversations,
     setIsHydrated,
     setIsPreviewMode,
     setSendingConversationIds,

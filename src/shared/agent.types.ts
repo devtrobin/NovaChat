@@ -1,6 +1,8 @@
 import { PersistedChatState } from "../renderer/types/chat.types";
 
 export type AgentId = "device-agent" | "diagnostic-agent";
+export type AgentConversationOrigin = "assistant" | "assistant-test" | "user";
+export type AgentRequestSource = "assistant" | "user";
 export type AgentPermissionDecision = "allow" | "deny";
 export type AgentTaskMode = "analysis" | "command" | "goal";
 
@@ -21,7 +23,7 @@ export type AgentTaskResult =
       output: string;
       request: string;
       resolvedCommand: string;
-      status: "error" | "success";
+      status: "error" | "partial-success" | "success";
     }
   | {
       agentConversationId: string;
@@ -59,7 +61,7 @@ export type AgentHistoryEntry = {
   at: string;
   command: string;
   result: string;
-  status: "denied" | "error" | "interrupted" | "success";
+  status: "denied" | "error" | "interrupted" | "partial-success" | "success";
   triggerMessageId: string;
   userAssistantConversationId: string;
 };
@@ -80,4 +82,8 @@ export type ActiveAgentTask = {
   status: "running" | "waiting-input" | "waiting-permission";
   taskId: string;
   title: string;
+};
+
+export type AgentDirectConversationResult = {
+  conversationId: string;
 };

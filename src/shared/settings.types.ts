@@ -19,6 +19,7 @@ export type OpenAISettings = {
 export type AppSettings = {
   activeProvider: AIProviderId;
   agents: AgentSettingsMap;
+  hideInternalConversations: boolean;
   localFiles: LocalFilesSettings;
   openai: OpenAISettings;
   previewMode: boolean;

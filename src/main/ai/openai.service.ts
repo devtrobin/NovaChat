@@ -1,6 +1,7 @@
 import { ChatMessage } from "../../renderer/types/chat.types";
-import { AgentContextFile, AgentId } from "../../shared/agent.types";
+import { AgentContextFile, AgentId, AgentRequestSource } from "../../shared/agent.types";
 import { OpenAISettings } from "../../shared/settings.types";
+import { AgentRuntimeContext } from "../agents/agent-prompt.service";
 import { buildDeviceAgentInput, buildGenericAgentInput, buildInput } from "./openai.payload";
 import { createResponseRecord, postOpenAIResponse } from "./openai.client";
 import { throwNovaParseError, throwOpenAIRequestError } from "./openai.errors";
@@ -49,12 +50,13 @@ export async function generateOpenAIReply(
 export async function generateDeviceAgentCommand(
   settings: OpenAISettings,
   context: AgentContextFile,
+  runtimeContext: AgentRuntimeContext,
   goal: string,
   userPrompt: string,
   signal?: AbortSignal,
 ): Promise<GenerateDeviceAgentCommandResult> {
   const requestBody = {
-    input: buildDeviceAgentInput(context, goal, userPrompt),
+    input: buildDeviceAgentInput(context, runtimeContext, goal, userPrompt),
     model: settings.model,
     store: false,
   };
@@ -85,12 +87,14 @@ export async function generateDeviceAgentCommand(
 export async function generateAgentTextReply(
   settings: OpenAISettings,
   context: AgentContextFile,
+  runtimeContext: AgentRuntimeContext,
   request: string,
   userPrompt: string,
+  source: AgentRequestSource,
   signal?: AbortSignal,
 ): Promise<{ apiRecords: ChatMessage["apiRequests"]; text: string }> {
   const requestBody = {
-    input: buildGenericAgentInput(context, request, userPrompt),
+    input: buildGenericAgentInput(context, runtimeContext, request, userPrompt, source),
     model: settings.model,
     store: false,
   };
