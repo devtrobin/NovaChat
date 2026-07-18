@@ -36,6 +36,22 @@ export function validateSettingsDraft(settings: AppSettings, category: SettingsC
       return "La sortie maximale doit etre comprise entre 10 000 et 1 000 000 caracteres.";
     }
 
+    if (
+      !Number.isInteger(settings.apiTrace.retentionDays)
+      || settings.apiTrace.retentionDays < 1
+      || settings.apiTrace.retentionDays > 3_650
+    ) {
+      return "La retention des traces doit etre comprise entre 1 et 3 650 jours.";
+    }
+
+    if (
+      !Number.isInteger(settings.apiTrace.maxEntriesPerMessage)
+      || settings.apiTrace.maxEntriesPerMessage < 1
+      || settings.apiTrace.maxEntriesPerMessage > 500
+    ) {
+      return "Le nombre de traces par message doit etre compris entre 1 et 500.";
+    }
+
     return null;
   }
 

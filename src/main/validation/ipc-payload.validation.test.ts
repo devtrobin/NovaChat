@@ -32,6 +32,12 @@ function createSettings() {
       "agent-planner": { enabled: true },
       "device-agent": { enabled: true },
     },
+    apiTrace: {
+      enabled: true,
+      maxEntriesPerMessage: 50,
+      redactSensitiveData: true,
+      retentionDays: 30,
+    },
     deviceExecution: {
       maxOutputCharacters: 200_000,
       timeoutMs: 15_000,

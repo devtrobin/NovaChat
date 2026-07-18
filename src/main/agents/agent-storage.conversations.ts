@@ -6,6 +6,7 @@ import {
   ChatMessage,
   Conversation,
 } from "../../shared/chat.types";
+import { ApiTraceSettings } from "../../shared/settings.types";
 import { saveChatStateToDirectory } from "../chat/chat-storage.service";
 import { writeJsonFile } from "../chat/chat-storage.io";
 import {
@@ -25,6 +26,7 @@ import { ensureAgentWorkspaceUnlocked } from "./agent-storage.workspace";
 type RecordAgentCommandExchangeArgs = {
   agentId: AgentId;
   agentConversationId?: string | null;
+  apiTraceSettings?: ApiTraceSettings;
   apiRequests?: ChatMessage["apiRequests"];
   assistantRequest: string;
   command: string;
@@ -48,6 +50,7 @@ export async function recordAgentCommandExchange(
 async function recordAgentCommandExchangeUnlocked({
   agentId,
   agentConversationId = null,
+  apiTraceSettings,
   apiRequests = [],
   assistantRequest,
   command,
@@ -82,6 +85,7 @@ async function recordAgentCommandExchangeUnlocked({
   await saveChatStateToDirectory(
     upsertConversation(workspace.conversations, nextConversation),
     getAgentConversationsDirectory(rootDirectory, agentId),
+    apiTraceSettings,
   );
 
   const nextHistoryEntry: AgentHistoryEntry = {

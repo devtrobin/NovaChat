@@ -2,6 +2,7 @@ import { Dirent } from "node:fs";
 import { mkdir, readdir, rm } from "node:fs/promises";
 import path from "node:path";
 import { PersistedChatState } from "../../shared/chat.types";
+import { ApiTraceSettings } from "../../shared/settings.types";
 import { readJsonFile, writeJsonFile } from "./chat-storage.io";
 import {
   getConversationDirectory,
@@ -12,7 +13,11 @@ import { splitMessageFiles, toIndex } from "./chat-storage.serialization";
 import { ConversationsIndex } from "./chat-storage.types";
 import { assertStorageWritable } from "../storage/storage-recovery.registry";
 
-async function writeConversationTree(rootDirectory: string, state: PersistedChatState): Promise<void> {
+async function writeConversationTree(
+  rootDirectory: string,
+  state: PersistedChatState,
+  apiTraceSettings?: ApiTraceSettings,
+): Promise<void> {
   assertStorageWritable(rootDirectory);
   await mkdir(rootDirectory, { recursive: true });
 
@@ -44,7 +49,7 @@ async function writeConversationTree(rootDirectory: string, state: PersistedChat
 
     for (const message of conversation.messages) {
       const messageDirectory = getMessageDirectory(rootDirectory, conversation.id, message);
-      const { apiRequests, lifecycleLog, messageBody } = splitMessageFiles(message);
+      const { apiRequests, lifecycleLog, messageBody } = splitMessageFiles(message, apiTraceSettings);
       await mkdir(messageDirectory, { recursive: true });
       await writeJsonFile(path.join(messageDirectory, "message.json"), messageBody);
       await writeJsonFile(path.join(messageDirectory, "log.json"), lifecycleLog);
@@ -58,8 +63,9 @@ async function writeConversationTree(rootDirectory: string, state: PersistedChat
 export async function saveChatStateToDirectory(
   state: PersistedChatState,
   rootDirectory: string,
+  apiTraceSettings?: ApiTraceSettings,
 ): Promise<void> {
-  await writeConversationTree(rootDirectory, state);
+  await writeConversationTree(rootDirectory, state, apiTraceSettings);
 }
 
 export async function saveChatStateToDirectories(
@@ -67,13 +73,14 @@ export async function saveChatStateToDirectories(
   activeDirectory: string,
   referenceDirectory: string,
   referenceIndexPath: string,
+  apiTraceSettings?: ApiTraceSettings,
 ): Promise<void> {
   assertStorageWritable(referenceDirectory);
   assertStorageWritable(activeDirectory);
-  await writeConversationTree(referenceDirectory, state);
+  await writeConversationTree(referenceDirectory, state, apiTraceSettings);
   await writeJsonFile(referenceIndexPath, toIndex(state));
 
   if (activeDirectory !== referenceDirectory) {
-    await writeConversationTree(activeDirectory, state);
+    await writeConversationTree(activeDirectory, state, apiTraceSettings);
   }
 }

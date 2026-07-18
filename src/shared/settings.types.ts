@@ -14,6 +14,13 @@ export type DeviceExecutionSettings = {
   timeoutMs: number;
 };
 
+export type ApiTraceSettings = {
+  enabled: boolean;
+  maxEntriesPerMessage: number;
+  redactSensitiveData: boolean;
+  retentionDays: number;
+};
+
 export type OpenAISettings = {
   apiKey: string;
   baseUrl: string;
@@ -24,6 +31,7 @@ export type OpenAISettings = {
 export type AppSettings = {
   activeProvider: AIProviderId;
   agents: AgentSettingsMap;
+  apiTrace: ApiTraceSettings;
   deviceExecution: DeviceExecutionSettings;
   hideInternalConversations: boolean;
   localFiles: LocalFilesSettings;

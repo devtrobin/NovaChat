@@ -4,6 +4,8 @@ import {
   MessageLifecycleEntry,
   PersistedChatState,
 } from "../../shared/chat.types";
+import { ApiTraceSettings } from "../../shared/settings.types";
+import { applyApiTracePolicy } from "./api-trace.policy";
 import { ConversationIndexEntry, ConversationsIndex } from "./chat-storage.types";
 
 export function toIndex(state: PersistedChatState): ConversationsIndex {
@@ -22,7 +24,7 @@ export function toIndex(state: PersistedChatState): ConversationsIndex {
   };
 }
 
-export function splitMessageFiles(message: ChatMessage) {
+export function splitMessageFiles(message: ChatMessage, apiTraceSettings?: ApiTraceSettings) {
   const {
     apiRequests = [],
     lifecycleLog = [],
@@ -30,7 +32,9 @@ export function splitMessageFiles(message: ChatMessage) {
   } = message;
 
   return {
-    apiRequests,
+    apiRequests: apiTraceSettings
+      ? applyApiTracePolicy(apiRequests, apiTraceSettings)
+      : apiRequests,
     lifecycleLog,
     messageBody,
   };

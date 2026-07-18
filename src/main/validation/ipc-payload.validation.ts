@@ -168,6 +168,7 @@ export function parseAppSettings(value: unknown): AppSettings {
   assertSerializedSize(value, "settings", 256 * 1024);
   const settings = readRecord(value, "settings");
   const agents = readRecord(settings.agents, "settings.agents");
+  const apiTrace = readRecord(settings.apiTrace, "settings.apiTrace");
   const planner = readRecord(agents["agent-planner"], "settings.agents.agent-planner");
   const device = readRecord(agents["device-agent"], "settings.agents.device-agent");
   const deviceExecution = readRecord(settings.deviceExecution, "settings.deviceExecution");
@@ -179,6 +180,20 @@ export function parseAppSettings(value: unknown): AppSettings {
     agents: {
       "agent-planner": { enabled: readBoolean(planner.enabled, "settings.agents.agent-planner.enabled") },
       "device-agent": { enabled: readBoolean(device.enabled, "settings.agents.device-agent.enabled") },
+    },
+    apiTrace: {
+      enabled: readBoolean(apiTrace.enabled, "settings.apiTrace.enabled"),
+      maxEntriesPerMessage: readInteger(
+        apiTrace.maxEntriesPerMessage,
+        "settings.apiTrace.maxEntriesPerMessage",
+        1,
+        500,
+      ),
+      redactSensitiveData: readBoolean(
+        apiTrace.redactSensitiveData,
+        "settings.apiTrace.redactSensitiveData",
+      ),
+      retentionDays: readInteger(apiTrace.retentionDays, "settings.apiTrace.retentionDays", 1, 3_650),
     },
     deviceExecution: {
       maxOutputCharacters: readInteger(

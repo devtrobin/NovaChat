@@ -137,6 +137,7 @@ async function recordPermissionDenied(
   const record = await recordAgentCommandExchange({
     agentId: task.agentId,
     agentConversationId: currentAgentConversationId,
+    apiTraceSettings: settings.apiTrace,
     apiRequests: commandApiRecords,
     assistantRequest: task.request,
     command: resolvedCommand,

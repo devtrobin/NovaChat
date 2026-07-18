@@ -42,6 +42,25 @@ describe("chat storage serialization", () => {
     )).toEqual(message);
   });
 
+  it("applies the configured trace policy while splitting message files", () => {
+    const message = createMessage("message-1", "2026-07-18T10:00:00.000Z");
+    message.apiRequests = [{
+      ...message.apiRequests?.[0],
+      at: "2026-07-18T10:00:00.000Z",
+      direction: "request",
+      from: "nova",
+      payload: { apiKey: "sk-1234567890" },
+      to: "provider",
+    }];
+
+    expect(splitMessageFiles(message, {
+      enabled: true,
+      maxEntriesPerMessage: 10,
+      redactSensitiveData: true,
+      retentionDays: 3_650,
+    }).apiRequests[0]?.payload).toEqual({ apiKey: "[REDACTED]" });
+  });
+
   it("deduplicates message ids in the conversation index", () => {
     const message = createMessage("message-1", "2026-07-18T10:00:00.000Z");
     const state: PersistedChatState = {

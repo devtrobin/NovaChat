@@ -71,6 +71,50 @@ export default function SettingsLocalFilesSection({
           setStatus();
         }} type="number" value={settings.deviceExecution.maxOutputCharacters} />
       </label>
+      <div className="settings-panel__section-head">
+        <h3 className="settings-panel__section-title">Traces provider</h3>
+        <p className="settings-panel__section-text">Controle la conservation et la redaction des fichiers <code>apis.json</code>.</p>
+      </div>
+      <label className="settings-panel__checkbox">
+        <input checked={settings.apiTrace.enabled} disabled={isBusy} onChange={(event) => {
+          setDraft((current) => current ? {
+            ...current,
+            apiTrace: { ...current.apiTrace, enabled: event.target.checked },
+          } : current);
+          setStatus();
+        }} type="checkbox" />
+        <span>Conserver les traces des appels provider</span>
+      </label>
+      <label className="settings-panel__checkbox">
+        <input checked={settings.apiTrace.redactSensitiveData} disabled={isBusy || !settings.apiTrace.enabled} onChange={(event) => {
+          setDraft((current) => current ? {
+            ...current,
+            apiTrace: { ...current.apiTrace, redactSensitiveData: event.target.checked },
+          } : current);
+          setStatus();
+        }} type="checkbox" />
+        <span>Masquer automatiquement cles, tokens et mots de passe</span>
+      </label>
+      <label className="settings-panel__field">
+        <span className="settings-panel__label">Retention des traces (jours)</span>
+        <input className="settings-panel__input" disabled={isBusy || !settings.apiTrace.enabled} max={3650} min={1} onChange={(event) => {
+          setDraft((current) => current ? {
+            ...current,
+            apiTrace: { ...current.apiTrace, retentionDays: Number(event.target.value) },
+          } : current);
+          setStatus();
+        }} type="number" value={settings.apiTrace.retentionDays} />
+      </label>
+      <label className="settings-panel__field">
+        <span className="settings-panel__label">Entrees maximales par message</span>
+        <input className="settings-panel__input" disabled={isBusy || !settings.apiTrace.enabled} max={500} min={1} onChange={(event) => {
+          setDraft((current) => current ? {
+            ...current,
+            apiTrace: { ...current.apiTrace, maxEntriesPerMessage: Number(event.target.value) },
+          } : current);
+          setStatus();
+        }} type="number" value={settings.apiTrace.maxEntriesPerMessage} />
+      </label>
       <label className="settings-panel__checkbox">
         <input checked={settings.previewMode} disabled={isBusy} onChange={(event) => {
           setDraft((current) => current ? { ...current, previewMode: event.target.checked } : current);

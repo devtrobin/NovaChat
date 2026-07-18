@@ -36,6 +36,12 @@ export function createDefaultSettings(): AppSettings {
   return parseAppSettings({
     activeProvider: "openai",
     agents: createDefaultAgentSettings(),
+    apiTrace: {
+      enabled: true,
+      maxEntriesPerMessage: 50,
+      redactSensitiveData: true,
+      retentionDays: 30,
+    },
     deviceExecution: {
       maxOutputCharacters: 200_000,
       timeoutMs: 15_000,
@@ -82,6 +88,10 @@ function mergeSettings(partial: unknown): AppSettings {
         ...defaults.agents["device-agent"],
         ...parsed.agents?.["device-agent"],
       },
+    },
+    apiTrace: {
+      ...defaults.apiTrace,
+      ...parsed.apiTrace,
     },
     deviceExecution: {
       ...defaults.deviceExecution,

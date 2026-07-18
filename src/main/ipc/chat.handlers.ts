@@ -7,6 +7,7 @@ import {
   getConversationsPathFromSettings,
   getReferenceConversationsDirectory,
   getReferenceConversationsPath,
+  loadSettingsFromDisk,
 } from "../settings/settings.service";
 import { ChatLoadResult, PersistedChatState } from "../../shared/chat.types";
 import { createDefaultChatState } from "../../renderer/services/conversation.service";
@@ -65,10 +66,12 @@ async function loadChatStateFromDisk(): Promise<ChatLoadResult> {
 }
 
 async function saveChatStateToDisk(state: PersistedChatState): Promise<void> {
+  const settings = await loadSettingsFromDisk();
   await saveChatStateToDirectories(
     state,
-    await getConversationsPathFromSettings(),
+    settings.localFiles.conversationsDirectory,
     getReferenceConversationsDirectory(),
     getReferenceConversationsPath(),
+    settings.apiTrace,
   );
 }

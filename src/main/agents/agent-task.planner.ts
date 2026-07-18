@@ -44,6 +44,7 @@ export async function runPlannerAgentTask(
   const record = await recordAgentCommandExchange({
     agentId: task.agentId,
     agentConversationId: currentAgentConversationId,
+    apiTraceSettings: settings.apiTrace,
     assistantRequest: task.request,
     command: task.request,
     result: {
