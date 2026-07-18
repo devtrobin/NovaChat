@@ -90,6 +90,13 @@ describe("agent storage", () => {
     const rootDirectory = await createTemporaryDirectory();
     const { agentConversationId } = await recordAgentCommandExchange({
       agentId: "device-agent",
+      apiRequests: [{
+        at: "2026-07-18T10:00:00.000Z",
+        direction: "response",
+        from: "openai",
+        payload: { command: "rg --files" },
+        to: "device-agent",
+      }],
       assistantRequest: "GOAL: Inspecter les fichiers",
       command: "rg --files",
       result: {
@@ -111,7 +118,13 @@ describe("agent storage", () => {
     });
     expect(workspace.conversations.conversations[0].messages).toMatchObject([
       { from: "assistant", to: "device" },
-      { content: "rg --files", from: "device", result: "package.json", to: "assistant" },
+      {
+        apiRequests: [{ payload: { command: "rg --files" } }],
+        content: "rg --files",
+        from: "device",
+        result: "package.json",
+        to: "assistant",
+      },
     ]);
   });
 });

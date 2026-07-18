@@ -8,7 +8,7 @@ import {
 } from "./ai.message-factory";
 import { classifyRuntimeError } from "./ai.orchestrator.runtime";
 import { Emit } from "./ai.orchestrator.types";
-import { appendApiErrorTrace } from "./ai.orchestrator.cycle";
+import { appendApiErrorTrace } from "./ai.orchestrator.cycle.state";
 import { NovaResponseParseError, OpenAIRequestError } from "./openai.types";
 
 export async function handleTurnError(

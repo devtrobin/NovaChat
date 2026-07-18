@@ -20,11 +20,11 @@ import {
   createPlannerNeedsInfoResponse,
   parsePlannerMessageContent,
 } from "./ai.planner";
+import { runAssistantCycle } from "./ai.orchestrator.cycle";
 import {
   appendInterruptedCommandContext,
   restartAssistantThinking,
-  runAssistantCycle,
-} from "./ai.orchestrator.cycle";
+} from "./ai.orchestrator.cycle.state";
 import {
   createAgentRequestMessage,
   createAssistantResponseMessage,

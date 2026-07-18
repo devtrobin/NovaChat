@@ -1,24 +1,22 @@
-import { ApiRequestRecord, ChatMessage } from "../../shared/chat.types";
-import { AgentId, AgentTaskRequest } from "../../shared/agent.types";
+import { ChatMessage } from "../../shared/chat.types";
+import { AgentId } from "../../shared/agent.types";
 import { AppSettings } from "../../shared/settings.types";
-import { runAgentTask } from "../agents/agent-orchestrator.service";
-import { Emit } from "./ai.orchestrator.types";
-import { appendLifecycleLog } from "./ai.orchestrator.runtime";
-import { generateOpenAIReply } from "./openai.service";
+import { runAgentHandoff } from "./ai.orchestrator.agent-cycle";
+import { requestAssistantReply } from "./ai.orchestrator.assistant-request";
 import {
-  registerAbortController,
-  throwIfTurnStopped,
-  unregisterAbortController,
-} from "./ai.turn-registry";
-import {
-  createAgentRequestMessage,
   appendUserApiTrace,
   createAssistantResponseMessage,
-  createInterruptedCommandContextMessage,
-  createPipelineSystemMessage,
-  createThinkingSystemMessage,
   PipelineStage,
 } from "./ai.orchestrator.cycle.messages";
+import { resolveAgentHandoff } from "./ai.orchestrator.handoff";
+import {
+  createForcedPlannerHandoff,
+  formatAgentLabel,
+  isAgentEnabled,
+  shouldForcePlannerAgentHandoff,
+} from "./ai.orchestrator.planner-handoff";
+import { Emit } from "./ai.orchestrator.types";
+import { throwIfTurnStopped } from "./ai.turn-registry";
 
 type RunAssistantCycleArgs = {
   conversationId: string;
@@ -40,21 +38,10 @@ export async function runAssistantCycle({
   turnId,
   turnMessages,
   userMessage,
-}: RunAssistantCycleArgs): Promise<
-  | { kind: "assistant"; message: ChatMessage }
-  | { kind: "agent"; message: ChatMessage }
-> {
+}: RunAssistantCycleArgs): Promise<{ kind: "assistant"; message: ChatMessage } | { kind: "agent"; message: ChatMessage }> {
   throwIfTurnStopped(turnId);
   onPipelineStageChange?.(step === 0 ? "nova-thinking" : "final-response");
-  const controller = new AbortController();
-  registerAbortController(turnId, controller);
-  const { apiRecords, providerResponse } = await generateOpenAIReply(
-    settings.openai,
-    turnMessages,
-    getEnabledAgents(settings),
-    controller.signal,
-  );
-  unregisterAbortController(turnId, controller);
+  const { apiRecords, providerResponse } = await requestAssistantReply(settings, turnId, turnMessages);
   throwIfTurnStopped(turnId);
   emit({
     conversationId,
@@ -64,44 +51,32 @@ export async function runAssistantCycle({
   });
 
   if (providerResponse.to === "user") {
-    if (shouldForcePlannerAgentHandoff(settings, step, turnMessages, userMessage.content, providerResponse.content)) {
-      const handoff = createForcedPlannerHandoff(apiRecords, userMessage.content);
-      const delegationMessage = createAgentRequestMessage(handoff.agentId, handoff.request, handoff.apiRecords);
-      onPipelineStageChange?.("requesting-agent", handoff.agentId);
-      emit({ conversationId, messages: [delegationMessage], type: "append-messages" });
-
-      const { deviceMessage } = await runAgentTask({
-        conversationId,
-        emit,
-        messageId: delegationMessage.id,
-        onPipelineStageChange,
-        settings,
-        task: {
-          agentId: handoff.agentId,
-          mode: handoff.mode,
-          request: handoff.request,
-          turnId,
-          triggerMessageId: userMessage.id,
-          userAssistantConversationId: conversationId,
-          userPrompt: userMessage.content,
-        },
-        turnId,
-      });
-
-      deviceMessage.apiRequests = [...(delegationMessage.apiRequests ?? [])];
-      appendLifecycleLog(deviceMessage, "assistant-agent-cycle-complete", `Cycle assistant -> ${handoff.agentId} termine.`);
-      emit({ conversationId, messages: [deviceMessage], type: "append-messages" });
-      turnMessages.push(deviceMessage);
-      return { kind: "agent", message: deviceMessage };
+    if (!shouldForcePlannerAgentHandoff(
+      settings,
+      step,
+      turnMessages,
+      userMessage.content,
+      providerResponse.content,
+    )) {
+      return {
+        kind: "assistant",
+        message: createAssistantResponseMessage(providerResponse.content, apiRecords),
+      };
     }
 
-    return { kind: "assistant", message: createAssistantResponseMessage(providerResponse.content, apiRecords) };
+    return runAgentHandoff({
+      conversationId,
+      emit,
+      handoff: createForcedPlannerHandoff(apiRecords, userMessage.content),
+      onPipelineStageChange,
+      settings,
+      turnId,
+      turnMessages,
+      userMessage,
+    });
   }
 
-  const handoff = resolveAgentHandoff({
-    apiRecords,
-    providerResponse,
-  });
+  const handoff = resolveAgentHandoff({ apiRecords, providerResponse });
   if (!isAgentEnabled(settings, handoff.agentId)) {
     return {
       kind: "assistant",
@@ -112,195 +87,14 @@ export async function runAssistantCycle({
     };
   }
 
-  const delegationMessage = createAgentRequestMessage(handoff.agentId, handoff.request, handoff.apiRecords);
-  onPipelineStageChange?.("requesting-agent", handoff.agentId);
-  emit({ conversationId, messages: [delegationMessage], type: "append-messages" });
-
-  const { deviceMessage } = await runAgentTask({
+  return runAgentHandoff({
     conversationId,
     emit,
-    messageId: delegationMessage.id,
+    handoff,
     onPipelineStageChange,
     settings,
-    task: {
-      agentId: handoff.agentId,
-      mode: handoff.mode,
-      request: handoff.request,
-      turnId,
-      triggerMessageId: userMessage.id,
-      userAssistantConversationId: conversationId,
-      userPrompt: userMessage.content,
-    },
     turnId,
+    turnMessages,
+    userMessage,
   });
-
-  emit({ conversationId, messages: [deviceMessage], type: "append-messages" });
-  deviceMessage.apiRequests = [...(delegationMessage.apiRequests ?? [])];
-  appendLifecycleLog(deviceMessage, "assistant-agent-cycle-complete", `Cycle assistant -> ${handoff.agentId} termine.`);
-  turnMessages.push(deviceMessage);
-
-  return { kind: "agent", message: deviceMessage };
-}
-
-export function restartAssistantThinking(
-  conversationId: string,
-  emit: Emit,
-  previousSystemMessageId: string,
-  stage: PipelineStage = "final-response",
-  agentId?: AgentId,
-): ChatMessage {
-  emit({
-    conversationId,
-    messageId: previousSystemMessageId,
-    type: "remove-message",
-  });
-  const nextSystemMessage = stage === "nova-thinking"
-    ? createThinkingSystemMessage()
-    : createPipelineSystemMessage(stage, agentId);
-  emit({
-    conversationId,
-    messages: [nextSystemMessage],
-    type: "append-messages",
-  });
-  return nextSystemMessage;
-}
-
-export function appendInterruptedCommandContext(turnMessages: ChatMessage[]): void {
-  turnMessages.push(createInterruptedCommandContextMessage());
-}
-
-export function appendApiErrorTrace(
-  userMessage: ChatMessage,
-  apiRecords: ApiRequestRecord[],
-  details: string,
-): ChatMessage {
-  userMessage.apiRequests = [...(userMessage.apiRequests ?? []), ...apiRecords];
-  appendLifecycleLog(userMessage, "api-response-error", details);
-  return { ...userMessage };
-}
-
-type ResolvedAgentHandoff = {
-  agentId: AgentId;
-  apiRecords: ApiRequestRecord[];
-  mode: AgentTaskRequest["mode"];
-  previewContent: string;
-  request: string;
-};
-
-function resolveAgentHandoff(args: {
-  apiRecords: ApiRequestRecord[];
-  providerResponse: Exclude<Awaited<ReturnType<typeof generateOpenAIReply>>["providerResponse"], { to: "user" }>;
-}): ResolvedAgentHandoff {
-  const agentId = args.providerResponse.to === "agent" ? args.providerResponse.agentId : "device-agent";
-  const content = args.providerResponse.content;
-  const goal = agentId === "device-agent"
-    ? extractDeviceGoal(content) ?? (!isLikelyShellCommand(content) ? content.trim() : null)
-    : null;
-  if (!goal) {
-    return {
-      agentId,
-      apiRecords: args.apiRecords,
-      mode: agentId === "device-agent" ? "command" : "analysis",
-      previewContent: content,
-      request: content,
-    };
-  }
-
-  return {
-    agentId,
-    apiRecords: args.apiRecords,
-    mode: "goal",
-    previewContent: `GOAL: ${goal}`,
-    request: goal,
-  };
-}
-
-function extractDeviceGoal(value: string): string | null {
-  const match = value.trim().match(/^(?:goal|objective|task)\s*:\s*([\s\S]+)$/i);
-  return match?.[1]?.trim() ? match[1].trim() : null;
-}
-
-function isLikelyShellCommand(value: string): boolean {
-  const trimmed = value.trim();
-  if (!trimmed) return false;
-  if (/\n/.test(trimmed)) return true;
-  if (/[`$][({]/.test(trimmed)) return true;
-  if (/\b(?:awk|cat|cut|df|echo|find|free|grep|head|ifconfig|ip|ls|nmap|ping|ps|route|sed|sw_vers|sysctl|tail|top|uname|vm_stat)\b/.test(trimmed)) {
-    return true;
-  }
-  if (/[|&;<>]/.test(trimmed)) return true;
-  if (/^(?:\w+=.+\s+)+(?:[A-Za-z_./-]+)/.test(trimmed)) return true;
-  if (/^[./~A-Za-z0-9_-]+\s+[-]/.test(trimmed)) return true;
-  return false;
-}
-
-function shouldForcePlannerAgentHandoff(
-  settings: AppSettings,
-  step: number,
-  turnMessages: ChatMessage[],
-  userPrompt: string,
-  assistantReply: string,
-): boolean {
-  if (step > 0) {
-    return false;
-  }
-  if (!isAgentEnabled(settings, "agent-planner")) {
-    return false;
-  }
-  const normalizedPrompt = userPrompt.trim().toLowerCase();
-  const normalizedReply = assistantReply.trim().toLowerCase();
-  const planningSignals = [
-    "analyse",
-    "analyser",
-    "corrige",
-    "debug",
-    "debugging",
-    "diagnostic",
-    "echec",
-    "enquete",
-    "erreur",
-    "investigation",
-    "plan",
-    "piste",
-    "probleme",
-    "refactor",
-    "workflow",
-  ];
-
-  const promptLooksNonTrivial = normalizedPrompt.length > 140
-    || planningSignals.some((signal) => normalizedPrompt.includes(signal));
-  if (!promptLooksNonTrivial) return false;
-  if (turnMessages.some((message) => message.from === "device" || message.agentId === "device-agent")) {
-    return false;
-  }
-  if (turnMessages.some((message) => message.from === "agent" && message.agentId === "agent-planner")) {
-    return false;
-  }
-
-  const replyAlreadyMentionsPlanner = normalizedReply.includes("agent-planner") || normalizedReply.includes("planner");
-  return !replyAlreadyMentionsPlanner;
-}
-
-function isAgentEnabled(settings: AppSettings, agentId: AgentId): boolean {
-  return settings.agents[agentId]?.enabled ?? true;
-}
-
-function getEnabledAgents(settings: AppSettings): AgentId[] {
-  return (Object.entries(settings.agents) as Array<[AgentId, { enabled: boolean }]>)
-    .filter(([, state]) => state.enabled)
-    .map(([agentId]) => agentId);
-}
-
-function formatAgentLabel(agentId: AgentId): string {
-  return agentId === "device-agent" ? "Device" : "Planner";
-}
-
-function createForcedPlannerHandoff(apiRecords: ApiRequestRecord[], userPrompt: string): ResolvedAgentHandoff {
-  return {
-    agentId: "agent-planner",
-    apiRecords,
-    mode: "analysis",
-    previewContent: userPrompt,
-    request: `Propose la prochaine etape atomique pour traiter cette demande utilisateur: ${userPrompt}`,
-  };
 }

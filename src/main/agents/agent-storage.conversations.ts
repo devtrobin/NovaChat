@@ -27,6 +27,7 @@ import { ensureAgentWorkspace } from "./agent-storage.workspace";
 type RecordAgentCommandExchangeArgs = {
   agentId: AgentId;
   agentConversationId?: string | null;
+  apiRequests?: ChatMessage["apiRequests"];
   assistantRequest: string;
   command: string;
   result: {
@@ -93,6 +94,7 @@ export async function appendDirectAgentExchange(
 export async function recordAgentCommandExchange({
   agentId,
   agentConversationId = null,
+  apiRequests = [],
   assistantRequest,
   command,
   result,
@@ -103,7 +105,13 @@ export async function recordAgentCommandExchange({
 }: RecordAgentCommandExchangeArgs): Promise<{ agentConversationId: string }> {
   const workspace = await ensureAgentWorkspace(rootDirectory, agentId);
   const assistantMessage = createAssistantToAgentMessage(agentId, assistantRequest, command);
-  const resultMessage = createAgentResultMessage(agentId, command, result.output, result.status);
+  const resultMessage = createAgentResultMessage(
+    agentId,
+    command,
+    result.output,
+    result.status,
+    apiRequests,
+  );
   const existingConversation = agentConversationId
     ? workspace.conversations.conversations.find((conversation) => conversation.id === agentConversationId) ?? null
     : null;

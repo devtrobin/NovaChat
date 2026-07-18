@@ -30,7 +30,10 @@ export async function runDeviceAgentTask(
   } = args;
 
   onPipelineStageChange?.("agent-generating", task.agentId);
-  const resolvedCommand = await resolveDeviceAgentCommand(settings, task);
+  const {
+    apiRecords: commandApiRecords,
+    command: resolvedCommand,
+  } = await resolveDeviceAgentCommand(settings, task);
   throwIfTurnStopped(turnId);
 
   const permissionResult = await resolveDevicePermission(
@@ -38,6 +41,7 @@ export async function runDeviceAgentTask(
     activeTaskId,
     currentAgentConversationId,
     resolvedCommand,
+    commandApiRecords,
   );
   if (permissionResult) return permissionResult;
 
@@ -45,10 +49,12 @@ export async function runDeviceAgentTask(
     args,
     activeTaskId,
     resolvedCommand,
+    commandApiRecords,
   );
   const record = await recordAgentCommandExchange({
     agentId: task.agentId,
     agentConversationId: currentAgentConversationId,
+    apiRequests: commandApiRecords,
     assistantRequest: task.request,
     command: resolvedCommand,
     result: {
@@ -79,6 +85,7 @@ async function executeResolvedDeviceCommand(
   args: RunAgentTaskArgs,
   activeTaskId: string,
   resolvedCommand: string,
+  commandApiRecords: NonNullable<ChatMessage["apiRequests"]>,
 ): Promise<ChatMessage> {
   const {
     conversationId,
@@ -109,12 +116,14 @@ async function executeResolvedDeviceCommand(
       resultSender: "device",
       turnId,
     });
-    return createDeviceAgentSummaryMessage(
+    const summaryMessage = createDeviceAgentSummaryMessage(
       task.request,
       resolvedCommand,
       executionMessage.result ?? "",
       normalizeDeviceStatus(executionMessage.status),
     );
+    summaryMessage.apiRequests = [...commandApiRecords];
+    return summaryMessage;
   } catch (error) {
     const deviceErrorMessage = createDeviceImmediateErrorMessage(
       resolvedCommand,
@@ -122,11 +131,13 @@ async function executeResolvedDeviceCommand(
       error,
       "assistant",
     );
-    return createDeviceAgentSummaryMessage(
+    const summaryMessage = createDeviceAgentSummaryMessage(
       task.request,
       resolvedCommand,
       deviceErrorMessage.result ?? "",
       "error",
     );
+    summaryMessage.apiRequests = [...commandApiRecords];
+    return summaryMessage;
   }
 }

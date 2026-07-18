@@ -131,12 +131,13 @@ export function createAgentResultMessage(
   command: string,
   output: string,
   status: AgentExchangeStatus,
+  apiRequests: ChatMessage["apiRequests"] = [],
 ): ChatMessage {
   const createdAt = new Date().toISOString();
   if (agentId !== "device-agent") {
     return {
       agentId,
-      apiRequests: [],
+      apiRequests: [...(apiRequests ?? [])],
       content: output,
       createdAt,
       from: "agent",
@@ -155,7 +156,7 @@ export function createAgentResultMessage(
   }
 
   return {
-    apiRequests: [],
+    apiRequests: [...(apiRequests ?? [])],
     content: command,
     createdAt,
     from: "device",

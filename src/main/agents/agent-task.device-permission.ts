@@ -3,6 +3,7 @@ import {
   recordAgentCommandExchange,
   saveAgentPermission,
 } from "./agent-storage.service";
+import { ApiRequestRecord } from "../../shared/chat.types";
 import { createDeviceAgentSummaryMessage } from "./agent-task.messages";
 import { AgentTaskExecutionResult, RunAgentTaskArgs } from "./agent-task.types";
 import { createDeviceImmediateErrorMessage } from "../ai/ai.message-factory";
@@ -24,6 +25,7 @@ export async function resolveDevicePermission(
   activeTaskId: string,
   currentAgentConversationId: string | null,
   resolvedCommand: string,
+  commandApiRecords: ApiRequestRecord[],
 ): Promise<AgentTaskExecutionResult | null> {
   const {
     conversationId,
@@ -50,6 +52,7 @@ export async function resolveDevicePermission(
       args,
       currentAgentConversationId,
       resolvedCommand,
+      commandApiRecords,
       "Commande refusee par une permission enregistree.",
     );
   }
@@ -100,6 +103,7 @@ export async function resolveDevicePermission(
     args,
     currentAgentConversationId,
     resolvedCommand,
+    commandApiRecords,
     "Commande refusee par l'utilisateur.",
   );
 }
@@ -108,6 +112,7 @@ async function recordPermissionDenied(
   args: RunAgentTaskArgs,
   currentAgentConversationId: string | null,
   resolvedCommand: string,
+  commandApiRecords: ApiRequestRecord[],
   errorMessage: string,
 ): Promise<AgentTaskExecutionResult> {
   const {
@@ -128,9 +133,11 @@ async function recordPermissionDenied(
     deviceErrorMessage.result ?? "",
     "denied",
   );
+  deviceMessage.apiRequests = [...commandApiRecords];
   const record = await recordAgentCommandExchange({
     agentId: task.agentId,
     agentConversationId: currentAgentConversationId,
+    apiRequests: commandApiRecords,
     assistantRequest: task.request,
     command: resolvedCommand,
     result: {
