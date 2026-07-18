@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow, dialog, ipcMain } from "electron";
 import path from "node:path";
 import { registerAiHandlers } from "./main/ipc/ai.handlers";
 import { registerAgentsHandlers } from "./main/ipc/agents.handlers";
@@ -6,13 +6,27 @@ import { registerChatHandlers } from "./main/ipc/chat.handlers";
 import { registerSettingsHandlers } from "./main/ipc/settings.handlers";
 import { createMainWindow } from "./main/window/create-main-window";
 import { configureStorageJournal } from "./main/storage/storage-journal";
+import { migrateApplicationData } from "./main/migrations/data-migration.service";
+import {
+  getLegacyApplicationDirectory,
+  getUserDataDirectory,
+} from "./main/settings/settings.service";
 
 if (require("electron-squirrel-startup")) {
   app.quit();
 }
 
-app.on("ready", () => {
-  configureStorageJournal(path.join(app.getPath("userData"), "logs", "storage-errors.jsonl"));
+void app.whenReady().then(async () => {
+  const userDataDirectory = getUserDataDirectory();
+  configureStorageJournal(path.join(userDataDirectory, "logs", "storage-errors.jsonl"));
+  try {
+    await migrateApplicationData(getLegacyApplicationDirectory(), userDataDirectory);
+  } catch (error) {
+    dialog.showErrorBox(
+      "Migration des donnees incomplete",
+      error instanceof Error ? error.message : "Une erreur inconnue a interrompu la migration.",
+    );
+  }
   createMainWindow();
 });
 

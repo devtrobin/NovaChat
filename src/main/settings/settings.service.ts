@@ -8,20 +8,28 @@ function getApplicationDirectory(): string {
   return app.isPackaged ? path.dirname(process.execPath) : process.cwd();
 }
 
+export function getLegacyApplicationDirectory(): string {
+  return getApplicationDirectory();
+}
+
+export function getUserDataDirectory(): string {
+  return app.getPath("userData");
+}
+
 export function getReferenceSettingsPath(): string {
-  return path.join(getApplicationDirectory(), "settings.json");
+  return path.join(getUserDataDirectory(), "settings.json");
 }
 
 export function getReferenceConversationsPath(): string {
-  return path.join(getApplicationDirectory(), "conversations.json");
+  return path.join(getUserDataDirectory(), "conversations.json");
 }
 
 export function getReferenceConversationsDirectory(): string {
-  return path.join(getApplicationDirectory(), "conversations");
+  return path.join(getUserDataDirectory(), "conversations");
 }
 
 export function getReferenceAgentsDirectory(): string {
-  return path.join(getApplicationDirectory(), "agents");
+  return path.join(getUserDataDirectory(), "agents");
 }
 
 export function createDefaultSettings(): AppSettings {
