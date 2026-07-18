@@ -36,18 +36,28 @@ Action recommandée :
 5. documenter que `/cmd` est une exécution explicite utilisateur qui contourne
    les permissions agent.
 
-### Absence de tests comportementaux
-
-Le projet n’a aucun runner de test ni script `test`. Les fichiers de test sont
-vides. Les composants les plus sensibles (`device.policy`, stockage,
-orchestrateur, parser provider) ne sont donc protégés par aucune régression
-automatique.
-
-Action recommandée : commencer par des tests unitaires Node sur la policy, le
-parser OpenAI, le planner, la sérialisation et les reducers de conversation,
-avant les tests UI.
-
 ## P1 — Risques de données, sécurité et cohérence produit
+
+### Couverture de tests encore limitée
+
+Le socle Vitest couvre désormais la policy, les parsers OpenAI/Planner, le
+stockage chat et les événements de conversation. Cinq tests d’échec attendu
+matérialisent les contournements Device.
+
+Il manque encore les composants React, l’orchestrateur complet, les
+permissions asynchrones, le registre d’arrêt et les parcours end-to-end.
+
+Action recommandée : convertir les cinq `it.fails` au fil du durcissement,
+puis couvrir les workflows asynchrones critiques.
+
+### Vulnérabilités de dépendances non triées
+
+L’installation npm du runner a signalé 57 vulnérabilités dans l’arbre complet,
+dont 2 critiques. Aucun `npm audit fix` automatique n’a été lancé afin
+d’éviter des mises à jour cassantes non analysées.
+
+Action recommandée : produire un audit détaillé, distinguer dépendances de
+build et runtime, puis corriger par mises à jour ciblées.
 
 ### Écritures non atomiques et erreurs silencieuses
 

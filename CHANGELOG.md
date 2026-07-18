@@ -3,6 +3,11 @@
 ## Unreleased
 
 ### Added
+- socle de tests Vitest
+  - policy de permissions Device
+  - parsers OpenAI et Planner
+  - serialisation et round-trip du stockage chat
+  - application des evenements de conversation
 - base de connaissance de reprise auditee contre le code au 18 juillet 2026
   - index `docs/README.md`
   - guide `docs/DEVELOPMENT.md`
@@ -44,6 +49,7 @@
 - modernisation du `tsconfig` pour TypeScript recent
 
 ### Fixed
+- parsing des sections Planner vides, qui pouvaient absorber le label suivant
 - imports CSS reconnus par TypeScript / VS Code
 - meilleure classification des erreurs UI
 - meilleure robustesse du parsing de reponses provider

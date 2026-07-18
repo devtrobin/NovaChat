@@ -11,7 +11,8 @@ NovaChat est un Electron + React fonctionnel avec :
 - `device-agent` pour générer/exécuter une commande locale ;
 - permissions, historique, activité et arrêt de tâches.
 
-TypeScript, lint et packaging Windows x64 passent au 18 juillet 2026.
+Tests, TypeScript, lint et packaging Windows x64 passent au 18 juillet 2026.
+La suite compte 31 réussites et 5 échecs attendus pour les failles Device.
 
 ## Ce qu’il faut lire
 
@@ -25,15 +26,16 @@ et contrats, consulter [DATA_MODEL.md](DATA_MODEL.md).
 
 ## Première action recommandée
 
-Mettre en place un runner de tests et verrouiller
-`src/main/device/device.policy.ts` avec une matrice adversariale. Ne pas
-étendre les commandes autorisées avant cette étape.
+Durcir `src/main/device/device.policy.ts` à partir des cinq tests adversariaux
+actuellement marqués `it.fails`. Ne pas étendre les commandes autorisées avant
+leur conversion en tests normaux.
 
 ## Commandes de départ
 
 ```powershell
 git status --short
 npm.cmd ci
+npm.cmd test
 npm.cmd exec tsc -- --noEmit
 npm.cmd run lint
 ```
@@ -66,7 +68,7 @@ out/
 
 ## Pièges immédiats
 
-- pas de tests malgré la présence de fichiers `*.test.tsx` ;
+- cinq contournements Device sont encore des échecs attendus ;
 - `activeProvider` n’effectue pas encore de routage multi-provider ;
 - `diagnostic-agent` est un ancien ID partiellement migré ;
 - le refus “Non” d’une permission peut devenir permanent ;

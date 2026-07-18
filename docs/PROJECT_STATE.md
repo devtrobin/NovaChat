@@ -18,8 +18,9 @@ l’exécution locale sont branchés. Le projet compile et se package.
 
 Il n’est toutefois pas prêt à être considéré comme une frontière de sécurité
 pour l’exécution de commandes, ni comme une application de production :
-l’absence de tests, la policy shell contournable, la robustesse du stockage et
-la gestion des secrets sont les principaux bloqueurs.
+la policy shell contournable, la couverture de tests encore initiale, la
+robustesse du stockage et la gestion des secrets sont les principaux
+bloqueurs.
 
 ## Matrice fonctionnelle
 
@@ -42,7 +43,7 @@ la gestion des secrets sont les principaux bloqueurs.
 | Conversations directes agent | Backend seulement | IPC exposé, aucune UI active |
 | Providers alternatifs | Placeholder | sélection possible mais non exécutée |
 | Internationalisation | Partielle | écran de boot seulement |
-| Tests automatisés | Absent | fichiers placeholders |
+| Tests automatisés | Socle fonctionnel | 31 réussites, 5 failles Device attendues |
 | Packaging Windows x64 | Vérifié | `npm.cmd run package` réussi |
 
 ## Agents actuels
@@ -93,6 +94,7 @@ preview, mais aucune implémentation provider correspondante n’existe.
 Réussites :
 
 ```text
+npm.cmd test
 npm.cmd exec tsc -- --noEmit
 npm.cmd run lint
 npm.cmd run package
@@ -100,13 +102,22 @@ npm.cmd run package
 
 Le package vérifié est `win32-x64`.
 
+La suite comprend 36 cas répartis dans six fichiers. Elle couvre la policy
+Device, les parsers OpenAI/Planner, le stockage chat et les reducers
+d’événements. Cinq cas `it.fails` exécutent les contournements Device déjà
+identifiés.
+
 Non vérifié :
 
 - installateur `make` ;
 - lancement du binaire packagé ;
 - macOS et Linux ;
 - comportement avec un vrai appel OpenAI pendant l’audit ;
-- tests automatisés, car ils n’existent pas.
+- composants React et parcours end-to-end.
+
+L’installation npm ayant ajouté Vitest a signalé 57 vulnérabilités dans
+l’arbre complet, dont 2 critiques. Elles n’ont pas été corrigées
+automatiquement ni triées dans ce chantier.
 
 ## Écarts avec l’ancienne documentation
 

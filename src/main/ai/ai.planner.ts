@@ -154,13 +154,13 @@ export function createPlannerInvalidResponse(message: ChatMessage): string {
 }
 
 function extractInlineValue(content: string, label: typeof SECTION_LABELS[number]): string | null {
-  const match = content.match(new RegExp(`(?:^|\\n)${label}:\\s*([^\\n]+)`, "i"));
+  const match = content.match(new RegExp(`(?:^|\\n)${label}:[ \\t]*([^\\n]+)`, "i"));
   return match?.[1]?.trim() || null;
 }
 
 function extractSection(content: string, label: typeof SECTION_LABELS[number]): string | null {
   const allLabelsPattern = SECTION_LABELS.join("|");
-  const match = content.match(new RegExp(`(?:^|\\n)${label}:\\s*([\\s\\S]*?)(?=\\n(?:${allLabelsPattern}):|$)`, "i"));
+  const match = content.match(new RegExp(`(?:^|\\n)${label}:[ \\t]*([\\s\\S]*?)(?=\\n(?:${allLabelsPattern}):|$)`, "i"));
   return match?.[1]?.trim() || null;
 }
 

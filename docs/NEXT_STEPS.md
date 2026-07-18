@@ -5,16 +5,17 @@
 Le système d’agents existe déjà. La priorité n’est plus de le créer, mais de
 fiabiliser les capacités qu’il possède avant de l’élargir.
 
-## Phase 1 — Filet de sécurité
+## Phase 1 — Filet de sécurité — terminée
 
-1. Ajouter un runner de tests TypeScript.
-2. Tester `device.policy.ts` avec cas sûrs et cas adversariaux.
-3. Tester `openai.parser.ts` et `ai.planner.ts`.
-4. Tester la sérialisation/lecture du stockage et les reducers d’événements.
-5. Ajouter un script `test` et l’intégrer à la checklist de validation.
+- Vitest ajouté avec `npm test` et `npm run test:watch`.
+- Policy Device testée avec cas sûrs et cas adversariaux.
+- Parsers OpenAI et Planner testés.
+- Sérialisation, round-trip du stockage et reducers d’événements testés.
+- 31 tests réussissent et 5 failles Device sont exécutées comme échecs
+  attendus.
 
-Critère de sortie : chaque bug de sécurité ou de données identifié ci-dessous
-peut recevoir un test de non-régression.
+La priorité active est désormais la phase 2. Les cinq `it.fails` doivent
+devenir des tests normaux au fil des corrections de policy.
 
 ## Phase 2 — Sécuriser Device
 

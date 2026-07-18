@@ -79,7 +79,7 @@ Eviter :
 Avant commit significatif :
 1. `npm exec tsc -- --noEmit`
 2. `npm run lint`
-3. lancer la suite de tests quand elle aura ete ajoutee
+3. `npm test`
 
 Sous PowerShell avec execution de scripts desactivee, utiliser `npm.cmd`.
 

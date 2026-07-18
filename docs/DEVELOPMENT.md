@@ -2,7 +2,7 @@
 
 ## Prérequis
 
-- Node.js compatible avec Electron Forge 7 et les dépendances verrouillées.
+- Node.js 20, 22 ou 24+ conformément au moteur déclaré par Vitest 4.
 - npm.
 - Une clé API et un modèle OpenAI pour les tours IA.
 - Une connexion réseau lors du premier packaging si Electron Forge doit
@@ -22,6 +22,8 @@ Sous macOS ou Linux, la forme habituelle est `npm ci`.
 | But | Commande |
 | --- | --- |
 | Démarrer en développement | `npm.cmd start` |
+| Lancer les tests une fois | `npm.cmd test` |
+| Lancer les tests en watch | `npm.cmd run test:watch` |
 | Vérifier TypeScript | `npm.cmd exec tsc -- --noEmit` |
 | Linter | `npm.cmd run lint` |
 | Créer un dossier applicatif | `npm.cmd run package` |
@@ -34,26 +36,32 @@ interdit `npm.ps1`; `npm.cmd` est donc nécessaire.
 ## État de validation au 18 juillet 2026
 
 - `npm.cmd exec tsc -- --noEmit` : réussi.
+- `npm.cmd test` : 31 réussites et 5 échecs attendus.
 - `npm.cmd run lint` : réussi.
 - `npm.cmd run package` : réussi pour `win32-x64`.
 - `npm.cmd run make` : non exécuté.
-- tests automatisés : absents.
 
 Le packaging produit actuellement `out/nova-chat-win32-x64/`. `out/` est
 ignoré par Git.
 
 ## Tests
 
-Il n’existe ni script `test`, ni dépendance de test UI déclarée. Les huit
-fichiers `*.test.tsx` ne contiennent que :
+Vitest 4 exécute six fichiers sous `src/` :
 
-```ts
-// Test setup pending.
-export {};
-```
+- policy de permissions Device ;
+- parser des réponses OpenAI ;
+- parser du format Planner ;
+- sérialisation du stockage chat ;
+- round-trip du stockage sur un dossier temporaire ;
+- application des événements de conversation.
 
-Un lint vert ne constitue donc pas une preuve comportementale. Jusqu’à
-l’ajout d’une suite de tests, vérifier manuellement au minimum :
+Cinq cas `it.fails` exécutent des commandes adversariales que la policy classe
+encore à tort comme autorisées. La suite reste verte tant que ces failles sont
+explicitement marquées comme attendues. Lors du point 2, chaque correction
+doit transformer son `it.fails` en test normal.
+
+Les composants React ne sont pas encore testés. Vérifier manuellement au
+minimum :
 
 1. démarrage et passage de l’écran de chargement ;
 2. création, renommage, recherche et suppression d’une conversation ;

@@ -49,14 +49,14 @@ forme `npm.cmd` évite le blocage de `npm.ps1` sur certains PowerShell.
 
 ```powershell
 npm.cmd exec tsc -- --noEmit
+npm.cmd test
 npm.cmd run lint
 npm.cmd run package
 ```
 
-Au 18 juillet 2026, les trois commandes passent sur Windows x64.
-
-Il n’existe pas encore de vraie suite de tests : les fichiers `*.test.tsx`
-sont des placeholders et aucun script `test` n’est défini.
+Au 18 juillet 2026, ces commandes passent sur Windows x64. La suite Vitest
+exécute 36 cas : 31 réussissent normalement et 5 sont des échecs attendus qui
+documentent les contournements connus de la policy Device.
 
 ## Configuration OpenAI
 

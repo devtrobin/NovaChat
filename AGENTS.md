@@ -31,13 +31,16 @@ Sous PowerShell avec une politique d’exécution restrictive, utiliser
 
 ```powershell
 npm.cmd ci
+npm.cmd test
 npm.cmd exec tsc -- --noEmit
 npm.cmd run lint
 npm.cmd run package
 ```
 
-Il n’existe pas encore de vraie suite de tests. Les fichiers `*.test.tsx`
-actuels sont des placeholders et aucun script `test` n’est défini.
+La suite Vitest couvre la policy Device, les parsers OpenAI/Planner, le
+stockage des conversations et les événements du chat. Cinq tests
+`it.fails` matérialisent des failles connues de la policy ; ils doivent être
+convertis en tests normaux lors du durcissement Device.
 
 ## Données locales
 
