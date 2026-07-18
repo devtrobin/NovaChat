@@ -36,6 +36,8 @@ export default function MessageItemSystem({ message, onOpenSettings, onSubmitPer
                 ? "allow-always"
                 : action.id === "permission-deny"
                   ? "deny"
+                  : action.id === "permission-deny-always"
+                    ? "deny-always"
                   : null;
             if (!decision) return null;
 

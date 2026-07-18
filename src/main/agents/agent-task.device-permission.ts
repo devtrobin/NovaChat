@@ -86,11 +86,11 @@ export async function resolveDevicePermission(
     );
   }
 
-  if (decision !== "deny") {
+  if (decision !== "deny" && decision !== "deny-always") {
     return null;
   }
 
-  if (policyDecision.kind === "ask") {
+  if (decision === "deny-always" && policyDecision.kind === "ask") {
     await saveAgentPermission(
       settings.localFiles.agentsDirectory,
       task.agentId,

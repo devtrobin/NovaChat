@@ -1,7 +1,12 @@
 export type MessageSender = 'user' | 'assistant' | 'agent' | 'device' | 'system';
 export type MessageRecipient = 'user' | 'assistant' | 'agent' | 'device';
 export type ConversationOrigin = 'assistant' | 'user';
-export type SystemActionId = "open-settings" | "permission-allow" | "permission-allow-always" | "permission-deny";
+export type SystemActionId =
+  | "open-settings"
+  | "permission-allow"
+  | "permission-allow-always"
+  | "permission-deny"
+  | "permission-deny-always";
 
 export type MessageStatus =
   | 'idle'

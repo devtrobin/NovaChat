@@ -51,6 +51,11 @@ export function createPermissionRequestSystemMessage(
         label: "Non",
         payload: { requestId },
       },
+      {
+        id: "permission-deny-always",
+        label: "Toujours refuser",
+        payload: { requestId },
+      },
     ],
     apiRequests: [],
     content: [
@@ -70,7 +75,7 @@ export function createPermissionRequestSystemMessage(
 }
 
 export function createPermissionResolutionSystemMessage(
-  decision: "allow" | "allow-always" | "deny",
+  decision: "allow" | "allow-always" | "deny" | "deny-always",
   command: string,
   summary?: string,
 ): ChatMessage {
@@ -90,13 +95,21 @@ export function createPermissionResolutionSystemMessage(
         "Commande :",
         formatCommandPreview(command),
       ].join("\n")
-      : [
-        "Permission refusee.",
-        summary ? `Action : ${summary}` : "La commande ne sera pas executee.",
-        "",
-        "Commande :",
-        formatCommandPreview(command),
-      ].join("\n");
+      : decision === "deny-always"
+        ? [
+          "Permission refusee de maniere permanente.",
+          summary ? `Action : ${summary}` : "La commande a ete memorisee dans les permissions refusees.",
+          "",
+          "Commande :",
+          formatCommandPreview(command),
+        ].join("\n")
+        : [
+          "Permission refusee une fois.",
+          summary ? `Action : ${summary}` : "La commande ne sera pas executee cette fois.",
+          "",
+          "Commande :",
+          formatCommandPreview(command),
+        ].join("\n");
 
   return {
     apiRequests: [],
