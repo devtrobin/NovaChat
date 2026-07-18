@@ -50,15 +50,6 @@ permissions asynchrones, le registre d’arrêt et les parcours end-to-end.
 Action recommandée : convertir les cinq `it.fails` au fil du durcissement,
 puis couvrir les workflows asynchrones critiques.
 
-### Vulnérabilités de dépendances non triées
-
-L’installation npm du runner a signalé 57 vulnérabilités dans l’arbre complet,
-dont 2 critiques. Aucun `npm audit fix` automatique n’a été lancé afin
-d’éviter des mises à jour cassantes non analysées.
-
-Action recommandée : produire un audit détaillé, distinguer dépendances de
-build et runtime, puis corriger par mises à jour ciblées.
-
 ### Écritures non atomiques et erreurs silencieuses
 
 `readJsonFile` et la lecture des settings absorbent toute erreur et retournent
@@ -231,8 +222,19 @@ actuelle. Elle ne doit pas servir de référence fonctionnelle.
 présent et le dépôt ne contient pas de fichier `LICENSE` malgré la déclaration
 `MIT`.
 
+### Résolutions npm transitives à surveiller
+
+L’audit npm est revenu à zéro grâce aux mises à jour directes et à quatre
+résolutions transitives : `tar`, `tmp`, `uuid` et `webpack-dev-server`.
+Celles-ci compensent des contraintes amont d’Electron Forge 7 et peuvent
+devenir inutiles ou incompatibles lors d’une prochaine mise à jour.
+
+Action recommandée : à chaque mise à jour d’Electron Forge, tenter de retirer
+les résolutions une par une, puis rejouer audit, tests, démarrage et packaging.
+
 ## Ce qui est sain aujourd’hui
 
+- Les audits npm complet et production signalent 0 vulnérabilité.
 - TypeScript `--noEmit` passe.
 - ESLint passe.
 - Le packaging Windows x64 passe.

@@ -98,9 +98,13 @@ npm.cmd test
 npm.cmd exec tsc -- --noEmit
 npm.cmd run lint
 npm.cmd run package
+npm.cmd audit
+npm.cmd audit --omit=dev
 ```
 
 Le package vérifié est `win32-x64`.
+Le démarrage de développement a également atteint le lancement de
+l’application et du serveur renderer sur `http://localhost:9000`.
 
 La suite comprend 36 cas répartis dans six fichiers. Elle couvre la policy
 Device, les parsers OpenAI/Planner, le stockage chat et les reducers
@@ -115,9 +119,16 @@ Non vérifié :
 - comportement avec un vrai appel OpenAI pendant l’audit ;
 - composants React et parcours end-to-end.
 
-L’installation npm ayant ajouté Vitest a signalé 57 vulnérabilités dans
-l’arbre complet, dont 2 critiques. Elles n’ont pas été corrigées
-automatiquement ni triées dans ce chantier.
+L’audit initial signalait 57 vulnérabilités dans l’arbre complet, dont
+2 critiques, et aucune dans les dépendances de production. Après mises à jour
+ciblées et résolutions transitives, les audits complet et production
+signalent tous les deux 0 vulnérabilité.
+
+Les résolutions `tar`, `tmp`, `uuid` et `webpack-dev-server` de `package.json`
+compensent des contraintes amont trop anciennes d’Electron Forge 7. Elles ont
+été validées par les tests, le typage, le lint, un démarrage de développement
+et le packaging Windows x64. Elles doivent être réévaluées lors de chaque mise
+à jour d’Electron Forge.
 
 ## Écarts avec l’ancienne documentation
 

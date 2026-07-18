@@ -36,6 +36,11 @@
 - traces `message.json`, `log.json`, `apis.json` par message
 
 ### Changed
+- mise à jour de sécurité de la chaîne npm :
+  - Electron 39.2.7 vers 39.8.10
+  - Electron Forge 7.10.2 vers 7.11.2
+  - résolutions transitives documentées pour `tar`, `tmp`, `uuid` et
+    `webpack-dev-server`
 - mise a jour complete de l'architecture, de l'etat, des workflows, du plan
   agents, du handoff et de la feuille de route pour refleter `agent-planner`,
   la generation de commande Device et le registre de taches
@@ -49,6 +54,7 @@
 - modernisation du `tsconfig` pour TypeScript recent
 
 ### Fixed
+- suppression des 57 vulnérabilités npm signalées, dont 2 critiques
 - parsing des sections Planner vides, qui pouvaient absorber le label suivant
 - imports CSS reconnus par TypeScript / VS Code
 - meilleure classification des erreurs UI
