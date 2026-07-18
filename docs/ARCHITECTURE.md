@@ -174,9 +174,11 @@ Sur macOS/Linux : `$SHELL -lc`, avec `/bin/zsh` en fallback.
 Le timeout est fixé à 15 secondes. Le registre est uniquement mémoire.
 
 La classification de permission de `device.policy.ts` intervient dans le flux
-agent, avant `startDeviceCommand`. Elle ne s’applique pas à `/cmd`, qui est une
-exécution explicitement demandée par l’utilisateur. Voir
-[RISKS.md](RISKS.md) pour ses limites.
+agent, avant `startDeviceCommand`. Le parseur sépare les segments et
+redirections ; toute syntaxe inconnue, dynamique ou complexe devient
+`ask-always` et ne peut donc pas recevoir d’autorisation permanente. La policy
+ne s’applique pas à `/cmd`, qui est une exécution explicitement demandée par
+l’utilisateur. Voir [RISKS.md](RISKS.md) pour ses limites.
 
 ### Domaine `chat`
 

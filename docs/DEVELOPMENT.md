@@ -36,7 +36,7 @@ interdit `npm.ps1`; `npm.cmd` est donc nécessaire.
 ## État de validation au 18 juillet 2026
 
 - `npm.cmd exec tsc -- --noEmit` : réussi.
-- `npm.cmd test` : 31 réussites et 5 échecs attendus.
+- `npm.cmd test` : 97 réussites.
 - `npm.cmd run lint` : réussi.
 - `npm.cmd run package` : réussi pour `win32-x64`.
 - `npm.cmd run make` : non exécuté.
@@ -55,10 +55,10 @@ Vitest 4 exécute six fichiers sous `src/` :
 - round-trip du stockage sur un dossier temporaire ;
 - application des événements de conversation.
 
-Cinq cas `it.fails` exécutent des commandes adversariales que la policy classe
-encore à tort comme autorisées. La suite reste verte tant que ces failles sont
-explicitement marquées comme attendues. Lors du point 2, chaque correction
-doit transformer son `it.fails` en test normal.
+La matrice Device comporte 74 cas normaux. Elle couvre commandes de lecture,
+écritures bornées, séparateurs shell, substitutions, wrappers, redirections,
+sous-commandes Git et options mutantes. Toute nouvelle règle de policy doit
+ajouter ses cas sûrs et adversariaux dans cette matrice.
 
 Les composants React ne sont pas encore testés. Vérifier manuellement au
 minimum :

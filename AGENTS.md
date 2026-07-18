@@ -38,9 +38,9 @@ npm.cmd run package
 ```
 
 La suite Vitest couvre la policy Device, les parsers OpenAI/Planner, le
-stockage des conversations et les événements du chat. Cinq tests
-`it.fails` matérialisent des failles connues de la policy ; ils doivent être
-convertis en tests normaux lors du durcissement Device.
+stockage des conversations et les événements du chat. La matrice Device couvre
+les séparateurs shell, expansions, wrappers, redirections, chemins et options
+mutantes avec des tests de régression normaux.
 
 ## Données locales
 
@@ -54,6 +54,7 @@ copier sa valeur dans des logs, une documentation ou un commit.
 ## Point de vigilance prioritaire
 
 Ne considérer ni `device.policy.ts` ni le workflow de permission comme une
-frontière de sécurité complète. Le parseur de commandes est contournable par
-plusieurs constructions shell. Lire `docs/RISKS.md` avant toute extension du
-canal `device`.
+frontière de sécurité complète. Les syntaxes non analysables sont classées
+`ask-always`, mais une commande explicitement autorisée reste exécutée par le
+shell de la plateforme. Lire `docs/RISKS.md` avant toute extension du canal
+`device`.

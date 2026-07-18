@@ -11,17 +11,18 @@ fiabiliser les capacités qu’il possède avant de l’élargir.
 - Policy Device testée avec cas sûrs et cas adversariaux.
 - Parsers OpenAI et Planner testés.
 - Sérialisation, round-trip du stockage et reducers d’événements testés.
-- 31 tests réussissent et 5 failles Device sont exécutées comme échecs
-  attendus.
+- 97 tests réussissent, dont 74 cas de policy Device.
 
-La priorité active est désormais la phase 2. Les cinq `it.fails` doivent
-devenir des tests normaux au fil des corrections de policy.
+La priorité active reste la phase 2. Les anciens `it.fails` sont désormais des
+tests de régression normaux.
 
 ## Phase 2 — Sécuriser Device
 
-1. Refuser par défaut les commandes non analysables.
+1. ~~Refuser par défaut les commandes non analysables.~~ Terminé :
+   elles sont classées `ask-always`.
 2. Traiter pipes, substitutions, sous-commandes, redirections et options
-   mutantes.
+   mutantes. La matrice actuelle est couverte ; maintenir cette règle à chaque
+   extension.
 3. Séparer explicitement :
    - lecture locale ;
    - écriture limitée au workspace ;

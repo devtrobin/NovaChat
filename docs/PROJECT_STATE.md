@@ -18,9 +18,8 @@ l’exécution locale sont branchés. Le projet compile et se package.
 
 Il n’est toutefois pas prêt à être considéré comme une frontière de sécurité
 pour l’exécution de commandes, ni comme une application de production :
-la policy shell contournable, la couverture de tests encore initiale, la
-robustesse du stockage et la gestion des secrets sont les principaux
-bloqueurs.
+la policy Device reste un contrôle de permission et non un sandbox, tandis que
+la robustesse du stockage et la gestion des secrets restent des bloqueurs.
 
 ## Matrice fonctionnelle
 
@@ -34,7 +33,7 @@ bloqueurs.
 | `/cmd` utilisateur | Fonctionnel | exécution directe sans permission agent |
 | Device agent | Fonctionnel | commande exacte ou générée depuis un objectif |
 | Planner agent | Fonctionnel | plan textuel structuré, étape atomique |
-| Permissions Device | Fonctionnel avec limites | règles exactes, policy non sûre |
+| Permissions Device | Durci avec limites | syntaxe restrictive, pas un sandbox |
 | Saisie interactive | Partielle | heuristique stdout, timeout 15 s |
 | Arrêt global d’un tour | Fonctionnel | abort provider, permission, commandes |
 | Activité agents | Fonctionnel | polling 1 s + rafraîchissement sur événement |
@@ -43,7 +42,7 @@ bloqueurs.
 | Conversations directes agent | Backend seulement | IPC exposé, aucune UI active |
 | Providers alternatifs | Placeholder | sélection possible mais non exécutée |
 | Internationalisation | Partielle | écran de boot seulement |
-| Tests automatisés | Socle fonctionnel | 31 réussites, 5 failles Device attendues |
+| Tests automatisés | Socle fonctionnel | 97 réussites, aucun échec attendu |
 | Packaging Windows x64 | Vérifié | `npm.cmd run package` réussi |
 
 ## Agents actuels
@@ -106,10 +105,10 @@ Le package vérifié est `win32-x64`.
 Le démarrage de développement a également atteint le lancement de
 l’application et du serveur renderer sur `http://localhost:9000`.
 
-La suite comprend 36 cas répartis dans six fichiers. Elle couvre la policy
+La suite comprend 97 cas répartis dans six fichiers. Elle couvre la policy
 Device, les parsers OpenAI/Planner, le stockage chat et les reducers
-d’événements. Cinq cas `it.fails` exécutent les contournements Device déjà
-identifiés.
+d’événements. La matrice Device comporte 74 cas et tous les anciens
+contournements connus sont des tests de régression normaux.
 
 Non vérifié :
 

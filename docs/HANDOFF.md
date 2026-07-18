@@ -12,7 +12,7 @@ NovaChat est un Electron + React fonctionnel avec :
 - permissions, historique, activité et arrêt de tâches.
 
 Tests, TypeScript, lint et packaging Windows x64 passent au 18 juillet 2026.
-La suite compte 31 réussites et 5 échecs attendus pour les failles Device.
+La suite compte 97 réussites, dont 74 cas de policy Device.
 
 ## Ce qu’il faut lire
 
@@ -26,9 +26,9 @@ et contrats, consulter [DATA_MODEL.md](DATA_MODEL.md).
 
 ## Première action recommandée
 
-Durcir `src/main/device/device.policy.ts` à partir des cinq tests adversariaux
-actuellement marqués `it.fails`. Ne pas étendre les commandes autorisées avant
-leur conversion en tests normaux.
+Poursuivre la phase 2 en séparant explicitement les catégories de permission
+Device, puis corriger la sémantique du refus `Non`. Ne pas étendre les
+commandes autorisées sans cas sûr et adversarial correspondant.
 
 ## Commandes de départ
 
@@ -68,7 +68,7 @@ out/
 
 ## Pièges immédiats
 
-- cinq contournements Device sont encore des échecs attendus ;
+- la policy Device est restrictive, mais reste un contrôle UX et non un sandbox ;
 - `activeProvider` n’effectue pas encore de routage multi-provider ;
 - `diagnostic-agent` est un ancien ID partiellement migré ;
 - le refus “Non” d’une permission peut devenir permanent ;
@@ -78,6 +78,5 @@ out/
 
 ## Phrase de reprise
 
-> Reprendre NovaChat au socle : ajouter les tests de policy et de stockage,
-> fermer les contournements shell, puis rendre la persistance atomique avant
-> toute nouvelle capacité agent.
+> Reprendre NovaChat au socle : terminer la sémantique des permissions Device,
+> puis rendre la persistance atomique avant toute nouvelle capacité agent.

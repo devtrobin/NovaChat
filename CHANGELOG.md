@@ -36,6 +36,8 @@
 - traces `message.json`, `log.json`, `apis.json` par message
 
 ### Changed
+- policy Device restrictive par défaut pour les syntaxes inconnues ou
+  complexes, avec séparation du parsing shell et des listes de règles
 - mise à jour de sécurité de la chaîne npm :
   - Electron 39.2.7 vers 39.8.10
   - Electron Forge 7.10.2 vers 7.11.2
@@ -54,6 +56,9 @@
 - modernisation du `tsconfig` pour TypeScript recent
 
 ### Fixed
+- fermeture des contournements Device connus par pipes, opérateurs shell,
+  substitutions, wrappers, sous-commandes Git, redirections et options
+  mutantes
 - suppression des 57 vulnérabilités npm signalées, dont 2 critiques
 - parsing des sections Planner vides, qui pouvaient absorber le label suivant
 - imports CSS reconnus par TypeScript / VS Code

@@ -6,49 +6,43 @@ calendaire.
 
 ## P0 — À traiter avant d’élargir les capacités locales
 
-### Policy `device` contournable
+### Policy `device` restrictive, mais non sandboxée
 
-`src/main/device/device.policy.ts` classe des chaînes shell avec un parseur
-maison. Il ne modélise pas correctement toutes les constructions shell :
+Les contournements connus par pipes, opérateurs, substitutions, wrappers,
+redirections, sous-commandes Git et options mutantes ont été fermés. La
+matrice Device comporte 74 tests normaux. Une construction inconnue ou trop
+complexe devient `ask-always`, ce qui interdit de la contourner avec une règle
+permanente mémorisée.
 
-- pipe simple `|` et exécution en arrière-plan `&` ;
-- substitutions `$(...)` et backticks ;
-- options mutantes de commandes classées en lecture (`sed -i`,
-  `find -delete`, `xargs`, etc.) ;
-- sous-commandes Git autres que quatre cas explicitement bloqués ;
-- redirections ou quoting complexes.
+La policy reste cependant un mécanisme UX de demande de permission :
 
-Exemple de conséquence : une commande dont le premier exécutable est classé
-lecture seule peut embarquer une écriture ou une suppression secondaire sans
-déclencher la permission attendue.
+- une commande acceptée ponctuellement s’exécute dans le shell complet ;
+- l’analyse ne remplace pas une isolation OS ;
+- les contrôles de chemins sont lexicaux et ne constituent pas un confinement
+  contre toutes les jonctions ou tous les liens symboliques ;
+- `/cmd` reste une exécution explicite utilisateur qui contourne les
+  permissions agent.
 
-De plus, `assertCommandAllowed()` ne bloque que chaîne vide et octet nul. La
-policy actuelle est donc un mécanisme UX de demande de permission, pas une
-frontière de sécurité.
+Actions restantes :
 
-Action recommandée :
-
-1. écrire une matrice de tests adversariaux ;
-2. remplacer la classification de chaîne par une approche explicite et
-   restrictive ;
-3. séparer lecture, écriture dans workspace, réseau et action destructive ;
-4. refuser par défaut les constructions non analysables ;
-5. documenter que `/cmd` est une exécution explicite utilisateur qui contourne
-   les permissions agent.
+1. séparer explicitement lecture, écriture workspace, réseau,
+   installation/système et suppression ;
+2. conserver un refus non mémorisable pour toute syntaxe non comprise ;
+3. durcir les chemins si la policy doit devenir une vraie frontière ;
+4. ne jamais étendre l’allowlist sans tests sûrs et adversariaux.
 
 ## P1 — Risques de données, sécurité et cohérence produit
 
 ### Couverture de tests encore limitée
 
 Le socle Vitest couvre désormais la policy, les parsers OpenAI/Planner, le
-stockage chat et les événements de conversation. Cinq tests d’échec attendu
-matérialisent les contournements Device.
+stockage chat et les événements de conversation. Les 97 tests réussissent,
+dont 74 cas de policy Device.
 
 Il manque encore les composants React, l’orchestrateur complet, les
 permissions asynchrones, le registre d’arrêt et les parcours end-to-end.
 
-Action recommandée : convertir les cinq `it.fails` au fil du durcissement,
-puis couvrir les workflows asynchrones critiques.
+Action recommandée : couvrir maintenant les workflows asynchrones critiques.
 
 ### Écritures non atomiques et erreurs silencieuses
 
