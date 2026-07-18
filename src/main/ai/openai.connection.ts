@@ -1,7 +1,7 @@
-import { OpenAISettings, SettingsTestResult } from "../../shared/settings.types";
+import { OpenAIRuntimeSettings, SettingsTestResult } from "../../shared/settings.types";
 import { postOpenAIResponse } from "./openai.client";
 
-export async function testOpenAIConnection(settings: OpenAISettings): Promise<SettingsTestResult> {
+export async function testOpenAIConnection(settings: OpenAIRuntimeSettings): Promise<SettingsTestResult> {
   try {
     const { response } = await postOpenAIResponse(settings.baseUrl, settings.apiKey, {
       input: "Reply with OK only.",

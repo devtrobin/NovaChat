@@ -1,8 +1,18 @@
 import { app } from "electron";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { AgentSettingsMap, AppSettings } from "../../shared/settings.types";
+import {
+  AgentSettingsMap,
+  AppSettings,
+  RuntimeAppSettings,
+} from "../../shared/settings.types";
 import { parseAppSettings } from "../validation/ipc-payload.validation";
+import { getOpenAICredentialStore } from "../credentials/electron-credential.service";
+import {
+  createStorageIssue,
+  readJsonFileDetailed,
+  writeJsonFile,
+} from "../chat/chat-storage.io";
+import { reportStorageIssue } from "../storage/storage-journal";
 
 function getApplicationDirectory(): string {
   return app.isPackaged ? path.dirname(process.execPath) : process.cwd();
@@ -53,7 +63,7 @@ export function createDefaultSettings(): AppSettings {
       settingsPath: getReferenceSettingsPath(),
     },
     openai: {
-      apiKey: "",
+      apiKeyConfigured: false,
       baseUrl: "https://api.openai.com/v1",
       model: "",
       provider: "openai",
@@ -109,23 +119,21 @@ function mergeSettings(partial: unknown): AppSettings {
 }
 
 async function readSettingsFile(filePath: string): Promise<AppSettings | null> {
+  const result = await readJsonFileDetailed<unknown>(filePath);
+  if (!result.value) return null;
   try {
-    const content = await readFile(filePath, "utf-8");
-    return mergeSettings(JSON.parse(content));
+    return mergeSettings(result.value);
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-      return null;
-    }
+    reportStorageIssue(createStorageIssue(
+      filePath,
+      "invalid-json",
+      error instanceof Error ? error.message : "Schema de settings invalide.",
+    ));
     return null;
   }
 }
 
-async function writeJsonFile(filePath: string, value: unknown): Promise<void> {
-  await mkdir(path.dirname(filePath), { recursive: true });
-  await writeFile(filePath, JSON.stringify(value, null, 2), "utf-8");
-}
-
-export async function loadSettingsFromDisk(): Promise<AppSettings> {
+async function loadSettingsMetadataFromDisk(): Promise<AppSettings> {
   const referenceSettings = await readSettingsFile(getReferenceSettingsPath());
   const fallbackSettings = referenceSettings ?? createDefaultSettings();
   const configuredSettingsPath = fallbackSettings.localFiles.settingsPath;
@@ -138,13 +146,62 @@ export async function loadSettingsFromDisk(): Promise<AppSettings> {
   return configuredSettings ?? fallbackSettings;
 }
 
-export async function saveSettingsToDisk(settings: AppSettings): Promise<void> {
-  const normalizedSettings = mergeSettings(settings);
+export async function loadSettingsFromDisk(): Promise<AppSettings> {
+  const settings = await loadSettingsMetadataFromDisk();
+  return {
+    ...settings,
+    openai: {
+      ...settings.openai,
+      apiKeyConfigured: await getOpenAICredentialStore().has(),
+      apiKeyUpdate: undefined,
+    },
+  };
+}
+
+export async function loadRuntimeSettingsFromDisk(): Promise<RuntimeAppSettings> {
+  const settings = await loadSettingsFromDisk();
+  const apiKey = await getOpenAICredentialStore().get();
+  return {
+    ...settings,
+    openai: {
+      ...settings.openai,
+      apiKey,
+    },
+  };
+}
+
+export async function saveSettingsToDisk(settings: AppSettings): Promise<AppSettings> {
+  const credentialStore = getOpenAICredentialStore();
+  if (settings.openai.apiKeyUpdate?.trim()) {
+    await credentialStore.set(settings.openai.apiKeyUpdate);
+  }
+  const normalizedSettings = mergeSettings({
+    ...settings,
+    openai: {
+      ...settings.openai,
+      apiKeyConfigured: await credentialStore.has(),
+      apiKeyUpdate: undefined,
+    },
+  });
   await writeJsonFile(getReferenceSettingsPath(), normalizedSettings);
 
   if (normalizedSettings.localFiles.settingsPath !== getReferenceSettingsPath()) {
     await writeJsonFile(normalizedSettings.localFiles.settingsPath, normalizedSettings);
   }
+  return loadSettingsFromDisk();
+}
+
+export async function clearOpenAIApiKey(): Promise<AppSettings> {
+  await getOpenAICredentialStore().clear();
+  const settings = await loadSettingsMetadataFromDisk();
+  return saveSettingsToDisk({
+    ...settings,
+    openai: {
+      ...settings.openai,
+      apiKeyConfigured: false,
+      apiKeyUpdate: undefined,
+    },
+  });
 }
 
 export async function getConversationsPathFromSettings(): Promise<string> {

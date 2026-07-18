@@ -3,7 +3,7 @@ import { runTurn } from "../ai/ai.orchestrator";
 import { resolvePermissionRequest } from "../ai/ai.permission.service";
 import { stopTurnByConversation } from "../ai/ai.turn-registry";
 import { killDeviceCommand, submitInputToCommand } from "../device/device.service";
-import { loadSettingsFromDisk } from "../settings/settings.service";
+import { loadRuntimeSettingsFromDisk } from "../settings/settings.service";
 import {
   parseCommandId,
   parseConversationId,
@@ -15,7 +15,7 @@ import {
 export function registerAiHandlers(ipcMain: IpcMain): void {
   ipcMain.handle("nova:ai:run-turn", async (event, payload: unknown) => {
     const request = parseRunTurnRequest(payload);
-    const settings = await loadSettingsFromDisk();
+    const settings = await loadRuntimeSettingsFromDisk();
     return runTurn(request, settings, (payload) => {
       event.sender.send("nova:ai:event", payload);
     });

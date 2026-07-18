@@ -139,7 +139,7 @@ function formatCommandHelp(definition: SlashCommandDefinition): string {
 }
 
 function formatStatus(settings: AppSettings): string {
-  const openAIReady = Boolean(settings.openai.apiKey.trim() && settings.openai.model.trim());
+  const openAIReady = Boolean(settings.openai.apiKeyConfigured && settings.openai.model.trim());
   const selectedProviderNote = settings.activeProvider === "openai"
     ? ""
     : " (aperçu uniquement : les conversations utilisent encore OpenAI)";

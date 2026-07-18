@@ -49,7 +49,7 @@ function createSettings() {
       settingsPath: path.resolve("settings.json"),
     },
     openai: {
-      apiKey: "",
+      apiKeyConfigured: false,
       baseUrl: "https://api.openai.com/v1",
       model: "",
       provider: "openai",
@@ -114,5 +114,18 @@ describe("IPC payload validation", () => {
   it("normalizes valid absolute settings paths", () => {
     expect(parseAppSettings(createSettings()).localFiles.conversationsDirectory)
       .toBe(path.normalize(path.resolve("conversations")));
+  });
+
+  it("never returns a plaintext API key supplied as an unknown renderer field", () => {
+    const settings = createSettings();
+    const parsed = parseAppSettings({
+      ...settings,
+      openai: {
+        ...settings.openai,
+        apiKey: "sk-should-not-cross-the-ipc-boundary",
+      },
+    });
+
+    expect(parsed.openai).not.toHaveProperty("apiKey");
   });
 });

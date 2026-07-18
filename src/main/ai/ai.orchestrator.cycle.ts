@@ -1,6 +1,6 @@
 import { ChatMessage } from "../../shared/chat.types";
 import { AgentId } from "../../shared/agent.types";
-import { AppSettings } from "../../shared/settings.types";
+import { RuntimeAppSettings } from "../../shared/settings.types";
 import { runAgentHandoff } from "./ai.orchestrator.agent-cycle";
 import { requestAssistantReply } from "./ai.orchestrator.assistant-request";
 import {
@@ -21,7 +21,7 @@ import { throwIfTurnStopped } from "./ai.turn-registry";
 type RunAssistantCycleArgs = {
   conversationId: string;
   emit: Emit;
-  settings: AppSettings;
+  settings: RuntimeAppSettings;
   onPipelineStageChange?: (stage: PipelineStage, agentId?: AgentId) => void;
   step: number;
   turnId: string;

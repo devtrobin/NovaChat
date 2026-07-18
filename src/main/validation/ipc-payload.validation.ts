@@ -211,7 +211,8 @@ export function parseAppSettings(value: unknown): AppSettings {
       settingsPath: readAbsolutePath(localFiles.settingsPath, "settings.localFiles.settingsPath"),
     },
     openai: {
-      apiKey: readString(openai.apiKey, "settings.openai.apiKey", 0, 16_384),
+      apiKeyConfigured: readBoolean(openai.apiKeyConfigured, "settings.openai.apiKeyConfigured"),
+      apiKeyUpdate: readOptionalString(openai.apiKeyUpdate, "settings.openai.apiKeyUpdate", 16_384),
       baseUrl: readHttpUrl(openai.baseUrl, "settings.openai.baseUrl"),
       model: readString(openai.model, "settings.openai.model", 0, 256),
       provider: readEnum(openai.provider, "settings.openai.provider", ["openai"] as const),

@@ -29,7 +29,7 @@ const settings: AppSettings = {
     settingsPath: "settings.json",
   },
   openai: {
-    apiKey: "test-key",
+    apiKeyConfigured: true,
     baseUrl: "https://api.openai.com/v1",
     model: "test-model",
     provider: "openai",

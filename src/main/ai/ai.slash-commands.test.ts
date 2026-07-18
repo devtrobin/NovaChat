@@ -37,7 +37,7 @@ const settings: AppSettings = {
     settingsPath: "settings.json",
   },
   openai: {
-    apiKey: "secret-that-must-not-be-displayed",
+    apiKeyConfigured: true,
     baseUrl: "https://api.openai.com/v1",
     model: "test-model",
     provider: "openai",
@@ -94,7 +94,7 @@ describe("slash command registry", () => {
     expect(content).toContain("OpenAI : prêt");
     expect(content).toContain("Modèle OpenAI : test-model");
     expect(content).toContain("Agent Device : désactivé");
-    expect(content).not.toContain(settings.openai.apiKey);
+    expect(content).not.toContain("secret");
   });
 
   it("returns an actionable settings message", () => {

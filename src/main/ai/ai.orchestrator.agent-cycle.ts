@@ -1,5 +1,5 @@
 import { ChatMessage } from "../../shared/chat.types";
-import { AppSettings } from "../../shared/settings.types";
+import { RuntimeAppSettings } from "../../shared/settings.types";
 import { runAgentTask } from "../agents/agent-orchestrator.service";
 import { createAgentRequestMessage, PipelineStage } from "./ai.orchestrator.cycle.messages";
 import { ResolvedAgentHandoff } from "./ai.orchestrator.handoff";
@@ -11,7 +11,7 @@ type RunAgentHandoffArgs = {
   emit: Emit;
   handoff: ResolvedAgentHandoff;
   onPipelineStageChange?: (stage: PipelineStage, agentId?: ResolvedAgentHandoff["agentId"]) => void;
-  settings: AppSettings;
+  settings: RuntimeAppSettings;
   turnId: string;
   turnMessages: ChatMessage[];
   userMessage: ChatMessage;

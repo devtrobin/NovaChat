@@ -59,7 +59,7 @@ export function validateSettingsDraft(settings: AppSettings, category: SettingsC
     return null;
   }
 
-  if (!settings.openai.apiKey.trim()) {
+  if (!settings.openai.apiKeyConfigured && !settings.openai.apiKeyUpdate?.trim()) {
     return "La cle API OpenAI est requise.";
   }
 

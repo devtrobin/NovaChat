@@ -3,6 +3,7 @@ import { AppSettings } from "../../../shared/settings.types";
 
 type SettingsOpenAISectionProps = {
   isBusy: boolean;
+  onClearApiKey: () => void;
   onTestConnection: () => void;
   setDraft: React.Dispatch<React.SetStateAction<AppSettings | null>>;
   setStatus: () => void;
@@ -11,6 +12,7 @@ type SettingsOpenAISectionProps = {
 
 export default function SettingsOpenAISection({
   isBusy,
+  onClearApiKey,
   onTestConnection,
   setDraft,
   setStatus,
@@ -25,9 +27,19 @@ export default function SettingsOpenAISection({
       <label className="settings-panel__field">
         <span className="settings-panel__label">OpenAI API Key</span>
         <input className="settings-panel__input" disabled={isBusy} onChange={(event) => {
-          setDraft((current) => current ? { ...current, openai: { ...current.openai, apiKey: event.target.value } } : current);
+          setDraft((current) => current ? {
+            ...current,
+            openai: { ...current.openai, apiKeyUpdate: event.target.value },
+          } : current);
           setStatus();
-        }} type="password" value={settings.openai.apiKey} />
+        }} placeholder={settings.openai.apiKeyConfigured
+          ? "Cle configuree — saisir une valeur pour la remplacer"
+          : "Saisir une cle API"} type="password" value={settings.openai.apiKeyUpdate ?? ""} />
+        <span className="settings-panel__section-text">
+          {settings.openai.apiKeyConfigured
+            ? "Une cle chiffree est configuree dans le coffre du systeme."
+            : "Aucune cle API n'est configuree."}
+        </span>
       </label>
       <label className="settings-panel__field">
         <span className="settings-panel__label">Model</span>
@@ -46,6 +58,14 @@ export default function SettingsOpenAISection({
       <div className="settings-panel__actions">
         <button className="settings-panel__test" disabled={isBusy} onClick={onTestConnection} type="button">
           Tester la connexion
+        </button>
+        <button
+          className="settings-panel__test"
+          disabled={isBusy || (!settings.openai.apiKeyConfigured && !settings.openai.apiKeyUpdate)}
+          onClick={onClearApiKey}
+          type="button"
+        >
+          Supprimer la cle
         </button>
       </div>
     </div>

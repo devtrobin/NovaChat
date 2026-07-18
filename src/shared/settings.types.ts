@@ -22,10 +22,15 @@ export type ApiTraceSettings = {
 };
 
 export type OpenAISettings = {
-  apiKey: string;
+  apiKeyConfigured: boolean;
+  apiKeyUpdate?: string;
   baseUrl: string;
   model: string;
   provider: "openai";
+};
+
+export type OpenAIRuntimeSettings = OpenAISettings & {
+  apiKey: string;
 };
 
 export type AppSettings = {
@@ -37,6 +42,10 @@ export type AppSettings = {
   localFiles: LocalFilesSettings;
   openai: OpenAISettings;
   previewMode: boolean;
+};
+
+export type RuntimeAppSettings = Omit<AppSettings, "openai"> & {
+  openai: OpenAIRuntimeSettings;
 };
 
 export type SettingsTestResult = {

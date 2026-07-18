@@ -1,7 +1,7 @@
 import { ChatMessage } from "../../shared/chat.types";
 import { RunTurnRequest, RunTurnResult } from "../../shared/ai.types";
 import { AgentId, AgentTaskRequest } from "../../shared/agent.types";
-import { AppSettings } from "../../shared/settings.types";
+import { RuntimeAppSettings } from "../../shared/settings.types";
 import {
   createInterruptedSystemMessage,
   createUserMessage,
@@ -37,7 +37,7 @@ import { runAgentTask } from "../agents/agent-orchestrator.service";
 
 export async function runTurn(
   request: RunTurnRequest,
-  settings: AppSettings,
+  settings: RuntimeAppSettings,
   emit: Emit,
 ): Promise<RunTurnResult> {
   const userMessage = createUserMessage(request.userInput);
@@ -168,7 +168,7 @@ type ResolvePlannerStepArgs = {
   emit: Emit;
   executedPlannerSteps: Set<string>;
   message: ChatMessage;
-  settings: AppSettings;
+  settings: RuntimeAppSettings;
   turnId: string;
   updatePipelineStage: (stage: PipelineStage, agentId?: AgentId) => void;
   userAssistantConversationId: string;

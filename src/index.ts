@@ -11,6 +11,8 @@ import {
   getLegacyApplicationDirectory,
   getUserDataDirectory,
 } from "./main/settings/settings.service";
+import { getOpenAICredentialStore } from "./main/credentials/electron-credential.service";
+import { migratePlaintextOpenAIKey } from "./main/credentials/credential-migration.service";
 
 if (require("electron-squirrel-startup")) {
   app.quit();
@@ -20,7 +22,12 @@ void app.whenReady().then(async () => {
   const userDataDirectory = getUserDataDirectory();
   configureStorageJournal(path.join(userDataDirectory, "logs", "storage-errors.jsonl"));
   try {
-    await migrateApplicationData(getLegacyApplicationDirectory(), userDataDirectory);
+    const legacyDirectory = getLegacyApplicationDirectory();
+    await migrateApplicationData(legacyDirectory, userDataDirectory);
+    await migratePlaintextOpenAIKey(getOpenAICredentialStore(), [
+      path.join(legacyDirectory, "settings.json"),
+      path.join(userDataDirectory, "settings.json"),
+    ]);
   } catch (error) {
     dialog.showErrorBox(
       "Migration des donnees incomplete",

@@ -1,6 +1,6 @@
 import { ChatMessage } from "../../shared/chat.types";
 import { AgentContextFile, AgentId } from "../../shared/agent.types";
-import { OpenAISettings } from "../../shared/settings.types";
+import { OpenAIRuntimeSettings } from "../../shared/settings.types";
 import { AgentRuntimeContext } from "../agents/agent-prompt.service";
 import { buildDeviceAgentInput, buildGenericAgentInput, buildInput } from "./openai.payload";
 import { createResponseRecord, postOpenAIResponse } from "./openai.client";
@@ -14,7 +14,7 @@ export { NovaResponseParseError, OpenAIRequestError } from "./openai.types";
 export { testOpenAIConnection } from "./openai.connection";
 
 export async function generateOpenAIReply(
-  settings: OpenAISettings,
+  settings: OpenAIRuntimeSettings,
   messages: ChatMessage[],
   enabledAgents: AgentId[],
   signal?: AbortSignal,
@@ -48,7 +48,7 @@ export async function generateOpenAIReply(
 }
 
 export async function generateDeviceAgentCommand(
-  settings: OpenAISettings,
+  settings: OpenAIRuntimeSettings,
   context: AgentContextFile,
   runtimeContext: AgentRuntimeContext,
   goal: string,
@@ -85,7 +85,7 @@ export async function generateDeviceAgentCommand(
 }
 
 export async function generateAgentTextReply(
-  settings: OpenAISettings,
+  settings: OpenAIRuntimeSettings,
   agentId: AgentId,
   context: AgentContextFile,
   runtimeContext: AgentRuntimeContext,

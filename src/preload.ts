@@ -29,6 +29,7 @@ contextBridge.exposeInMainWorld("nova", {
     save: (state: PersistedChatState) => ipcRenderer.invoke("nova:chat:save", state),
   },
   settings: {
+    clearOpenAIApiKey: (): Promise<AppSettings> => ipcRenderer.invoke("nova:settings:clear-openai-key"),
     load: (): Promise<AppSettings> => ipcRenderer.invoke("nova:settings:load"),
     save: (settings: AppSettings): Promise<AppSettings> => ipcRenderer.invoke("nova:settings:save", settings),
     test: (settings: AppSettings): Promise<SettingsTestResult> => ipcRenderer.invoke("nova:settings:test", settings),

@@ -40,10 +40,16 @@ export async function readJsonFileDetailed<T>(filePath: string): Promise<Storage
   };
 }
 
-export async function writeJsonFile(filePath: string, value: unknown): Promise<void> {
+export async function writeJsonFile(
+  filePath: string,
+  value: unknown,
+  options: { createBackup?: boolean } = {},
+): Promise<void> {
   await mkdir(path.dirname(filePath), { recursive: true });
   const serialized = JSON.stringify(value, null, 2);
-  await backupValidJsonFile(filePath);
+  if (options.createBackup !== false) {
+    await backupValidJsonFile(filePath);
+  }
   await writeFileAtomically(filePath, serialized);
 }
 

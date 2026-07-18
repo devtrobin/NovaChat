@@ -29,6 +29,7 @@ declare global {
         save: (state: PersistedChatState) => Promise<void>;
       };
       settings: {
+        clearOpenAIApiKey: () => Promise<AppSettings>;
         load: () => Promise<AppSettings>;
         save: (settings: AppSettings) => Promise<AppSettings>;
         test: (settings: AppSettings) => Promise<SettingsTestResult>;

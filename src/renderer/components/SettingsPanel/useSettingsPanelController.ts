@@ -73,6 +73,25 @@ export function useSettingsPanelController({
     }
   }, [draft, handleTestConnection, onSaved]);
 
+  const handleClearApiKey = React.useCallback(async () => {
+    setIsBusy(true);
+    setStatus(createEmptyStatus());
+    try {
+      const savedSettings = await window.nova.settings.clearOpenAIApiKey();
+      setInitialSettings(savedSettings);
+      setDraft(savedSettings);
+      onSaved(savedSettings);
+      setStatus({ kind: "success", message: "La cle API OpenAI a ete supprimee du coffre." });
+    } catch (error) {
+      setStatus({
+        kind: "error",
+        message: error instanceof Error ? error.message : "La suppression de la cle API a echoue.",
+      });
+    } finally {
+      setIsBusy(false);
+    }
+  }, [onSaved]);
+
   const handleReset = React.useCallback(() => {
     if (!initialSettings) return;
     setDraft(initialSettings);
@@ -81,6 +100,7 @@ export function useSettingsPanelController({
 
   return {
     draft,
+    handleClearApiKey,
     handleConfirm,
     handleReset,
     handleTestConnection,

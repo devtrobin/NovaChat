@@ -1,5 +1,5 @@
 import { ChatMessage } from "../../shared/chat.types";
-import { AppSettings } from "../../shared/settings.types";
+import { RuntimeAppSettings } from "../../shared/settings.types";
 import { getEnabledAgents } from "./ai.orchestrator.planner-handoff";
 import { generateOpenAIReply } from "./openai.service";
 import {
@@ -8,7 +8,7 @@ import {
 } from "./ai.turn-registry";
 
 export async function requestAssistantReply(
-  settings: AppSettings,
+  settings: RuntimeAppSettings,
   turnId: string,
   turnMessages: ChatMessage[],
 ) {

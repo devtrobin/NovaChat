@@ -14,6 +14,7 @@ import "./SettingsPanel.css";
 export default function SettingsPanel({ activeCategory, agents = [], onOpenConversation, onSaved, onSelectAgent }: SettingsPanelProps) {
   const {
     draft,
+    handleClearApiKey,
     handleConfirm,
     handleReset,
     handleTestConnection,
@@ -43,7 +44,7 @@ export default function SettingsPanel({ activeCategory, agents = [], onOpenConve
           ) : null}
           {activeCategory === "local-files" ? <SettingsLocalFilesSection isBusy={isBusy} setDraft={setDraft} setStatus={resetStatus} settings={draft} /> : null}
           {activeCategory === "provider" ? <SettingsProviderSection isBusy={isBusy} setDraft={setDraft} setStatus={resetStatus} settings={draft} /> : null}
-          {activeCategory === "openai" ? <SettingsOpenAISection isBusy={isBusy} onTestConnection={() => void handleTestConnection()} setDraft={setDraft} setStatus={resetStatus} settings={draft} /> : null}
+          {activeCategory === "openai" ? <SettingsOpenAISection isBusy={isBusy} onClearApiKey={() => void handleClearApiKey()} onTestConnection={() => void handleTestConnection()} setDraft={setDraft} setStatus={resetStatus} settings={draft} /> : null}
           {!["agents-activity", "local-files", "provider", "openai"].includes(activeCategory) ? (
             <SettingsProviderPlaceholder activeCategory={activeCategory as Exclude<typeof activeCategory, "local-files" | "provider" | "openai">} />
           ) : null}
