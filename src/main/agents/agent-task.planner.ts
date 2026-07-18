@@ -35,7 +35,6 @@ export async function runPlannerAgentTask(
     runtimeContext,
     task.request,
     task.userPrompt,
-    "assistant",
     controller.signal,
   );
   unregisterAbortController(turnId, controller);

@@ -1,11 +1,10 @@
 export type MessageSender = 'user' | 'assistant' | 'agent' | 'device' | 'system';
 export type MessageRecipient = 'user' | 'assistant' | 'agent' | 'device';
-export type ConversationOrigin = 'assistant' | 'assistant-test' | 'user';
+export type ConversationOrigin = 'assistant' | 'user';
 export type SystemActionId = "open-settings" | "permission-allow" | "permission-allow-always" | "permission-deny";
 
 export type MessageStatus =
   | 'idle'
-  | 'streaming'
   | 'error'
   | 'pending'
   | 'partial-success'

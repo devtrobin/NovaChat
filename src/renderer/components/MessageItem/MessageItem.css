@@ -205,13 +205,6 @@
   color: var(--color-text-soft);
 }
 
-.message-item__cursor {
-  display: inline-block;
-  margin-left: 2px;
-  color: var(--color-accent);
-  animation: message-cursor-blink 1s step-end infinite;
-}
-
 .message-item__detail-toggle {
   justify-self: start;
   border: 0;
@@ -391,12 +384,6 @@
   padding: 0 1px;
   background: rgba(44, 142, 215, 0.24);
   color: #edf7ff;
-}
-
-@keyframes message-cursor-blink {
-  50% {
-    opacity: 0;
-  }
 }
 
 @keyframes system-text-sweep {

@@ -11,7 +11,6 @@ import {
 import {
   ActiveAgentTask,
   AgentContextFile,
-  AgentDirectConversationResult,
   AgentId,
   AgentPermissionDecision,
   AgentPermissionsFile,
@@ -29,7 +28,6 @@ contextBridge.exposeInMainWorld("nova", {
   },
   settings: {
     load: (): Promise<AppSettings> => ipcRenderer.invoke("nova:settings:load"),
-    reset: (): Promise<AppSettings> => ipcRenderer.invoke("nova:settings:reset"),
     save: (settings: AppSettings): Promise<AppSettings> => ipcRenderer.invoke("nova:settings:save", settings),
     test: (settings: AppSettings): Promise<SettingsTestResult> => ipcRenderer.invoke("nova:settings:test", settings),
   },
@@ -43,14 +41,6 @@ contextBridge.exposeInMainWorld("nova", {
       ipcRenderer.invoke("nova:agents:delete-permission", { agentId, command }),
     getActiveTasks: (agentId: AgentId): Promise<ActiveAgentTask[]> => ipcRenderer.invoke("nova:agents:get-active-tasks", agentId),
     stopTask: (taskId: string): Promise<boolean> => ipcRenderer.invoke("nova:agents:stop-task", taskId),
-    createDirectConversation: (agentId: AgentId, title: string): Promise<AgentDirectConversationResult> =>
-      ipcRenderer.invoke("nova:agents:create-direct-conversation", { agentId, title }),
-    sendDirectMessage: (
-      agentId: AgentId,
-      prompt: string,
-      conversationId?: string | null,
-    ): Promise<AgentDirectConversationResult> =>
-      ipcRenderer.invoke("nova:agents:send-direct-message", { agentId, conversationId, prompt }),
   },
   ai: {
     killCommand: (commandId: string): Promise<void> => ipcRenderer.invoke("nova:ai:kill-command", commandId),

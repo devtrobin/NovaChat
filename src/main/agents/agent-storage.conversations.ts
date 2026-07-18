@@ -16,10 +16,7 @@ import {
   createAgentConversation,
   createAgentConversationTitle,
   createAgentResultMessage,
-  createAssistantTestConversationTitle,
-  createAssistantTestMessage,
   createAssistantToAgentMessage,
-  createDirectAgentReplyMessage,
   upsertConversation,
 } from "./agent-storage.records";
 import { ensureAgentWorkspace } from "./agent-storage.workspace";
@@ -39,57 +36,6 @@ type RecordAgentCommandExchangeArgs = {
   userAssistantConversationId: string;
   userPrompt: string;
 };
-
-export async function createAgentUserConversation(
-  rootDirectory: string,
-  agentId: AgentId,
-  title: string,
-): Promise<{ conversationId: string }> {
-  const workspace = await ensureAgentWorkspace(rootDirectory, agentId);
-  const conversation = createAgentConversation(title, "assistant-test");
-  await saveChatStateToDirectory(
-    upsertConversation(workspace.conversations, conversation),
-    getAgentConversationsDirectory(rootDirectory, agentId),
-  );
-
-  return { conversationId: conversation.id };
-}
-
-export async function appendDirectAgentExchange(
-  rootDirectory: string,
-  agentId: AgentId,
-  prompt: string,
-  output: string,
-  apiRequests: ChatMessage["apiRequests"],
-  conversationId?: string | null,
-): Promise<{ conversationId: string }> {
-  const workspace = await ensureAgentWorkspace(rootDirectory, agentId);
-  const existingConversation = conversationId
-    ? workspace.conversations.conversations.find((conversation) => conversation.id === conversationId) ?? null
-    : null;
-  const conversation = existingConversation
-    ?? createAgentConversation(createAssistantTestConversationTitle(prompt), "assistant-test");
-
-  if ((conversation.origin ?? "assistant") !== "assistant-test") {
-    throw new Error("Cette conversation agent est en lecture seule.");
-  }
-
-  const userMessage = createAssistantTestMessage(agentId, prompt);
-  const replyMessage = createDirectAgentReplyMessage(agentId, output);
-  replyMessage.apiRequests = apiRequests ?? [];
-  const nextConversation: Conversation = {
-    ...conversation,
-    messages: [...conversation.messages, userMessage, replyMessage],
-    updatedAt: replyMessage.createdAt,
-  };
-
-  await saveChatStateToDirectory(
-    upsertConversation(workspace.conversations, nextConversation),
-    getAgentConversationsDirectory(rootDirectory, agentId),
-  );
-
-  return { conversationId: nextConversation.id };
-}
 
 export async function recordAgentCommandExchange({
   agentId,

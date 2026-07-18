@@ -6,7 +6,6 @@ import {
   buildPendingSteps,
   runWithTimeout,
   getErrorMessage,
-  sleep,
   updateStepById,
 } from './LoadingScreen.fonctions';
 
@@ -17,7 +16,6 @@ type UseLoadingFlowArgs = {
 
 export function useLoadingFlow({ onReady, tasks }: UseLoadingFlowArgs) {
   const [phase, setPhase] = React.useState<Phase>('tasks');
-  const [welcomeVisible, setWelcomeVisible] = React.useState(false);
   const [currentTaskIds, setCurrentTaskIds] = React.useState<Array<string>>([]);
   const [runId, setRunId] = React.useState(0);
   const [steps, setSteps] = React.useState<Array<Step>>(() => buildPendingSteps(tasks));
@@ -58,7 +56,6 @@ export function useLoadingFlow({ onReady, tasks }: UseLoadingFlowArgs) {
     async function runFlow() {
       let activeTask: BootTask | undefined;
       setPhase('tasks');
-      setWelcomeVisible(false);
       setCurrentTaskIds([]);
       setSteps(buildPendingSteps(tasks));
       try {
@@ -76,14 +73,8 @@ export function useLoadingFlow({ onReady, tasks }: UseLoadingFlowArgs) {
         return;
       }
       if (cancelled) return;
-      setPhase('welcome');
       setCurrentTaskIds([]);
-      setWelcomeVisible(true);
-      await sleep(2000);
-      if (cancelled) return;
-      setWelcomeVisible(false);
-      await sleep(1000);
-      if (!cancelled) onReadyRef.current();
+      onReadyRef.current();
     }
 
     runFlow();
@@ -92,5 +83,5 @@ export function useLoadingFlow({ onReady, tasks }: UseLoadingFlowArgs) {
     };
   }, [runId, tasks]);
 
-  return { phase, welcomeVisible, steps, currentTaskIds, retry };
+  return { phase, steps, currentTaskIds, retry };
 }

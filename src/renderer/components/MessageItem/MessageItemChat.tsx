@@ -27,9 +27,6 @@ export default function MessageItemChat({ isSearchMatch, message, searchQuery }:
       </div>
       <p className="message-item__content">
         <MessageItemHighlight searchQuery={searchQuery} value={message.content} />
-        {message.from === "assistant" && message.status === "streaming" ? (
-          <span className="message-item__cursor">▌</span>
-        ) : null}
       </p>
       {message.result && message.isExpandable ? (
         <>

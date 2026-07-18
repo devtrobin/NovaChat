@@ -3,8 +3,6 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import {
-  appendDirectAgentExchange,
-  createAgentUserConversation,
   deleteAgentPermission,
   getAgentPermission,
   loadAgentWorkspace,
@@ -56,34 +54,6 @@ describe("agent storage", () => {
       decision: null,
       matchedRule: null,
     });
-  });
-
-  it("persists a writable direct-agent conversation", async () => {
-    const rootDirectory = await createTemporaryDirectory();
-    const { conversationId } = await createAgentUserConversation(
-      rootDirectory,
-      "agent-planner",
-      "Test direct",
-    );
-    await appendDirectAgentExchange(
-      rootDirectory,
-      "agent-planner",
-      "Prépare un plan",
-      "Plan prêt",
-      [],
-      conversationId,
-    );
-
-    const workspace = await loadAgentWorkspace(rootDirectory, "agent-planner");
-    expect(workspace.conversations.conversations[0]).toMatchObject({
-      id: conversationId,
-      origin: "assistant-test",
-      title: "Test direct",
-    });
-    expect(workspace.conversations.conversations[0].messages).toMatchObject([
-      { content: "Prépare un plan", from: "assistant", to: "agent" },
-      { content: "Plan prêt", from: "agent", to: "assistant" },
-    ]);
   });
 
   it("persists an internal Device exchange and its history entry", async () => {

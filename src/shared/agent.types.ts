@@ -1,8 +1,7 @@
 import { PersistedChatState } from "./chat.types";
 
 export type AgentId = "agent-planner" | "device-agent";
-export type AgentConversationOrigin = "assistant" | "assistant-test" | "user";
-export type AgentRequestSource = "assistant" | "user";
+export type AgentConversationOrigin = "assistant" | "user";
 export type AgentPermissionDecision = "allow" | "deny";
 export type AgentTaskMode = "analysis" | "command" | "goal";
 
@@ -82,8 +81,4 @@ export type ActiveAgentTask = {
   status: "running" | "waiting-input" | "waiting-permission";
   taskId: string;
   title: string;
-};
-
-export type AgentDirectConversationResult = {
-  conversationId: string;
 };

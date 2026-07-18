@@ -4,7 +4,6 @@
     "ready": "Application ready"
   },
   "loading": {
-    "welcome": "Welcome to Nova ✨",
     "status": {
       "idle": "Preparing…",
       "single": "In progress: {{label}}…",
@@ -17,14 +16,10 @@
   },
   "boot": {
     "steps": {
-      "preDelay": "Initialization",
-      "ipc": "Connecting to main process",
-      "libs": "Loading libraries",
-      "postDelay": "Finalizing"
+      "ipc": "Connecting to main process"
     },
     "errors": {
-      "ipc": "Unable to contact the main process",
-      "libs": "Error while loading libraries"
+      "ipc": "Unable to contact the main process"
     }
   },
   "errors": {

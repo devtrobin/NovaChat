@@ -4,7 +4,6 @@
     "ready": "Application prête"
   },
   "loading": {
-    "welcome": "Bienvenue dans Nova ✨",
     "status": {
       "idle": "Préparation…",
       "single": "En cours : {{label}}…",
@@ -17,14 +16,10 @@
   },
   "boot": {
     "steps": {
-      "preDelay": "Initialisation",
-      "ipc": "Connexion au processus principal",
-      "libs": "Chargement des librairies",
-      "postDelay": "Finalisation"
+      "ipc": "Connexion au processus principal"
     },
     "errors": {
-      "ipc": "Impossible de contacter le process principal",
-      "libs": "Erreur lors du chargement des librairies"
+      "ipc": "Impossible de contacter le process principal"
     }
   },
   "errors": {

@@ -9,7 +9,7 @@ export type Step = {
     error?: string;
 };
 
-export type Phase = "tasks" | "welcome" | "error";
+export type Phase = "tasks" | "error";
 
 export type LoadingScreenProps = {
     onReady: () => void;

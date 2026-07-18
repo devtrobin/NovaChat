@@ -5,13 +5,6 @@ import type { Step } from "./LoadingScreen.types";
 import type { BootTask } from "./LoadingStep/LoadingStep.types";
 
 /**
- * Pause utilitaire (async sleep)
- */
-export function sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-/**
  * Met à jour un step par id
  */
 export function updateStepById(

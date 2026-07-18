@@ -10,7 +10,6 @@ import {
 import {
   ActiveAgentTask,
   AgentContextFile,
-  AgentDirectConversationResult,
   AgentId,
   AgentPermissionDecision,
   AgentPermissionsFile,
@@ -30,7 +29,6 @@ declare global {
       };
       settings: {
         load: () => Promise<AppSettings>;
-        reset: () => Promise<AppSettings>;
         save: (settings: AppSettings) => Promise<AppSettings>;
         test: (settings: AppSettings) => Promise<SettingsTestResult>;
       };
@@ -46,12 +44,6 @@ declare global {
         deletePermission: (agentId: AgentId, command: string) => Promise<AgentPermissionsFile>;
         getActiveTasks: (agentId: AgentId) => Promise<ActiveAgentTask[]>;
         stopTask: (taskId: string) => Promise<boolean>;
-        createDirectConversation: (agentId: AgentId, title: string) => Promise<AgentDirectConversationResult>;
-        sendDirectMessage: (
-          agentId: AgentId,
-          prompt: string,
-          conversationId?: string | null,
-        ) => Promise<AgentDirectConversationResult>;
       };
       ai: {
         killCommand: (commandId: string) => Promise<void>;

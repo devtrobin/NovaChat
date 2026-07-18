@@ -1,5 +1,5 @@
 import { ChatMessage } from "../../shared/chat.types";
-import { AgentContextFile, AgentId, AgentRequestSource } from "../../shared/agent.types";
+import { AgentContextFile, AgentId } from "../../shared/agent.types";
 import { OpenAISettings } from "../../shared/settings.types";
 import { AgentRuntimeContext } from "../agents/agent-prompt.service";
 import { buildDeviceAgentInput, buildGenericAgentInput, buildInput } from "./openai.payload";
@@ -91,11 +91,10 @@ export async function generateAgentTextReply(
   runtimeContext: AgentRuntimeContext,
   request: string,
   userPrompt: string,
-  source: AgentRequestSource,
   signal?: AbortSignal,
 ): Promise<{ apiRecords: ChatMessage["apiRequests"]; text: string }> {
   const requestBody = {
-    input: buildGenericAgentInput(agentId, context, runtimeContext, request, userPrompt, source),
+    input: buildGenericAgentInput(agentId, context, runtimeContext, request, userPrompt),
     model: settings.model,
     store: false,
   };

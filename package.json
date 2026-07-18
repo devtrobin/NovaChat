@@ -2,13 +2,15 @@
   "name": "nova-chat",
   "productName": "nova-chat",
   "version": "1.0.0",
-  "description": "My Electron application description",
+  "description": "Assistant desktop Electron avec chat, orchestration Planner/Device et exécution locale contrôlée.",
   "main": ".webpack/main",
   "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make",
     "publish": "electron-forge publish",
+    "check": "npm test && npm exec tsc -- --noEmit && npm run lint",
+    "ci": "npm run check && npm run package",
     "lint": "eslint --ext .ts,.tsx .",
     "test": "vitest run",
     "test:watch": "vitest"

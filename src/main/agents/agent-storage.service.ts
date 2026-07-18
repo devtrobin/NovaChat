@@ -1,8 +1,4 @@
-export {
-  appendDirectAgentExchange,
-  createAgentUserConversation,
-  recordAgentCommandExchange,
-} from "./agent-storage.conversations";
+export { recordAgentCommandExchange } from "./agent-storage.conversations";
 export {
   deleteAgentPermission,
   getAgentPermission,

@@ -18,11 +18,6 @@ import {
   TurnStoppedError,
 } from "../ai/ai.turn-registry";
 
-export {
-  createDirectAgentConversation,
-  runDirectAgentConversationTurn,
-} from "./agent-direct-conversation.service";
-
 export async function runAgentTask(
   args: RunAgentTaskArgs,
 ): Promise<AgentTaskExecutionResult> {

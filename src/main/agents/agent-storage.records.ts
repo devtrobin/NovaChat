@@ -15,11 +15,6 @@ export function createAgentConversationTitle(userPrompt: string): string {
   return title || "Execution device";
 }
 
-export function createAssistantTestConversationTitle(prompt: string): string {
-  const title = prompt.trim().slice(0, 48);
-  return title || "Test assistant";
-}
-
 export function createAgentConversation(
   title: string,
   origin: AgentConversationOrigin = "assistant",
@@ -33,49 +28,6 @@ export function createAgentConversation(
     origin,
     title,
     updatedAt: createdAt,
-  };
-}
-
-export function createAssistantTestMessage(agentId: AgentId, prompt: string): ChatMessage {
-  const createdAt = new Date().toISOString();
-
-  return {
-    agentId,
-    apiRequests: [],
-    content: prompt,
-    createdAt,
-    from: "assistant",
-    id: crypto.randomUUID(),
-    lifecycleLog: [
-      {
-        at: createdAt,
-        details: `Demande assistant simule -> ${agentId} creee.`,
-        event: "created",
-      },
-    ],
-    to: "agent",
-  };
-}
-
-export function createDirectAgentReplyMessage(agentId: AgentId, output: string): ChatMessage {
-  const createdAt = new Date().toISOString();
-
-  return {
-    agentId,
-    apiRequests: [],
-    content: output,
-    createdAt,
-    from: "agent",
-    id: crypto.randomUUID(),
-    lifecycleLog: [
-      {
-        at: createdAt,
-        details: `Reponse ${agentId} -> assistant simule creee.`,
-        event: "created",
-      },
-    ],
-    status: "success",
-    to: "assistant",
   };
 }
 

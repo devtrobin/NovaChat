@@ -1,12 +1,10 @@
 import { IpcMain } from "electron";
 import { deleteAgentPermission, loadAgentWorkspace, saveAgentContext, saveAgentPermission } from "../agents/agent-storage.service";
-import { createDirectAgentConversation, runDirectAgentConversationTurn } from "../agents/agent-orchestrator.service";
 import { getActiveAgentTasks, stopTurnByAgentTask } from "../ai/ai.turn-registry";
-import { getAgentsPathFromSettings, loadSettingsFromDisk } from "../settings/settings.service";
+import { getAgentsPathFromSettings } from "../settings/settings.service";
 import {
   ActiveAgentTask,
   AgentContextFile,
-  AgentDirectConversationResult,
   AgentId,
   AgentPermissionDecision,
   AgentPermissionsFile,
@@ -49,22 +47,4 @@ export function registerAgentsHandlers(ipcMain: IpcMain): void {
     return stopTurnByAgentTask(taskId);
   });
 
-  ipcMain.handle("nova:agents:create-direct-conversation", async (
-    _event,
-    payload: { agentId: AgentId; title: string },
-  ): Promise<AgentDirectConversationResult> => {
-    return createDirectAgentConversation(await loadSettingsFromDisk(), payload.agentId, payload.title);
-  });
-
-  ipcMain.handle("nova:agents:send-direct-message", async (
-    _event,
-    payload: { agentId: AgentId; conversationId?: string | null; prompt: string },
-  ): Promise<AgentDirectConversationResult> => {
-    return runDirectAgentConversationTurn(
-      await loadSettingsFromDisk(),
-      payload.agentId,
-      payload.prompt,
-      payload.conversationId,
-    );
-  });
 }

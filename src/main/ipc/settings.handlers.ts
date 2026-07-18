@@ -1,7 +1,6 @@
 import { IpcMain } from "electron";
 import { testOpenAIConnection } from "../ai/openai.service";
 import {
-  createDefaultSettings,
   loadSettingsFromDisk,
   saveSettingsToDisk,
 } from "../settings/settings.service";
@@ -26,9 +25,4 @@ export function registerSettingsHandlers(ipcMain: IpcMain): void {
     return settings;
   });
 
-  ipcMain.handle("nova:settings:reset", async () => {
-    const defaults = createDefaultSettings();
-    await saveSettingsToDisk(defaults);
-    return defaults;
-  });
 }

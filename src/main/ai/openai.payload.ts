@@ -1,5 +1,5 @@
 import { ChatMessage } from "../../shared/chat.types";
-import { AgentContextFile, AgentId, AgentRequestSource } from "../../shared/agent.types";
+import { AgentContextFile, AgentId } from "../../shared/agent.types";
 import { AgentRuntimeContext } from "../agents/agent-prompt.service";
 
 export function buildInput(messages: ChatMessage[], enabledAgents: AgentId[]) {
@@ -161,7 +161,6 @@ export function buildGenericAgentInput(
   runtimeContext: AgentRuntimeContext,
   request: string,
   userPrompt: string,
-  source: AgentRequestSource,
 ) {
   return [
     {
@@ -174,7 +173,7 @@ export function buildGenericAgentInput(
             `Runtime platform: ${runtimeContext.platform}.`,
             `Runtime shell: ${runtimeContext.shell}.`,
             `Active provider: ${runtimeContext.activeProvider}.`,
-            `Request source: ${source}.`,
+            "Request source: assistant.",
             "Adapt all recommendations to the runtime platform.",
             "If the platform is darwin, do not suggest Linux-only commands such as lscpu, free, or journalctl unless you explicitly say they are Linux-specific alternatives.",
             agentId === "agent-planner"
@@ -219,12 +218,8 @@ export function buildGenericAgentInput(
             agentId === "agent-planner"
               ? "Put optional context only in DEBUG. Keep SUMMARY and REQUEST concise."
               : "",
-            source === "assistant"
-              ? "Be concise, actionable, and useful for the main assistant."
-              : "Answer directly to the user in a concise and useful way.",
-            source === "assistant"
-              ? "Do not speak to the end user. Help Nova reason, interpret, or decide the next step."
-              : "Speak directly to the user.",
+            "Be concise, actionable, and useful for the main assistant.",
+            "Do not speak to the end user. Help Nova reason, interpret, or decide the next step.",
           ].join(" "),
           type: "input_text",
         },
@@ -236,7 +231,7 @@ export function buildGenericAgentInput(
         {
           text: JSON.stringify({
             request,
-            source,
+            source: "assistant",
             userPrompt,
           }),
           type: "input_text",
