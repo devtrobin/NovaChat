@@ -2,8 +2,7 @@
 
 Cette base décrit l’état réellement observé du projet, et non uniquement
 l’intention historique. Elle a été vérifiée le **18 juillet 2026** sur la
-branche `main`, au commit
-`3595d2fa72f3da83b7673459c621f3365f908084`.
+branche `main`, pour le code allant jusqu’au commit `d589ae1`.
 
 Le fichier [../AGENTS.md](../AGENTS.md) fournit la version courte destinée aux
 outils et agents qui ouvrent le dépôt.

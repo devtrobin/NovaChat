@@ -4,9 +4,8 @@
 
 - Date d’audit : 18 juillet 2026.
 - Branche : `main`.
-- Commit audité :
-  `3595d2fa72f3da83b7673459c621f3365f908084`.
-- `origin/main` pointait sur le même commit avant la mise à jour documentaire.
+- État du code audité jusqu’au commit :
+  `d589ae1` (`Security: store OpenAI key in OS vault`).
 - Des données locales non suivies existaient déjà sous `agents/`. Elles ne
   font pas partie du code source.
 
@@ -17,9 +16,10 @@ chat, OpenAI, la persistance, les deux agents internes, les permissions et
 l’exécution locale sont branchés. Le projet compile et se package.
 
 Il n’est toutefois pas prêt à être considéré comme une frontière de sécurité
-pour l’exécution de commandes, ni comme une application de production :
-la policy Device reste un contrôle de permission et non un sandbox, tandis que
-la robustesse du stockage et la gestion des secrets restent des bloqueurs.
+pour l’exécution de commandes, ni comme une application de production. La
+phase 3 de fiabilisation des données est terminée, mais la policy Device reste
+un contrôle de permission et non un sandbox ; le durcissement Electron, les
+surfaces provider et les parcours end-to-end restent incomplets.
 
 ## Matrice fonctionnelle
 
@@ -27,7 +27,7 @@ la robustesse du stockage et la gestion des secrets restent des bloqueurs.
 | --- | --- | --- |
 | Chat multi-conversation | Fonctionnel | drafts, renommage, suppression, non-lus |
 | Recherche dans la conversation | Fonctionnel | `Ctrl/Cmd+F`, navigation et surlignage |
-| Persistance locale | Fonctionnel avec risques | JSON éclaté, non atomique |
+| Persistance locale | Fiabilisée | JSON éclaté, atomique par fichier, backups, journal et reprise explicite |
 | OpenAI Responses API | Fonctionnel | seul provider réel |
 | Streaming | Non implémenté | aucune surface inactive conservée |
 | Commandes slash locales | Fonctionnel | aide, état, agents et paramètres sans appel provider |
@@ -42,7 +42,7 @@ la robustesse du stockage et la gestion des secrets restent des bloqueurs.
 | Historique agent | Fonctionnel | stockage et vue |
 | Providers alternatifs | Placeholder | sélection possible mais non exécutée |
 | Internationalisation | Partielle | écran de boot seulement |
-| Tests automatisés | Socle fonctionnel | 174 réussites, aucun échec attendu |
+| Tests automatisés | Socle fonctionnel | 191 réussites dans 23 fichiers, aucun échec attendu |
 | Packaging Windows x64 | Vérifié | `npm.cmd run package` réussi |
 
 ## Agents actuels
@@ -78,12 +78,14 @@ Le Device est activé par défaut. Il peut :
 Configuration réellement utilisée :
 
 ```text
-settings.openai.apiKey
+coffre système OpenAI (runtime main uniquement)
 settings.openai.model
 settings.openai.baseUrl
 ```
 
-La requête cible `<baseUrl>/responses`, avec `store: false`.
+La clé est chiffrée avec `electron.safeStorage`, n’est ni persistée dans
+`settings.json` ni renvoyée au renderer. La requête cible
+`<baseUrl>/responses`, avec `store: false`.
 
 Les IDs Anthropic, Google, Mistral, Ollama et LM Studio sont visibles en mode
 preview, mais aucune implémentation provider correspondante n’existe.
@@ -107,12 +109,14 @@ Le package vérifié est `win32-x64`.
 Le démarrage de développement a également atteint le lancement de
 l’application et du serveur renderer sur `http://localhost:9000`.
 
-La suite comprend 174 cas répartis dans dix-huit fichiers. Elle couvre la policy
+La suite comprend 191 cas répartis dans 23 fichiers. Elle couvre la policy
 Device, les parsers OpenAI/Planner, les commandes slash, les handoffs
 assistant-agent, la conservation des traces, les messages de tâche agent, le
 formatage de la page Device, les stockages chat/agents, les frontières IPC,
-les chemins confinés, le cycle de vie Device et les reducers d’événements. La
-matrice Device comporte 88 cas et tous les anciens
+les chemins confinés, le cycle de vie Device, les reducers d’événements, les
+écritures atomiques, les reprises sur backup, les queues agents, les
+migrations `userData`/Planner et le coffre de secrets. La matrice Device
+comporte 88 cas et tous les anciens
 contournements connus sont des tests de régression normaux.
 
 Non vérifié :
@@ -160,6 +164,7 @@ artefacts `.webpack/` et `out/` sont ignorés. La capture historique obsolète a
 Le projet est reprenable sans refonte globale. Les frontières de domaines sont
 lisibles et les flux principaux sont opérationnels.
 
-La prochaine phase ne devrait toutefois pas ajouter de nouveaux agents ou
-providers. La phase 3 doit fiabiliser la persistance et les migrations dans
-l’ordre décrit par [NEXT_STEPS.md](NEXT_STEPS.md).
+La phase 3 est close. La prochaine priorité est la phase 4 : clarifier les
+providers réellement utilisables, corriger le masquage des résultats `/cmd`
+et décider de l’objectif i18n, dans l’ordre décrit par
+[NEXT_STEPS.md](NEXT_STEPS.md).

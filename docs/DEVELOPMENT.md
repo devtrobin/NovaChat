@@ -38,7 +38,7 @@ interdit `npm.ps1`; `npm.cmd` est donc nécessaire.
 ## État de validation au 18 juillet 2026
 
 - `npm.cmd exec tsc -- --noEmit` : réussi.
-- `npm.cmd test` : 174 réussites.
+- `npm.cmd test` : 191 réussites.
 - `npm.cmd run lint` : réussi.
 - `npm.cmd run package` : réussi pour `win32-x64`.
 - `npm.cmd run ci` : réussi.
@@ -49,7 +49,7 @@ ignoré par Git.
 
 ## Tests
 
-Vitest 4 exécute dix-huit fichiers sous `src/` :
+Vitest 4 exécute 23 fichiers sous `src/` :
 
 - policy de permissions Device ;
 - parser des réponses OpenAI ;
@@ -66,6 +66,11 @@ Vitest 4 exécute dix-huit fichiers sous `src/` :
 - formatage des statuts et sorties de la page Device.
 - résolution des handoffs explicites et heuristiques.
 - fusion des traces de délégation et de génération Device.
+- écritures JSON atomiques, backups et détection de récupération partielle ;
+- sérialisation des opérations concurrentes d’un même agent ;
+- migrations `userData` et `diagnostic-agent` ;
+- rétention et redaction des traces API ;
+- chiffrement, remplacement, suppression et migration de la clé OpenAI.
 
 La matrice Device comporte 88 cas normaux. Elle couvre commandes de lecture,
 écritures bornées, séparateurs shell, substitutions, wrappers, redirections,
@@ -95,22 +100,29 @@ détail et une action de nouvelle tentative.
 
 ## Configuration locale
 
-En développement, les valeurs par défaut pointent vers la racine du dépôt :
+En développement comme en application packagée, les valeurs par défaut
+pointent sous `app.getPath("userData")` :
 
 ```text
 settings.json
 conversations.json
 conversations/
 agents/
+logs/storage-errors.jsonl
+secrets/openai-api-key.json
 ```
 
-Le code ne s’appuie pas sur `app.getPath("userData")`. En application
-packagée, la racine par défaut est le dossier contenant l’exécutable
-(`path.dirname(process.execPath)`). Cette contrainte doit être revue avant de
-considérer le packaging multi-OS comme prêt pour la production.
+Au premier démarrage après mise à jour, NovaChat copie les anciennes données
+placées à la racine de l’application si la destination n’existe pas, puis
+réécrit uniquement les anciens chemins par défaut. Les chemins personnalisés
+restent inchangés. L’état des migrations est enregistré dans
+`migration-state.json`.
 
-`settings.json` contient la clé API OpenAI en clair. Il est ignoré par Git,
-mais doit rester traité comme un secret.
+`settings.json` ne contient plus la clé API. Celle-ci est chiffrée par
+`electron.safeStorage` dans le fichier de secret dédié ; le backend Linux
+`basic_text` est refusé. Une ancienne installation peut encore contenir une
+clé en clair tant que sa migration n’a pas réussi : ne jamais afficher,
+journaliser ou committer les anciens settings/backups.
 
 ## Debug par domaine
 
@@ -127,6 +139,8 @@ mais doit rester traité comme un secret.
 | Persistance chat | `src/main/chat/` |
 | Persistance agent | `src/main/agents/agent-storage.service.ts` |
 | Settings | `src/main/settings/`, `src/renderer/components/SettingsPanel/` |
+| Migrations | `src/main/migrations/`, `src/main/credentials/` |
+| Reprise et journal stockage | `src/main/storage/`, `src/main/chat/chat-storage.io.ts` |
 
 ## Discipline de changement
 

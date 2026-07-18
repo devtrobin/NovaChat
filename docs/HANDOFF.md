@@ -12,9 +12,11 @@ NovaChat est un Electron + React fonctionnel avec :
 - permissions, historique, activité et arrêt de tâches.
 
 Tests, TypeScript, lint et packaging Windows x64 passent au 18 juillet 2026.
-La suite compte 174 réussites, dont 88 cas de policy Device.
+La suite compte 191 réussites dans 23 fichiers, dont 88 cas de policy Device.
 La phase 2 de sécurisation Device et la priorité P2 de maintenabilité recensée
-dans `RISKS.md` sont terminées.
+dans `RISKS.md` sont terminées. La phase 3 de fiabilisation des données est
+également terminée : JSON atomiques et récupérables, queues agents, migrations
+`userData`/Planner, traces bornées et clé OpenAI chiffrée.
 
 ## Ce qu’il faut lire
 
@@ -28,9 +30,10 @@ et contrats, consulter [DATA_MODEL.md](DATA_MODEL.md).
 
 ## Première action recommandée
 
-Commencer la phase 3 par les écritures JSON atomiques et la protection contre
-les récupérations partielles. Ne pas étendre les commandes autorisées sans cas
-sûr et adversarial correspondant.
+Commencer la phase 4 par la clarification des providers non implémentés, puis
+corriger `hideInternalConversations` afin de conserver les résultats `/cmd`.
+Ne pas étendre les commandes autorisées sans cas sûr et adversarial
+correspondant.
 
 ## Commandes de départ
 
@@ -67,17 +70,21 @@ agents/
 out/
 ```
 
-`settings.json` peut contenir une clé API en clair. Ne jamais la journaliser.
+Les settings courants ne contiennent plus la clé API, mais des fichiers
+antérieurs ou backups non encore migrés peuvent en contenir. Ne jamais les
+journaliser.
 
 ## Pièges immédiats
 
 - la policy Device est restrictive, mais reste un contrôle UX et non un sandbox ;
 - `activeProvider` n’effectue pas encore de routage multi-provider ;
-- `diagnostic-agent` est un ancien ID partiellement migré ;
 - la saisie interactive reste heuristique sans pseudo-terminal ;
-- les writes JSON ne sont pas atomiques.
+- acquitter une bannière de récupération réautorise les écritures mais ne
+  restaure pas une donnée illisible ;
+- la redaction des traces masque les secrets reconnaissables, pas tout contenu
+  métier potentiellement sensible.
 
 ## Phrase de reprise
 
-> Reprendre NovaChat au socle : rendre la persistance atomique et résistante
-> aux récupérations partielles avant toute nouvelle capacité agent.
+> Reprendre NovaChat en phase 4 : aligner les surfaces visibles avec les
+> capacités réellement implémentées avant toute nouvelle capacité agent.

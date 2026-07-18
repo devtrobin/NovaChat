@@ -10,8 +10,8 @@ Avant toute modification significative, lire dans cet ordre :
 4. `docs/RISKS.md`
 5. `docs/NEXT_STEPS.md`
 
-La documentation a été auditée contre le code le 18 juillet 2026 au commit
-`3595d2fa72f3da83b7673459c621f3365f908084`.
+La documentation a été auditée contre le code le 18 juillet 2026 jusqu’au
+commit `d589ae1`.
 
 ## Invariants d’architecture
 
@@ -48,8 +48,9 @@ mutantes avec des tests de régression normaux.
 et `out/` sont des données ou artefacts locaux. Ne pas les committer, les
 réinitialiser ou les supprimer sans demande explicite.
 
-`settings.json` peut contenir une clé API en clair. Ne jamais afficher ni
-copier sa valeur dans des logs, une documentation ou un commit.
+Les settings actuels ne contiennent plus la clé API, mais des fichiers
+antérieurs ou backups non encore migrés peuvent en contenir. Ne jamais
+afficher ni copier leur valeur dans des logs, une documentation ou un commit.
 
 ## Point de vigilance prioritaire
 

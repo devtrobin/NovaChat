@@ -64,7 +64,17 @@ Le writer réécrit l’arbre complet à chaque sauvegarde et supprime les dossi
 absents de l’état fourni. Les sauvegardes du chat principal sont sérialisées
 par une queue dans `chat.handlers.ts`.
 
-Un second index de référence est aussi écrit à la racine de l’application :
+Chaque JSON est remplacé atomiquement et son dernier contenu valide est
+conservé dans `<fichier>.bak`. Un primaire invalide est copié sous un nom
+`.corrupt-<date>.bak`, puis le reader tente le backup. Les erreurs sont
+journalisées dans `userData/logs/storage-errors.jsonl`.
+
+Un état récupéré avec un fichier invalide ou une donnée indexée manquante
+contient un `StorageRecoveryNotice`. Les écritures sur la racine sont alors
+bloquées jusqu’à acknowledgement par `chat.acknowledgeRecovery`, afin que
+l’auto-sauvegarde ne supprime pas silencieusement les données non chargées.
+
+Un second index de référence est aussi écrit sous `userData` :
 `conversations.json`.
 
 ## Stockage des agents
@@ -95,10 +105,13 @@ agents/
   source, message déclencheur et conversation interne.
 - `conversations/` réutilise le même stockage éclaté que le chat principal.
 
-Une compatibilité partielle existe avec l’ancien identifiant
-`diagnostic-agent` : le flag `enabled` et les réponses provider sont
-normalisés vers `agent-planner`, mais le dossier de données historique n’est
-pas migré automatiquement.
+Toutes les opérations d’un même agent sont sérialisées par racine et ID afin
+d’éviter deux cycles lecture-modification-écriture concurrents.
+
+L’ancien identifiant `diagnostic-agent` est migré une seule fois. Son dossier
+est déplacé dans `agents/.migration-backups/`, puis copié ou fusionné dans
+`agent-planner` avec déduplication des permissions, historiques et
+conversations.
 
 ## Settings
 
@@ -108,13 +121,18 @@ pas migré automatiquement.
 activeProvider
 agents.agent-planner.enabled
 agents.device-agent.enabled
+apiTrace.enabled
+apiTrace.retentionDays
+apiTrace.maxEntriesPerMessage
+apiTrace.redactSensitiveData
 deviceExecution.maxOutputCharacters
 deviceExecution.timeoutMs
 hideInternalConversations
 localFiles.settingsPath
 localFiles.conversationsDirectory
 localFiles.agentsDirectory
-openai.apiKey
+openai.apiKeyConfigured
+openai.apiKeyUpdate (transitoire, jamais écrit)
 openai.baseUrl
 openai.model
 previewMode
@@ -129,6 +147,12 @@ Le fichier de référence est toujours lu en premier. S’il indique un
 configuration active. Lors d’une sauvegarde, Nova écrit le fichier de
 référence puis le fichier configuré.
 
+Les valeurs par défaut de settings, conversations et agents sont sous
+`app.getPath("userData")`. La clé OpenAI est stockée séparément dans
+`userData/secrets/openai-api-key.json`, chiffrée par `electron.safeStorage`.
+Le renderer ne reçoit que `apiKeyConfigured`; `OpenAIRuntimeSettings.apiKey`
+n’existe que dans le main, après déchiffrement.
+
 ## API preload / IPC
 
 Le contrat public du renderer est `window.nova`, exposé par
@@ -137,8 +161,8 @@ Le contrat public du renderer est `window.nova`, exposé par
 | Domaine | Opérations |
 | --- | --- |
 | `ping` | test de disponibilité du main |
-| `chat` | `load`, `save` |
-| `settings` | `load`, `save`, `test` |
+| `chat` | `load`, `save`, `acknowledgeRecovery` |
+| `settings` | `load`, `save`, `test`, `clearOpenAIApiKey` |
 | `ai` | `runTurn`, `stopTurn`, événements, permission, stdin, kill |
 | `agents` | workspace, contexte, permissions, tâches actives |
 
@@ -163,16 +187,17 @@ main et par les contrôles de permission associés.
 
 ## Traces et volumétrie
 
-Les appels de l’assistant principal et des agents textuels attachent le
-payload de requête et la réponse complète à `apis.json`. Les traces de
-génération de commande Device sont fusionnées avec celles de la délégation,
-rattachées au message final et persistées dans la conversation agent. Le test
-de connexion ne persiste aucune trace.
+Les appels de l’assistant principal et des agents textuels peuvent attacher le
+payload de requête et la réponse à `apis.json`. Les traces de génération de
+commande Device sont fusionnées avec celles de la délégation et rattachées au
+message final. Le test de connexion ne persiste aucune trace.
 
-Les résultats envoyés au provider sont tronqués à 4 000 caractères, mais les
-traces locales persistées ne le sont pas. Les sorties de commande ne sont pas
-plafonnées non plus.
+Avant écriture, `apiTrace` peut supprimer toutes les traces, retirer celles
+plus anciennes que `retentionDays`, garder au plus
+`maxEntriesPerMessage` entrées et masquer champs sensibles, Bearer tokens et
+clés de forme `sk-*`. Ces règles s’appliquent au chat principal et aux agents.
 
-Cette observabilité est utile pour le debug, mais elle peut faire croître
-rapidement le stockage et conserver des données sensibles présentes dans les
-conversations ou les réponses provider.
+Les résultats réinjectés au provider sont tronqués à 4 000 caractères. La
+sortie de commande conservée en mémoire est également plafonnée par
+`deviceExecution.maxOutputCharacters`. Les prompts et réponses fonctionnels
+restent potentiellement sensibles même après la redaction ciblée des secrets.

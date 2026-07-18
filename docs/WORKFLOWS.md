@@ -4,6 +4,8 @@
 
 ```text
 Electron ready
+  -> migration des données vers userData
+  -> migration/chiffrement de la clé OpenAI
   -> createMainWindow
   -> renderer React
   -> LoadingScreen
@@ -13,9 +15,15 @@ Electron ready
   -> abonnement nova:ai:event
 ```
 
-Le boot exécute uniquement le ping IPC réel, avec un timeout de trois secondes
-et une action de reprise en cas d’erreur. Après hydratation, toute modification
-des conversations déclenche une sauvegarde complète.
+Avant de créer la fenêtre, le main exécute les migrations versionnées des
+données et du secret. Une erreur affiche une boîte de dialogue et reste
+journalisable/récupérable ; aucune copie en clair de la clé n’est supprimée
+tant que le coffre n’a pas été relu avec succès.
+
+Le boot renderer exécute uniquement le ping IPC réel, avec un timeout de trois
+secondes et une action de reprise en cas d’erreur. Après hydratation, toute
+modification des conversations déclenche une sauvegarde complète si aucune
+récupération de stockage n’est en attente.
 
 Fichiers :
 
@@ -40,7 +48,8 @@ ChatInput
 Étapes :
 
 1. le draft est vidé et la conversation passe en état d’envoi ;
-2. le main charge les settings ;
+2. le main charge les settings et déchiffre la clé uniquement dans son
+   contexte runtime ;
 3. Nova crée le message user et un message système de progression ;
 4. la conversation complète est transformée en JSON pour OpenAI ;
 5. OpenAI doit renvoyer un objet Nova minifié ;
@@ -230,18 +239,26 @@ Chargement :
 
 1. lire le dossier configuré ;
 2. fallback vers le dossier de référence ;
-3. lire l’index s’il existe ;
-4. découvrir aussi les dossiers non indexés ;
-5. reconstruire et trier les messages ;
-6. fallback vers une conversation d’accueil.
+3. lire chaque JSON, avec tentative du `.bak` si le primaire est invalide ;
+4. archiver les fichiers corrompus et journaliser les anomalies ;
+5. découvrir aussi les dossiers non indexés ;
+6. détecter toute donnée indexée mais absente ou illisible ;
+7. reconstruire et trier les messages ;
+8. si l’état est partiel, afficher une bannière et verrouiller la racine ;
+9. fallback vers une conversation d’accueil en l’absence de données.
 
 Sauvegarde :
 
 1. filtrer les messages système ;
 2. mettre la sauvegarde dans la queue du handler ;
-3. synchroniser le dossier de référence ;
-4. écrire l’index de référence à la racine ;
-5. synchroniser le dossier configuré s’il diffère.
+3. refuser l’écriture si une récupération n’a pas été acknowledged ;
+4. appliquer rétention, plafond et redaction aux traces API ;
+5. synchroniser le dossier de référence par écritures atomiques ;
+6. écrire l’index de référence sous `userData` ;
+7. synchroniser le dossier configuré s’il diffère.
+
+L’acknowledgement retire le verrou après inspection utilisateur ; il ne
+reconstitue pas les données illisibles.
 
 ## 10. Persistance et vues agent
 
@@ -251,6 +268,13 @@ Sauvegarde :
 - permissions ;
 - conversations internes ;
 - historique.
+
+Les opérations sont mises dans une queue par racine/agent. La lecture de
+l’état, sa modification et les écritures associées forment ainsi une section
+critique qui évite les écrasements entre tâches concurrentes.
+
+Une récupération partielle produit la même bannière que le chat principal et
+bloque les mutations du workspace concerné jusqu’à acknowledgement.
 
 Les pages Planner et Device interrogent les tâches actives chaque seconde et
 se rafraîchissent aussi après un événement IA.
@@ -274,16 +298,26 @@ seule côté renderer. Aucun canal IPC de conversation directe n’est exposé.
 
 Chargement :
 
-1. defaults ;
+1. defaults sous `app.getPath("userData")` ;
 2. fichier de référence ;
-3. merge et compatibilité `diagnostic-agent` ;
-4. éventuel fichier configuré.
+3. merge et compatibilité de schéma ;
+4. éventuel fichier configuré ;
+5. calcul de `apiKeyConfigured` depuis le coffre, sans exposer la clé.
 
 Sauvegarde UI :
 
 1. validation des chemins conversations/settings ;
 2. si provider actif OpenAI, test réseau obligatoire ;
-3. écriture du fichier de référence et de l’éventuel fichier secondaire.
+3. si une nouvelle clé a été saisie, chiffrement et relecture de vérification ;
+4. suppression de la valeur transitoire ;
+5. écriture atomique du fichier de référence et de l’éventuel fichier
+   secondaire ;
+6. retour au renderer des settings publics sans secret.
+
+Une action séparée supprime la clé du coffre. Au premier démarrage après mise à
+jour, la migration recherche aussi l’ancienne clé dans les settings de
+référence et personnalisés, la sécurise, puis nettoie les primaires et backups
+en clair.
 
 Le chemin `agentsDirectory` n’est pas validé comme non vide aujourd’hui.
 

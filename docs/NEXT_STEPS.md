@@ -11,9 +11,9 @@ fiabiliser les capacités qu’il possède avant de l’élargir.
 - Policy Device testée avec cas sûrs et cas adversariaux.
 - Parsers OpenAI et Planner testés.
 - Sérialisation, round-trip du stockage et reducers d’événements testés.
-- 174 tests réussissent, dont 88 cas de policy Device.
+- La suite actuelle compte 191 tests réussis, dont 88 cas de policy Device.
 
-La phase 2 est terminée. La priorité active passe à la phase 3. Les anciens
+La phase 2 est terminée. Les anciens
 `it.fails` sont désormais des tests de régression normaux.
 
 ## Phase 2 — Sécuriser Device — terminée
@@ -43,18 +43,36 @@ La phase 2 est terminée. La priorité active passe à la phase 3. Les anciens
 Critère de sortie : aucun contournement connu de la matrice de tests et une UX
 de permission non ambiguë.
 
-## Phase 3 — Fiabiliser les données
+## Phase 3 — Fiabiliser les données — terminée
 
-1. Écritures JSON atomiques.
-2. Backups et journalisation des erreurs de lecture.
-3. Détection d’état partiellement récupéré avant auto-sauvegarde.
-4. Queue ou verrou par espace agent.
-5. Migration vers `app.getPath("userData")`.
-6. Migration idempotente de `diagnostic-agent` vers `agent-planner`.
-7. Politique de rétention/redaction de `apis.json`.
-8. Stockage sécurisé de la clé API.
+1. ~~Écritures JSON atomiques.~~ Chaque fichier JSON est écrit dans un
+   temporaire synchronisé, puis renommé.
+2. ~~Backups et journalisation des erreurs de lecture.~~ La dernière version
+   valide est conservée en `.bak`, les fichiers corrompus sont archivés et les
+   anomalies sont ajoutées à `logs/storage-errors.jsonl` sous `userData`.
+3. ~~Détection d’état partiellement récupéré avant auto-sauvegarde.~~ Un état
+   incomplet affiche une bannière et bloque les écritures concernées jusqu’à
+   acknowledgement explicite.
+4. ~~Queue ou verrou par espace agent.~~ Les opérations sont sérialisées par
+   racine de stockage et par agent.
+5. ~~Migration vers `app.getPath("userData")`.~~ Les nouveaux chemins par
+   défaut utilisent `userData` et les anciens emplacements sont copiés une
+   seule fois sans remplacer les chemins personnalisés.
+6. ~~Migration idempotente de `diagnostic-agent` vers `agent-planner`.~~ Les
+   settings et dossiers sont migrés ou fusionnés, avec l’original déplacé dans
+   `.migration-backups`.
+7. ~~Politique de rétention/redaction de `apis.json`.~~ Activation, durée,
+   plafond par message et masquage des secrets sont configurables et appliqués
+   aux conversations principales comme aux conversations agents.
+8. ~~Stockage sécurisé de la clé API.~~ La clé est chiffrée par
+   `electron.safeStorage`, n’est plus renvoyée au renderer et les anciennes
+   copies en clair sont nettoyées seulement après vérification du coffre.
 
-Critère de sortie : arrêt brutal ou JSON corrompu sans perte silencieuse.
+Critère de sortie atteint : une corruption détectée ne peut plus être
+silencieusement écrasée par l’auto-sauvegarde. Les copies valides, archives et
+journaux permettent une reprise explicite après une interruption.
+
+La priorité active passe à la phase 4.
 
 ## Phase 4 — Clarifier les surfaces produit
 
@@ -94,8 +112,8 @@ configurations main et renderer construisent désormais des tableaux de règles
 indépendants.
 
 Les surfaces sans consommateur, les délais simulés et l’hygiène de distribution
-recensés en P2 sont également traités. Les prochains travaux actifs reviennent
-aux phases 3 et 4, centrées sur les données et la cohérence produit.
+recensés en P2 sont également traités. Les prochains travaux actifs sont ceux
+de la phase 4, centrés sur la cohérence produit.
 
 ## Phase 6 — Nouvelles capacités
 

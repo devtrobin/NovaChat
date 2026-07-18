@@ -42,54 +42,52 @@ Actions restantes :
 ### Couverture de tests encore limitée
 
 Le socle Vitest couvre désormais la policy, les parsers OpenAI/Planner, le
-stockage chat, les commandes slash, les messages de tâche agent et les
-événements de conversation. Les 174 tests réussissent, dont 88 cas de policy
-Device.
+stockage chat, les migrations, les commandes slash, les messages de tâche
+agent, la concurrence agent, la politique de traces et le coffre de secrets.
+Les 191 tests réussissent, dont 88 cas de policy Device.
 
 Il manque encore les composants React, l’orchestrateur complet, les
 permissions asynchrones, le registre d’arrêt et les parcours end-to-end.
 
 Action recommandée : couvrir maintenant les workflows asynchrones critiques.
 
-### Écritures non atomiques et erreurs silencieuses
+### Écritures non atomiques et erreurs silencieuses — corrigé
 
-`readJsonFile` et la lecture des settings absorbent toute erreur et retournent
-`null`. Les writes utilisent directement `writeFile`, sans fichier temporaire
-ni renommage atomique.
+Les JSON sont écrits par temporaire synchronisé puis renommage. La version
+précédente valide est conservée en `.bak`, un primaire corrompu est archivé et
+les erreurs sont journalisées sous `userData/logs/storage-errors.jsonl`.
 
-Une coupure pendant une écriture peut produire un JSON invalide. Au prochain
-chargement, un message illisible peut disparaître de l’état puis être supprimé
-du disque lors de l’auto-sauvegarde du renderer.
+Une récupération partielle enregistre un verrou en mémoire : l’auto-sauvegarde
+et les écritures sur les racines qui se chevauchent sont refusées jusqu’à
+l’acknowledgement explicite de la bannière. Ce mécanisme empêche l’écrasement
+silencieux ; il ne transforme pas une synchronisation multi-fichiers en
+transaction de base de données.
 
-Action recommandée : writes atomiques, journal d’erreur visible, sauvegarde de
-secours et refus de réécrire automatiquement un état partiellement récupéré.
+### Concurrence du stockage agent — corrigée
 
-### Concurrence du stockage agent
+Les chargements-modifications-écritures des conversations, historiques,
+permissions et contextes sont sérialisés par couple racine/agent. Une erreur
+dans une opération ne bloque pas les suivantes et la queue est libérée après
+la dernière opération.
 
-La sauvegarde du chat principal possède une queue. Les écritures des
-conversations et de l’historique agents n’en ont pas. Deux tâches concurrentes
-sur un même agent peuvent charger le même état puis écraser mutuellement une
-entrée.
+### Emplacement par défaut en application packagée — corrigé
 
-Action recommandée : queue par espace agent ou couche transactionnelle
-commune.
+Les settings, conversations, agents, journaux et secrets par défaut résident
+sous `app.getPath("userData")`. Au démarrage, une migration versionnée copie
+les anciennes valeurs par défaut et réécrit uniquement ces chemins ; les
+chemins personnalisés restent inchangés.
 
-### Emplacement par défaut en application packagée
+### Clé API et traces en clair — corrigé avec limites
 
-`settings.service.ts` utilise le dossier de l’exécutable lorsque l’application
-est packagée. Ce dossier n’est pas un emplacement de données utilisateur
-portable et peut être non inscriptible ou invalidé par une mise à jour.
+La clé OpenAI est chiffrée via `electron.safeStorage` dans un fichier dédié et
+n’est jamais renvoyée au renderer après sauvegarde. La migration supprime les
+copies en clair des settings et de leurs backups seulement après écriture et
+relecture vérifiées du secret. Le backend Linux `basic_text` est refusé.
 
-Action recommandée : migrer les données vers `app.getPath("userData")`, avec
-une stratégie explicite de migration depuis les chemins actuels.
-
-### Clé API et traces en clair
-
-La clé OpenAI est stockée en clair dans `settings.json`. Les requêtes et
-réponses provider complètes sont persistées dans `apis.json`.
-
-Action recommandée : coffre de secrets OS pour la clé, politique de rétention
-et option de désactivation/redaction des traces.
+Les traces API peuvent être désactivées, sont bornées en âge et en nombre
+d’entrées par message, et masquent par défaut les champs et motifs de secrets.
+La redaction est une défense ciblée : le contenu fonctionnel des prompts et
+réponses peut toujours être sensible même s’il ne ressemble pas à un secret.
 
 ### Validation IPC insuffisante — corrigée
 
@@ -135,13 +133,12 @@ Le validateur exige le fichier settings et le dossier conversations, mais pas
 Action recommandée : validation par section, sauvegarde locale indépendante du
 test provider, timeout/abort et validation de tous les chemins.
 
-### Migration `diagnostic-agent` incomplète
+### Migration `diagnostic-agent` — corrigée
 
-Le code convertit l’ancien flag et les réponses vers `agent-planner`, mais ne
-migre ni ne masque complètement l’ancienne clé de settings, ni le dossier de
-données `diagnostic-agent`.
-
-Action recommandée : migration idempotente avec sauvegarde et journal.
+La migration versionnée remplace l’ancien flag, déplace le dossier source dans
+`.migration-backups`, puis le copie ou le fusionne avec `agent-planner`.
+Permissions, historique et conversations sont dédupliqués. Une nouvelle
+exécution ne rejoue pas les étapes déjà marquées.
 
 ### Masquage des messages internes trop large
 
@@ -248,5 +245,9 @@ les résolutions une par une, puis rejouer audit, tests, démarrage et packaging
 - Le packaging Windows x64 passe.
 - Les domaines main/renderer/preload sont identifiables.
 - Le contrat événementiel du chat est simple.
-- La persistance éclatée facilite l’inspection manuelle.
+- La persistance éclatée est atomique par fichier, sauvegardée et observable.
+- Les données par défaut sont sous `userData` et les écritures agents sont
+  sérialisées.
+- La clé OpenAI stockée n’est ni présente dans les settings ni exposée au
+  renderer.
 - L’arrêt de tour regroupe abort provider, permission et commandes actives.

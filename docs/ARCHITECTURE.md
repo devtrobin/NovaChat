@@ -19,9 +19,11 @@ Electron main
     └── stockage JSON local
 ```
 
-Le renderer ne doit posséder ni clé provider, ni accès Node, ni accès direct
-au shell. Le preload expose un contrat limité. Le main porte les effets de
-bord.
+Le renderer ne reçoit jamais une clé provider déjà stockée, ni accès Node, ni
+accès direct au shell. Une nouvelle clé saisie dans le formulaire ne traverse
+le preload que comme valeur de remplacement ponctuelle ; le main la chiffre,
+puis renvoie uniquement `apiKeyConfigured`. Le preload expose un contrat
+limité. Le main porte les effets de bord.
 
 Le packaging active `asar` et plusieurs fuses Electron : désactivation de
 `RunAsNode`, des options Node par variable d’environnement et des arguments
@@ -207,8 +209,14 @@ writer synchronise l’arbre avec l’état reçu, y compris par suppressions
 récursives.
 
 Le chat principal sérialise ses sauvegardes avec une queue dans
-`chat.handlers.ts`. Les espaces agents ne bénéficient pas encore de cette
-protection.
+`chat.handlers.ts`. Les espaces agents sérialisent également toute opération
+de lecture-modification-écriture par couple racine/agent.
+
+Chaque JSON est écrit dans un fichier temporaire synchronisé puis renommé. La
+dernière version valide est conservée en `.bak`. Une lecture corrompue tente ce
+backup, archive le primaire et journalise l’anomalie. Si l’état reconstruit est
+partiel, un registre de récupération bloque toute nouvelle écriture sur la
+racine concernée jusqu’à acknowledgement explicite dans l’UI.
 
 Les handlers IPC valident leurs payloads à l’exécution avant le métier. Les
 identifiants utilisables comme segments de chemin sont restreints, et les
@@ -220,6 +228,16 @@ stockage configurée.
 Le main calcule les chemins par défaut, fusionne les anciennes configurations,
 lit le fichier de référence puis un éventuel fichier configuré et écrit les
 deux à la sauvegarde.
+
+Les références par défaut résident sous `app.getPath("userData")`. Au
+démarrage, `data-migration.service.ts` copie une seule fois les anciennes
+données placées près de l’exécutable, préserve les chemins personnalisés et
+migre `diagnostic-agent` vers `agent-planner`.
+
+La clé OpenAI vit dans `userData/secrets/openai-api-key.json`, chiffrée par
+`electron.safeStorage`. `settings.service.ts` sépare les settings publics des
+settings runtime déchiffrés, accessibles uniquement au main. La migration du
+secret vérifie la relecture avant de nettoyer les anciennes copies en clair.
 
 Seul le bloc OpenAI est opérationnel. Les autres IDs provider servent à l’UI
 preview et au contexte runtime des agents.
@@ -244,8 +262,9 @@ agent-planner
 device-agent
 ```
 
-`diagnostic-agent` est un ancien nom partiellement pris en charge pour
-compatibilité.
+`diagnostic-agent` est un ancien nom accepté pendant la migration. Son flag et
+son espace de données sont migrés de façon idempotente ; la copie source est
+conservée sous `.migration-backups`.
 
 ### Persistance et observabilité
 
@@ -255,7 +274,9 @@ Chaque message peut porter deux catégories de traces séparées :
 - `apiRequests` : payloads et réponses provider.
 
 Ces traces ne sont pas envoyées dans le message Nova simplifié au provider,
-mais elles sont persistées sur disque.
+mais elles peuvent être persistées sur disque selon `apiTrace`. La policy
+applique activation, rétention, plafond par message et redaction des secrets
+avant chaque écriture, y compris dans les conversations agents.
 
 ## Dépendances structurelles à préserver
 
