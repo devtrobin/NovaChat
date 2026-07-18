@@ -14,7 +14,3 @@ export function resolveShell(command: string): { args: string[]; file: string; s
     shell: preferredShell,
   };
 }
-
-export function getKillSignal(): NodeJS.Signals | undefined {
-  return process.platform === "win32" ? undefined : "SIGTERM";
-}

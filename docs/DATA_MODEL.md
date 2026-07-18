@@ -108,6 +108,8 @@ pas migré automatiquement.
 activeProvider
 agents.agent-planner.enabled
 agents.device-agent.enabled
+deviceExecution.maxOutputCharacters
+deviceExecution.timeoutMs
 hideInternalConversations
 localFiles.settingsPath
 localFiles.conversationsDirectory
@@ -149,6 +151,11 @@ Les événements `nova:ai:event` sont :
 
 Le renderer les applique dans
 `src/renderer/services/chat/chat.events.ts`.
+
+Les handlers valident chaque argument IPC à l’exécution : forme des objets,
+types, énumérations, longueurs, volume sérialisé, identifiants et chemins
+absolus. Les chemins construits à partir d’identifiants sont en plus confinés à
+leur racine de stockage.
 
 Le contrat public ne contient aucun canal Device direct ni API de conversation
 agent sans interface. Toute exécution locale passe par le flux `ai` dans le

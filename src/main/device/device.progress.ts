@@ -31,6 +31,6 @@ export function buildProgress(commandId: string, command: RunningCommand): Devic
     commandId,
     inputPlaceholder: command.inputPlaceholder,
     inputSecret: command.inputSecret,
-    output: command.output.trimEnd(),
+    output: command.output.toString().trimEnd(),
   };
 }

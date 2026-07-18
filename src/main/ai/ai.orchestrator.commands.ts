@@ -1,5 +1,6 @@
 import { ChatMessage } from "../../shared/chat.types";
 import { RunTurnRequest, RunTurnResult } from "../../shared/ai.types";
+import { AppSettings } from "../../shared/settings.types";
 import {
   createDeviceImmediateErrorMessage,
   createInterruptedSystemMessage,
@@ -13,6 +14,7 @@ import { finishTurn, startTurn, TurnStoppedError } from "./ai.turn-registry";
 
 export async function runDirectCommandTurn(
   request: RunTurnRequest,
+  settings: AppSettings,
   userMessage: ChatMessage,
   emit: Emit,
 ): Promise<RunTurnResult> {
@@ -48,6 +50,7 @@ export async function runDirectCommandTurn(
       emit,
       initialMessage: runningMessage,
       messageId: runningMessage.id,
+      options: settings.deviceExecution,
       resultRecipient: "user",
       resultSender: "device",
       turnId,

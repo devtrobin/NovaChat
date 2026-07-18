@@ -28,6 +28,10 @@ export function createDefaultSettings(): AppSettings {
   return parseAppSettings({
     activeProvider: "openai",
     agents: createDefaultAgentSettings(),
+    deviceExecution: {
+      maxOutputCharacters: 200_000,
+      timeoutMs: 15_000,
+    },
     hideInternalConversations: false,
     localFiles: {
       agentsDirectory: getReferenceAgentsDirectory(),
@@ -70,6 +74,10 @@ function mergeSettings(partial: unknown): AppSettings {
         ...defaults.agents["device-agent"],
         ...parsed.agents?.["device-agent"],
       },
+    },
+    deviceExecution: {
+      ...defaults.deviceExecution,
+      ...parsed.deviceExecution,
     },
     localFiles: {
       ...defaults.localFiles,

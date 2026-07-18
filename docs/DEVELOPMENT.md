@@ -38,7 +38,7 @@ interdit `npm.ps1`; `npm.cmd` est donc nécessaire.
 ## État de validation au 18 juillet 2026
 
 - `npm.cmd exec tsc -- --noEmit` : réussi.
-- `npm.cmd test` : 154 réussites.
+- `npm.cmd test` : 174 réussites.
 - `npm.cmd run lint` : réussi.
 - `npm.cmd run package` : réussi pour `win32-x64`.
 - `npm.cmd run ci` : réussi.
@@ -49,7 +49,7 @@ ignoré par Git.
 
 ## Tests
 
-Vitest 4 exécute douze fichiers sous `src/` :
+Vitest 4 exécute dix-huit fichiers sous `src/` :
 
 - policy de permissions Device ;
 - parser des réponses OpenAI ;
@@ -58,6 +58,9 @@ Vitest 4 exécute douze fichiers sous `src/` :
 - round-trip du stockage sur un dossier temporaire ;
 - application des événements de conversation.
 - parsing et réponses des commandes slash locales.
+- validation runtime des payloads IPC ;
+- confinement des chemins de stockage ;
+- limites de sortie, timeout interactif et stratégie de kill Device.
 - formatage des résultats agent et détection des commandes Device.
 - initialisation, permissions, conversations et historique du stockage agent.
 - formatage des statuts et sorties de la page Device.

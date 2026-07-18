@@ -43,7 +43,7 @@ Actions restantes :
 
 Le socle Vitest couvre désormais la policy, les parsers OpenAI/Planner, le
 stockage chat, les commandes slash, les messages de tâche agent et les
-événements de conversation. Les 154 tests réussissent, dont 88 cas de policy
+événements de conversation. Les 174 tests réussissent, dont 88 cas de policy
 Device.
 
 Il manque encore les composants React, l’orchestrateur complet, les
@@ -91,15 +91,12 @@ réponses provider complètes sont persistées dans `apis.json`.
 Action recommandée : coffre de secrets OS pour la clé, politique de rétention
 et option de désactivation/redaction des traces.
 
-### Validation IPC insuffisante
+### Validation IPC insuffisante — corrigée
 
-Les types TypeScript ne valident rien à l’exécution. Les handlers acceptent des
-IDs, chemins et objets issus du renderer sans schéma runtime. Les IDs de
-conversation sont ensuite utilisés dans des chemins de fichiers.
-
-Action recommandée : valider tous les payloads IPC, borner les chaînes,
-normaliser les IDs et vérifier que les chemins résolus restent dans leur
-racine.
+Les handlers reçoivent désormais des valeurs `unknown` et valident à
+l’exécution objets, énumérations, identifiants, tailles, URLs et chemins. Les
+chemins dérivés des conversations, messages et agents sont résolus avec un
+contrôle d’appartenance à leur racine avant lecture, écriture ou suppression.
 
 ### Durcissement Electron incomplet
 
@@ -110,13 +107,11 @@ aucune règle de navigation/nouvelle fenêtre n’est installée.
 Action recommandée : configuration explicite, CSP stricte et blocage des
 navigations externes non approuvées.
 
-### Sémantique de refus trompeuse
+### Sémantique de refus trompeuse — corrigée
 
-Le bouton de permission `Non` enregistre une règle `deny` permanente pour les
-commandes classées `ask`. L’UI ne dit pas que le refus sera mémorisé.
-
-Action recommandée : faire de `Non` un refus ponctuel ou renommer l’action et
-ajouter une action distincte “Toujours refuser”.
+Le bouton `Non` est maintenant ponctuel. Seule l’action distincte
+`Toujours refuser` enregistre une règle `deny`, et les messages de résolution
+indiquent explicitement la portée de la décision.
 
 ### Providers preview incohérents
 
@@ -156,17 +151,19 @@ résultat visible d’un `/cmd` lancé directement par l’utilisateur.
 Action recommandée : distinguer messages internes d’agent et résultat
 explicitement demandé par l’utilisateur.
 
-### Exécution interactive fragile
+### Saisie interactive encore heuristique
 
-- timeout global fixe de 15 secondes, y compris en attente de saisie ;
 - détection de prompt par expressions régulières sur stdout/stderr ;
 - absence de pseudo-terminal ;
-- kill Windows potentiellement limité au processus shell et non à tout
-  l’arbre enfant ;
-- sortie accumulée sans plafond mémoire.
 
-Action recommandée : état d’attente qui suspend le timeout, PTY si nécessaire,
-kill d’arbre et limite de sortie.
+Le timeout actif et la limite de sortie sont configurables et bornés. Le
+timeout est suspendu pendant `waiting-input`, puis réarmé après soumission.
+L’arrêt cible l’arbre avec `taskkill /t /f` sous Windows et le groupe de
+processus détaché sous Unix. La sortie en mémoire conserve une fin bornée et
+signale sa troncature.
+
+Action restante : adopter un pseudo-terminal si le support d’applications
+interactives générales devient un objectif produit.
 
 ## P2 — Maintenabilité et dette fonctionnelle — terminée
 

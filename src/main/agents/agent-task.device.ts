@@ -112,6 +112,7 @@ async function executeResolvedDeviceCommand(
       initialMessage: runningMessage,
       messageId: runningMessage.id,
       onProgressStateChange: (status) => updateActiveAgentTaskStatus(activeTaskId, status),
+      options: args.settings.deviceExecution,
       resultRecipient: "assistant",
       resultSender: "device",
       turnId,

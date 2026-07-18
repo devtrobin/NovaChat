@@ -166,6 +166,7 @@ export function parseAppSettings(value: unknown): AppSettings {
   const agents = readRecord(settings.agents, "settings.agents");
   const planner = readRecord(agents["agent-planner"], "settings.agents.agent-planner");
   const device = readRecord(agents["device-agent"], "settings.agents.device-agent");
+  const deviceExecution = readRecord(settings.deviceExecution, "settings.deviceExecution");
   const localFiles = readRecord(settings.localFiles, "settings.localFiles");
   const openai = readRecord(settings.openai, "settings.openai");
 
@@ -174,6 +175,15 @@ export function parseAppSettings(value: unknown): AppSettings {
     agents: {
       "agent-planner": { enabled: readBoolean(planner.enabled, "settings.agents.agent-planner.enabled") },
       "device-agent": { enabled: readBoolean(device.enabled, "settings.agents.device-agent.enabled") },
+    },
+    deviceExecution: {
+      maxOutputCharacters: readInteger(
+        deviceExecution.maxOutputCharacters,
+        "settings.deviceExecution.maxOutputCharacters",
+        10_000,
+        1_000_000,
+      ),
+      timeoutMs: readInteger(deviceExecution.timeoutMs, "settings.deviceExecution.timeoutMs", 1_000, 300_000),
     },
     hideInternalConversations: readBoolean(settings.hideInternalConversations, "settings.hideInternalConversations"),
     localFiles: {
@@ -295,6 +305,13 @@ function readBoolean(value: unknown, field: string): boolean {
     throw new InvalidIpcPayloadError(field, "booleen attendu");
   }
   return value;
+}
+
+function readInteger(value: unknown, field: string, min: number, max: number): number {
+  if (!Number.isInteger(value) || (value as number) < min || (value as number) > max) {
+    throw new InvalidIpcPayloadError(field, `entier attendu entre ${min} et ${max}`);
+  }
+  return value as number;
 }
 
 function readOptionalBoolean(value: unknown, field: string): boolean | undefined {

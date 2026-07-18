@@ -20,6 +20,22 @@ export function validateSettingsDraft(settings: AppSettings, category: SettingsC
       return "Le dossier des conversations est requis.";
     }
 
+    if (
+      !Number.isInteger(settings.deviceExecution.timeoutMs)
+      || settings.deviceExecution.timeoutMs < 1_000
+      || settings.deviceExecution.timeoutMs > 300_000
+    ) {
+      return "Le delai maximal doit etre compris entre 1 000 et 300 000 ms.";
+    }
+
+    if (
+      !Number.isInteger(settings.deviceExecution.maxOutputCharacters)
+      || settings.deviceExecution.maxOutputCharacters < 10_000
+      || settings.deviceExecution.maxOutputCharacters > 1_000_000
+    ) {
+      return "La sortie maximale doit etre comprise entre 10 000 et 1 000 000 caracteres.";
+    }
+
     return null;
   }
 

@@ -12,6 +12,10 @@ const settings: AppSettings = {
     "agent-planner": { enabled: true },
     "device-agent": { enabled: false },
   },
+  deviceExecution: {
+    maxOutputCharacters: 200_000,
+    timeoutMs: 15_000,
+  },
   hideInternalConversations: false,
   localFiles: {
     agentsDirectory: "agents",

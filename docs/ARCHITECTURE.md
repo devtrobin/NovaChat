@@ -184,7 +184,10 @@ Sur Windows : `cmd.exe /d /s /c`.
 
 Sur macOS/Linux : `$SHELL -lc`, avec `/bin/zsh` en fallback.
 
-Le timeout est fixé à 15 secondes. Le registre est uniquement mémoire.
+Le registre est uniquement mémoire. Le timeout actif et la limite de sortie
+sont configurables dans `deviceExecution`. Le timeout est suspendu pendant une
+attente de saisie détectée, puis réarmé à la soumission. L’arrêt cible l’arbre
+de processus (`taskkill /t /f` sous Windows, groupe détaché sous Unix).
 
 La classification de permission de `device.policy.ts` intervient dans le flux
 agent, avant `startDeviceCommand`. Cette façade s’appuie sur les modules
@@ -206,6 +209,11 @@ récursives.
 Le chat principal sérialise ses sauvegardes avec une queue dans
 `chat.handlers.ts`. Les espaces agents ne bénéficient pas encore de cette
 protection.
+
+Les handlers IPC valident leurs payloads à l’exécution avant le métier. Les
+identifiants utilisables comme segments de chemin sont restreints, et les
+constructeurs de chemins vérifient que la cible résolue reste dans la racine de
+stockage configurée.
 
 ### Domaine `settings`
 

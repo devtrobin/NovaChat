@@ -35,14 +35,14 @@ la robustesse du stockage et la gestion des secrets restent des bloqueurs.
 | Device agent | Fonctionnel | commande exacte ou générée depuis un objectif |
 | Planner agent | Fonctionnel | plan textuel structuré, étape atomique |
 | Permissions Device | Durci avec limites | syntaxe restrictive, pas un sandbox |
-| Saisie interactive | Partielle | heuristique stdout, timeout 15 s |
+| Saisie interactive | Partielle | heuristique stdout ; timeout configurable suspendu pendant la saisie |
 | Arrêt global d’un tour | Fonctionnel | abort provider, permission, commandes |
 | Activité agents | Fonctionnel | polling 1 s + rafraîchissement sur événement |
 | Contexte agent éditable | Fonctionnel | `contexte.json` |
 | Historique agent | Fonctionnel | stockage et vue |
 | Providers alternatifs | Placeholder | sélection possible mais non exécutée |
 | Internationalisation | Partielle | écran de boot seulement |
-| Tests automatisés | Socle fonctionnel | 154 réussites, aucun échec attendu |
+| Tests automatisés | Socle fonctionnel | 174 réussites, aucun échec attendu |
 | Packaging Windows x64 | Vérifié | `npm.cmd run package` réussi |
 
 ## Agents actuels
@@ -107,11 +107,12 @@ Le package vérifié est `win32-x64`.
 Le démarrage de développement a également atteint le lancement de
 l’application et du serveur renderer sur `http://localhost:9000`.
 
-La suite comprend 154 cas répartis dans douze fichiers. Elle couvre la policy
+La suite comprend 174 cas répartis dans dix-huit fichiers. Elle couvre la policy
 Device, les parsers OpenAI/Planner, les commandes slash, les handoffs
 assistant-agent, la conservation des traces, les messages de tâche agent, le
-formatage de la page Device, les stockages chat/agents et les reducers
-d’événements. La matrice Device comporte 88 cas et tous les anciens
+formatage de la page Device, les stockages chat/agents, les frontières IPC,
+les chemins confinés, le cycle de vie Device et les reducers d’événements. La
+matrice Device comporte 88 cas et tous les anciens
 contournements connus sont des tests de régression normaux.
 
 Non vérifié :
@@ -160,5 +161,5 @@ Le projet est reprenable sans refonte globale. Les frontières de domaines sont
 lisibles et les flux principaux sont opérationnels.
 
 La prochaine phase ne devrait toutefois pas ajouter de nouveaux agents ou
-providers. Elle devrait sécuriser et tester le socle existant dans l’ordre
-décrit par [NEXT_STEPS.md](NEXT_STEPS.md).
+providers. La phase 3 doit fiabiliser la persistance et les migrations dans
+l’ordre décrit par [NEXT_STEPS.md](NEXT_STEPS.md).

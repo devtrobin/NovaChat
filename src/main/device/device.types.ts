@@ -3,6 +3,7 @@ import {
   DeviceCommandProgress,
   DeviceCommandResult,
 } from "../../shared/chat.types";
+import { BoundedOutputBuffer } from "./device.output-buffer";
 
 export type ProgressListener = (progress: DeviceCommandProgress) => void;
 
@@ -14,10 +15,13 @@ export type RunningCommand = {
   inputSecret?: boolean;
   normalizedCommand: string;
   onProgress?: ProgressListener;
-  output: string;
+  output: BoundedOutputBuffer;
   promise: Promise<DeviceCommandResult>;
+  settled: boolean;
   shell: string;
   startedAt: number;
+  timeoutHandle?: ReturnType<typeof setTimeout>;
+  timeoutMs: number;
   timedOut: boolean;
   wasKilled: boolean;
 };

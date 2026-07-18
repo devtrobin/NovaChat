@@ -32,6 +32,10 @@ function createSettings() {
       "agent-planner": { enabled: true },
       "device-agent": { enabled: true },
     },
+    deviceExecution: {
+      maxOutputCharacters: 200_000,
+      timeoutMs: 15_000,
+    },
     hideInternalConversations: false,
     localFiles: {
       agentsDirectory: path.resolve("agents"),

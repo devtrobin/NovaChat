@@ -42,7 +42,7 @@ export async function runTurn(
 ): Promise<RunTurnResult> {
   const userMessage = createUserMessage(request.userInput);
   if (isDirectCommand(request.userInput)) {
-    return runDirectCommandTurn(request, userMessage, emit);
+    return runDirectCommandTurn(request, settings, userMessage, emit);
   }
   if (isSlashCommand(request.userInput)) {
     return runSlashCommandTurn(request, settings, userMessage, emit);

@@ -9,6 +9,11 @@ export type LocalFilesSettings = {
   settingsPath: string;
 };
 
+export type DeviceExecutionSettings = {
+  maxOutputCharacters: number;
+  timeoutMs: number;
+};
+
 export type OpenAISettings = {
   apiKey: string;
   baseUrl: string;
@@ -19,6 +24,7 @@ export type OpenAISettings = {
 export type AppSettings = {
   activeProvider: AIProviderId;
   agents: AgentSettingsMap;
+  deviceExecution: DeviceExecutionSettings;
   hideInternalConversations: boolean;
   localFiles: LocalFilesSettings;
   openai: OpenAISettings;

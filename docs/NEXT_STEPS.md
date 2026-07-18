@@ -11,12 +11,12 @@ fiabiliser les capacités qu’il possède avant de l’élargir.
 - Policy Device testée avec cas sûrs et cas adversariaux.
 - Parsers OpenAI et Planner testés.
 - Sérialisation, round-trip du stockage et reducers d’événements testés.
-- 154 tests réussissent, dont 88 cas de policy Device.
+- 174 tests réussissent, dont 88 cas de policy Device.
 
-La priorité active reste la phase 2. Les anciens `it.fails` sont désormais des
-tests de régression normaux.
+La phase 2 est terminée. La priorité active passe à la phase 3. Les anciens
+`it.fails` sont désormais des tests de régression normaux.
 
-## Phase 2 — Sécuriser Device
+## Phase 2 — Sécuriser Device — terminée
 
 1. ~~Refuser par défaut les commandes non analysables.~~ Terminé :
    elles sont classées `ask-always`.
@@ -30,10 +30,15 @@ tests de régression normaux.
    - accès réseau ;
    - installation/système ;
    - suppression/destruction.
-4. Corriger la sémantique `Non` vs refus permanent.
-5. Valider les payloads IPC et les chemins.
-6. Ajouter limites de sortie, timeout configurable, kill d’arbre et stratégie
-   d’input interactive.
+4. ~~Corriger la sémantique `Non` vs refus permanent.~~ Terminé : `Non` est
+   ponctuel et `Toujours refuser` est la seule action de refus mémorisée.
+5. ~~Valider les payloads IPC et les chemins.~~ Terminé : tous les arguments
+   IPC sont validés à l’exécution et les chemins dérivés restent confinés à
+   leur racine configurée.
+6. ~~Ajouter limites de sortie, timeout configurable, kill d’arbre et stratégie
+   d’input interactive.~~ Terminé : sortie bornée, limites persistées dans les
+   settings, timeout actif suspendu pendant la saisie, puis réarmé, et arrêt
+   récursif de l’arbre de processus.
 
 Critère de sortie : aucun contournement connu de la matrice de tests et une UX
 de permission non ambiguë.
@@ -90,7 +95,7 @@ indépendants.
 
 Les surfaces sans consommateur, les délais simulés et l’hygiène de distribution
 recensés en P2 sont également traités. Les prochains travaux actifs reviennent
-aux phases 2 à 4, centrées sur sécurité, données et cohérence produit.
+aux phases 3 et 4, centrées sur les données et la cohérence produit.
 
 ## Phase 6 — Nouvelles capacités
 

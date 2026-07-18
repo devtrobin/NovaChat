@@ -145,8 +145,8 @@ Le main ajoute un message système avec :
 La promesse du tour reste en attente jusqu’à la décision. Une seule permission
 peut être active par conversation principale.
 
-Attention : pour une commande classée `ask`, le chemin actuel enregistre aussi
-`Non` comme règle permanente. Voir `RISKS.md`.
+Pour une commande classée `ask`, `Non` refuse uniquement l’exécution courante.
+`Toujours refuser` est la seule action qui enregistre une règle permanente.
 
 Les commandes `ask-always` redemandent toujours une permission, même si une
 règle existe.
@@ -160,14 +160,18 @@ règle existe.
 3. choisit le shell ;
 4. spawn le processus avec stdin/stdout/stderr en pipes ;
 5. enregistre la commande en mémoire ;
-6. accumule stdout et stderr ;
+6. accumule une fin bornée de stdout et stderr ;
 7. émet la progression ;
-8. tue après 15 secondes ;
-9. produit `DeviceCommandResult`.
+8. applique le timeout actif configuré et le suspend pendant une attente de
+   saisie ;
+9. arrête récursivement l’arbre de processus sur kill ou timeout ;
+10. produit `DeviceCommandResult`.
 
 Une sortie terminant par `password:`, `mot de passe:`, `passphrase:`, `?` ou
 `:` peut passer le message en `waiting-input`. Le renderer renvoie alors la
 valeur via `submitCommandInput`.
+Le timeout est alors réarmé. La détection reste heuristique et ne remplace pas
+un pseudo-terminal pour une application interactive générale.
 
 ## 7. Commandes slash locales et `/cmd`
 

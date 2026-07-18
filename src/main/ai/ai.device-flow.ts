@@ -1,4 +1,5 @@
 import { ChatMessage } from "../../shared/chat.types";
+import { DeviceExecutionSettings } from "../../shared/settings.types";
 import { awaitDeviceCommand, startDeviceCommand } from "../device/device.service";
 import { createDeviceResultMessage } from "./ai.message-factory";
 import { emitDeviceProgress, emitDeviceStart } from "./ai.device-flow.progress";
@@ -13,6 +14,7 @@ type ExecuteDeviceCommandArgs = {
   initialMessage: ChatMessage;
   messageId: string;
   onProgressStateChange?: (status: "running" | "waiting-input") => void;
+  options: DeviceExecutionSettings;
   resultRecipient: "assistant" | "user";
   resultSender: "device";
   turnId: string;
@@ -25,6 +27,7 @@ export async function executeDeviceCommand({
   initialMessage,
   messageId,
   onProgressStateChange,
+  options,
   resultRecipient,
   resultSender,
   turnId,
@@ -32,6 +35,7 @@ export async function executeDeviceCommand({
   throwIfTurnStopped(turnId);
   const runningCommand = startDeviceCommand(
     command,
+    options,
     emitDeviceProgress(emit, conversationId, messageId, initialMessage, onProgressStateChange),
   );
   registerTurnCommand(turnId, runningCommand.commandId);
