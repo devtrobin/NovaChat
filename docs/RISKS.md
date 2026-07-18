@@ -43,7 +43,7 @@ Actions restantes :
 
 Le socle Vitest couvre désormais la policy, les parsers OpenAI/Planner, le
 stockage chat, les commandes slash, les messages de tâche agent et les
-événements de conversation. Les 141 tests réussissent, dont 88 cas de policy
+événements de conversation. Les 148 tests réussissent, dont 88 cas de policy
 Device.
 
 Il manque encore les composants React, l’orchestrateur complet, les
@@ -174,7 +174,6 @@ kill d’arbre et limite de sortie.
 
 Plusieurs fichiers dépassent encore largement l’objectif de 100 lignes :
 
-- `DeviceAgentPage.tsx` ;
 - `ai.orchestrator.cycle.ts`.
 
 Le seuil de `CODING_GUIDELINES.md` doit être compris comme une cible, pas comme
@@ -192,6 +191,9 @@ modules dédiés.
 `agent-storage.service.ts`, auparavant proche de 500 lignes, est désormais une
 façade minimale. Les chemins, la récupération d’historique, le workspace, les
 records persistés et les écritures conversationnelles sont séparés.
+
+`DeviceAgentPage.tsx`, auparavant à plus de 400 lignes, compose désormais un
+hook contrôleur et quatre vues d’onglets dédiées.
 
 ### Types partagés couplés au renderer
 

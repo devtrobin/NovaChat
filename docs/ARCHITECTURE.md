@@ -69,6 +69,9 @@ App
 La logique est répartie entre `WorkspaceLayout.service.ts` et les hooks
 `useWorkspace*`.
 
+`DeviceAgentPage.tsx` compose quatre vues d’onglets dédiées. Le chargement, le
+polling et les mutations sont regroupés dans `useDeviceAgentPageController.ts`.
+
 ### État de conversation
 
 Le renderer conserve l’état canonique affiché. Le main n’envoie que des

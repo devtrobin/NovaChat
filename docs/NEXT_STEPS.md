@@ -11,7 +11,7 @@ fiabiliser les capacités qu’il possède avant de l’élargir.
 - Policy Device testée avec cas sûrs et cas adversariaux.
 - Parsers OpenAI et Planner testés.
 - Sérialisation, round-trip du stockage et reducers d’événements testés.
-- 141 tests réussissent, dont 88 cas de policy Device.
+- 148 tests réussissent, dont 88 cas de policy Device.
 
 La priorité active reste la phase 2. Les anciens `it.fails` sont désormais des
 tests de régression normaux.
@@ -75,7 +75,8 @@ Découper sans refonte globale :
    et conversations ;
 3. ~~`device.policy.ts` entre parsing et règles ;~~ terminé avec des modules
    dédiés aux règles, segments, chemins, tokens et types ;
-4. `DeviceAgentPage.tsx` en vues d’onglets ;
+4. ~~`DeviceAgentPage.tsx` en vues d’onglets ;~~ terminé avec un hook
+   contrôleur et des vues General, Contexte, Permissions et Historique ;
 5. déplacer les types de chat transversaux vers `src/shared`.
 
 Corriger aussi la mutation du tableau de règles Webpack.
