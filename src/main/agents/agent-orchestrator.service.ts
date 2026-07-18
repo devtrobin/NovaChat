@@ -17,7 +17,11 @@ import { executeDeviceCommand } from "../ai/ai.device-flow";
 import { createDeviceImmediateErrorMessage } from "../ai/ai.message-factory";
 import { createRunningDeviceMessage } from "../ai/ai.message-factory.device";
 import type { PipelineStage } from "../ai/ai.orchestrator.cycle.messages";
-import { evaluateCommandPermissionPolicy } from "../device/device.policy";
+import {
+  DEVICE_RISK_CATEGORY_LABELS,
+  DeviceCommandRiskCategory,
+  evaluateCommandPermissionPolicy,
+} from "../device/device.policy";
 import {
   completeActiveAgentTask,
   getAgentConversationId,
@@ -194,7 +198,7 @@ export async function runAgentTask({
         resolvedCommand,
         emit,
         turnId,
-        summarizePermissionRequest(task.request, resolvedCommand),
+        summarizePermissionRequest(task.request, resolvedCommand, policyDecision.category),
       );
       updateActiveAgentTaskStatus(activeTask.taskId, "running");
 
@@ -611,7 +615,11 @@ function isLikelyShellCommand(value: string): boolean {
   return false;
 }
 
-function summarizePermissionRequest(taskRequest: string, command: string): string {
+function summarizePermissionRequest(
+  taskRequest: string,
+  command: string,
+  category: DeviceCommandRiskCategory,
+): string {
   const requestSummary = taskRequest
     .replace(/\s+/g, " ")
     .trim()
@@ -621,5 +629,9 @@ function summarizePermissionRequest(taskRequest: string, command: string): strin
     .map((line) => line.trim())
     .find(Boolean) ?? command.trim();
 
-  return `${requestSummary} | Commande: ${firstCommandLine.slice(0, 140)}`;
+  return [
+    `Catégorie : ${DEVICE_RISK_CATEGORY_LABELS[category]}`,
+    requestSummary,
+    `Commande : ${firstCommandLine.slice(0, 140)}`,
+  ].join(" | ");
 }

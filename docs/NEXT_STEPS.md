@@ -11,7 +11,7 @@ fiabiliser les capacités qu’il possède avant de l’élargir.
 - Policy Device testée avec cas sûrs et cas adversariaux.
 - Parsers OpenAI et Planner testés.
 - Sérialisation, round-trip du stockage et reducers d’événements testés.
-- 112 tests réussissent, dont 74 cas de policy Device.
+- 126 tests réussissent, dont 88 cas de policy Device.
 
 La priorité active reste la phase 2. Les anciens `it.fails` sont désormais des
 tests de régression normaux.
@@ -23,7 +23,8 @@ tests de régression normaux.
 2. Traiter pipes, substitutions, sous-commandes, redirections et options
    mutantes. La matrice actuelle est couverte ; maintenir cette règle à chaque
    extension.
-3. Séparer explicitement :
+3. ~~Séparer explicitement :~~ Terminé, chaque décision porte une catégorie
+   affichée dans la demande de permission :
    - lecture locale ;
    - écriture limitée au workspace ;
    - accès réseau ;

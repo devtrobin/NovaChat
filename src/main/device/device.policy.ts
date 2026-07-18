@@ -5,28 +5,41 @@ import {
   DELETE_COMMANDS,
   DESTRUCTIVE_PATH_NAMES,
   GIT_DESTRUCTIVE_SUBCOMMANDS,
+  GIT_NETWORK_SUBCOMMANDS,
   GIT_READ_ONLY_SUBCOMMANDS,
-  PERMISSION_REQUIRED_COMMANDS,
+  GIT_WORKSPACE_WRITE_SUBCOMMANDS,
+  INSTALLATION_OR_SYSTEM_COMMANDS,
+  NETWORK_COMMANDS,
   READ_ONLY_COMMANDS,
   SAFE_WRITE_COMMANDS,
   SHELL_CONTROL_TOKENS,
   SHELL_WRAPPERS,
+  WORKSPACE_MUTATION_COMMANDS,
 } from "./device.policy.constants";
 import { DevicePolicyError } from "./device.types";
 
-export type DeviceCommandPermissionPolicy =
-  | {
-      kind: "allow";
-      reason: string;
-    }
-  | {
-      kind: "ask";
-      reason: string;
-    }
-  | {
-      kind: "ask-always";
-      reason: string;
-    };
+export type DeviceCommandRiskCategory =
+  | "destructive"
+  | "network"
+  | "read-local"
+  | "system"
+  | "unclassified"
+  | "workspace-write";
+
+export type DeviceCommandPermissionPolicy = {
+  category: DeviceCommandRiskCategory;
+  kind: "allow" | "ask" | "ask-always";
+  reason: string;
+};
+
+export const DEVICE_RISK_CATEGORY_LABELS: Record<DeviceCommandRiskCategory, string> = {
+  destructive: "suppression ou action destructive",
+  network: "accès réseau",
+  "read-local": "lecture locale",
+  system: "installation ou modification système",
+  unclassified: "action non classifiable automatiquement",
+  "workspace-write": "écriture locale limitée au workspace",
+};
 
 type CommandToken = {
   index: number;
@@ -82,22 +95,19 @@ export function evaluateCommandPermissionPolicy(
   const parseResult = parseCommand(normalizedCommand);
   if (parseResult.kind === "unsafe") {
     return {
+      category: "unclassified",
       kind: "ask-always",
       reason: parseResult.reason,
     };
   }
 
-  let pendingDecision: DeviceCommandPermissionPolicy | null = null;
+  let finalDecision: DeviceCommandPermissionPolicy | null = null;
   for (const segment of parseResult.segments) {
     const decision = evaluateSegment(segment, allowedWriteRoots);
-    if (decision.kind === "ask-always") return decision;
-    if (decision.kind === "ask") pendingDecision = decision;
+    finalDecision = mergePolicyDecisions(finalDecision, decision);
   }
 
-  return pendingDecision ?? {
-    kind: "allow",
-    reason: "Commande autorisee par la policy device.",
-  };
+  return finalDecision ?? allow("read-local", "Commande de lecture autorisee par la policy device.");
 }
 
 function evaluateSegment(
@@ -105,25 +115,28 @@ function evaluateSegment(
   allowedWriteRoots: string[],
 ): DeviceCommandPermissionPolicy {
   const { tokens, writeTargets } = segment;
-  if (writeTargets.some((targetPath) => isCriticalWritePath(targetPath, allowedWriteRoots))) {
-    return askAlways("La commande ecrit en dehors des zones applicatives autorisees.");
+  const unsafeRedirectCategory = getUnsafeWriteRiskCategory(writeTargets, allowedWriteRoots);
+  if (unsafeRedirectCategory) {
+    return askAlways(unsafeRedirectCategory, "La commande ecrit en dehors des zones applicatives autorisees.");
   }
 
   if (tokens.length === 0) {
     return writeTargets.length > 0
-      ? ask("Une redirection sans commande modifie un fichier.")
-      : askAlways("Le segment ne contient aucune commande analysable.");
+      ? ask("workspace-write", "Une redirection sans commande modifie un fichier.")
+      : askAlways("unclassified", "Le segment ne contient aucune commande analysable.");
   }
   if (isShellControlSegment(tokens) || isAssignmentOnlySegment(tokens)) {
     return writeTargets.length > 0
-      ? ask("Le segment de controle contient une redirection en ecriture.")
-      : allow("Segment de controle shell ou affectation locale autorise.");
+      ? ask("workspace-write", "Le segment de controle contient une redirection en ecriture.")
+      : allow("read-local", "Segment de controle shell ou affectation locale autorise.");
   }
 
   const commandToken = findCommandToken(tokens);
-  if (!commandToken) return askAlways("Commande impossible a classifier automatiquement.");
+  if (!commandToken) {
+    return askAlways("unclassified", "Commande impossible a classifier automatiquement.");
+  }
   if (tokens.slice(0, commandToken.index).some((token) => isVariableAssignment(token))) {
-    return askAlways("Une variable d'environnement peut modifier le comportement de l'executable.");
+    return askAlways("unclassified", "Une variable d'environnement peut modifier le comportement de l'executable.");
   }
 
   const commandName = commandToken.name;
@@ -131,16 +144,16 @@ function evaluateSegment(
   const normalizedName = normalizeSensitiveCommandName(commandName, commandTokens);
 
   if (DELETE_COMMANDS.has(normalizedName)) {
-    return askAlways("Les suppressions demandent toujours une confirmation utilisateur.");
+    return askAlways("destructive", "Les suppressions demandent toujours une confirmation utilisateur.");
   }
   if (ALWAYS_CONFIRM_COMMANDS.has(normalizedName)) {
-    return askAlways("La commande touche a des zones ou droits critiques.");
+    return askAlways("system", "La commande touche a des zones ou droits critiques.");
   }
   if (hasExplicitExecutablePath(tokens[commandToken.index])) {
-    return askAlways("Un executable designe par un chemin explicite n'est pas dans l'allowlist.");
+    return askAlways("unclassified", "Un executable designe par un chemin explicite n'est pas dans l'allowlist.");
   }
   if (SHELL_WRAPPERS.has(commandName)) {
-    return askAlways("Les interpreteurs et commandes d'evaluation ne sont pas analyses recursivement.");
+    return askAlways("unclassified", "Les interpreteurs et commandes d'evaluation ne sont pas analyses recursivement.");
   }
 
   if (commandName === "git") return evaluateGitCommand(commandTokens, allowedWriteRoots);
@@ -159,7 +172,7 @@ function evaluateSegment(
       || /^\d{4,}(?:\.\d+)?$/.test(token)
     ))
   ) {
-    return askAlways("La modification de l'horloge systeme exige toujours une confirmation.");
+    return askAlways("system", "La modification de l'horloge systeme exige toujours une confirmation.");
   }
   if (
     commandName === "hostname"
@@ -171,7 +184,7 @@ function evaluateSegment(
       || token.startsWith("-F")
     ))
   ) {
-    return askAlways("La modification du nom de machine exige toujours une confirmation.");
+    return askAlways("system", "La modification du nom de machine exige toujours une confirmation.");
   }
   if (
     commandName === "sysctl"
@@ -187,7 +200,7 @@ function evaluateSegment(
       || token.startsWith("-w")
     ))
   ) {
-    return askAlways("La modification de parametres systeme exige toujours une confirmation.");
+    return askAlways("system", "La modification de parametres systeme exige toujours une confirmation.");
   }
   if (
     commandName === "rg"
@@ -198,10 +211,10 @@ function evaluateSegment(
       || token.startsWith("--pre=")
     ))
   ) {
-    return askAlways("Le preprocesseur rg peut executer une commande externe.");
+    return askAlways("unclassified", "Le preprocesseur rg peut executer une commande externe.");
   }
   if (commandName === "awk" || commandName === "xargs") {
-    return askAlways("Cette commande peut executer ou construire une autre commande.");
+    return askAlways("unclassified", "Cette commande peut executer ou construire une autre commande.");
   }
   if (commandName === "env" || commandName === "command") {
     return evaluateCommandWrapper(commandName, commandTokens);
@@ -209,6 +222,7 @@ function evaluateSegment(
 
   if (READ_ONLY_COMMANDS.has(commandName)) {
     return allow(
+      writeTargets.length > 0 ? "workspace-write" : "read-local",
       writeTargets.length > 0
         ? "Sortie ecrite dans une zone applicative autorisee."
         : "Commande de lecture autorisee par defaut.",
@@ -217,11 +231,17 @@ function evaluateSegment(
   if (SAFE_WRITE_COMMANDS.has(commandName)) {
     return evaluateSafeWriteCommand(commandName, commandTokens, writeTargets, allowedWriteRoots);
   }
-  if (PERMISSION_REQUIRED_COMMANDS.has(commandName)) {
-    return ask("Cette commande peut modifier l'environnement local ou contacter le reseau.");
+  if (NETWORK_COMMANDS.has(commandName)) {
+    return ask("network", "Cette commande peut contacter le reseau.");
+  }
+  if (INSTALLATION_OR_SYSTEM_COMMANDS.has(commandName)) {
+    return ask("system", "Cette commande peut installer, construire ou executer des dependances.");
+  }
+  if (WORKSPACE_MUTATION_COMMANDS.has(commandName)) {
+    return ask("workspace-write", "Cette commande peut deplacer ou renommer des fichiers locaux.");
   }
 
-  return askAlways("Commande inconnue ou non analysable par la policy automatique.");
+  return askAlways("unclassified", "Commande inconnue ou non analysable par la policy automatique.");
 }
 
 function evaluateGitCommand(
@@ -241,20 +261,25 @@ function evaluateGitCommand(
       || (token.startsWith("-c") && token.length > 2)
     ))
   ) {
-    return askAlways("Cette option Git peut charger une configuration ou une commande externe.");
+    return askAlways("unclassified", "Cette option Git peut charger une configuration ou une commande externe.");
   }
   const subcommand = findGitSubcommand(tokens);
-  if (!subcommand) return allow("Invocation Git sans sous-commande mutante.");
+  if (!subcommand) return allow("read-local", "Invocation Git sans sous-commande mutante.");
   if (GIT_DESTRUCTIVE_SUBCOMMANDS.has(subcommand.name)) {
-    return askAlways("Cette sous-commande Git peut supprimer ou restaurer des donnees.");
+    return askAlways("destructive", "Cette sous-commande Git peut supprimer ou restaurer des donnees.");
   }
   const outputTarget = findOptionValue(tokens, "--output");
-  if (outputTarget && isCriticalWritePath(outputTarget, allowedWriteRoots)) {
-    return askAlways("La sortie Git cible un chemin hors des zones autorisees.");
+  const outputRisk = outputTarget
+    ? getUnsafeWriteRiskCategory([outputTarget], allowedWriteRoots)
+    : null;
+  if (outputRisk) {
+    return askAlways(outputRisk, "La sortie Git cible un chemin hors des zones autorisees.");
   }
   if (GIT_READ_ONLY_SUBCOMMANDS.has(subcommand.name)) {
-    if (outputTarget) return ask("Cette sous-commande Git ecrit sa sortie dans un fichier.");
-    return allow("Sous-commande Git de lecture autorisee par defaut.");
+    if (outputTarget) {
+      return ask("workspace-write", "Cette sous-commande Git ecrit sa sortie dans un fichier.");
+    }
+    return allow("read-local", "Sous-commande Git de lecture autorisee par defaut.");
   }
 
   const args = tokens.slice(subcommand.index + 1);
@@ -262,7 +287,7 @@ function evaluateGitCommand(
     subcommand.name === "remote"
     && args.every((token) => token === "-v" || token === "--verbose")
   ) {
-    return allow("Consultation des remotes Git autorisee par defaut.");
+    return allow("read-local", "Consultation des remotes Git autorisee par defaut.");
   }
   if (
     subcommand.name === "branch"
@@ -279,10 +304,16 @@ function evaluateGitCommand(
       "-vv",
     ].includes(token))
   ) {
-    return allow("Consultation des branches Git autorisee par defaut.");
+    return allow("read-local", "Consultation des branches Git autorisee par defaut.");
   }
 
-  return ask("Cette sous-commande Git peut modifier le depot ou contacter le reseau.");
+  if (GIT_NETWORK_SUBCOMMANDS.has(subcommand.name)) {
+    return ask("network", "Cette sous-commande Git peut contacter un depot distant.");
+  }
+  if (GIT_WORKSPACE_WRITE_SUBCOMMANDS.has(subcommand.name)) {
+    return ask("workspace-write", "Cette sous-commande Git peut modifier le depot local.");
+  }
+  return askAlways("unclassified", "Cette sous-commande Git n'est pas classifiee assez finement.");
 }
 
 function evaluateFindCommand(
@@ -290,20 +321,26 @@ function evaluateFindCommand(
   allowedWriteRoots: string[],
 ): DeviceCommandPermissionPolicy {
   const normalizedTokens = tokens.map((token) => token.toLowerCase());
+  if (normalizedTokens.includes("-delete")) {
+    return askAlways("destructive", "L'option find -delete peut supprimer des fichiers.");
+  }
   if (normalizedTokens.some((token) => FIND_EXECUTION_OPTIONS.has(token))) {
-    return askAlways("Les options find d'execution ou de suppression exigent une confirmation.");
+    return askAlways("unclassified", "Les options find d'execution ne sont pas analysees recursivement.");
   }
 
   for (let index = 0; index < normalizedTokens.length; index += 1) {
     if (!FIND_WRITE_OPTIONS.has(normalizedTokens[index])) continue;
     const targetPath = tokens[index + 1];
-    if (!targetPath || isCriticalWritePath(targetPath, allowedWriteRoots)) {
-      return askAlways("La cible d'ecriture de find est absente ou hors des zones autorisees.");
+    const targetRisk = targetPath
+      ? getUnsafeWriteRiskCategory([targetPath], allowedWriteRoots)
+      : "unclassified";
+    if (targetRisk) {
+      return askAlways(targetRisk, "La cible d'ecriture de find est absente ou hors des zones autorisees.");
     }
-    return ask("Cette option find ecrit dans un fichier.");
+    return ask("workspace-write", "Cette option find ecrit dans un fichier.");
   }
 
-  return allow("Recherche locale find autorisee par defaut.");
+  return allow("read-local", "Recherche locale find autorisee par defaut.");
 }
 
 function evaluateSedCommand(
@@ -315,14 +352,19 @@ function evaluateSedCommand(
     || token.startsWith("--in-place=")
     || /^-[^-]*i/.test(token)
   ));
-  if (!inPlace) return ask("Les scripts sed ne sont pas analyses assez finement pour etre autorises.");
+  if (!inPlace) {
+    return askAlways("unclassified", "Les scripts sed ne sont pas analyses assez finement pour etre autorises.");
+  }
 
   const possibleTargets = tokens.slice(1).filter((token) => token && !token.startsWith("-"));
   const targetPath = possibleTargets[possibleTargets.length - 1];
-  if (targetPath && looksLikePath(targetPath) && isCriticalWritePath(targetPath, allowedWriteRoots)) {
-    return askAlways("sed tente de modifier un fichier hors des zones autorisees.");
+  const targetRisk = targetPath && looksLikePath(targetPath)
+    ? getUnsafeWriteRiskCategory([targetPath], allowedWriteRoots)
+    : null;
+  if (targetRisk) {
+    return askAlways(targetRisk, "sed tente de modifier un fichier hors des zones autorisees.");
   }
-  return ask("La modification en place avec sed exige une permission.");
+  return ask("workspace-write", "La modification en place avec sed exige une permission.");
 }
 
 function evaluateOutputOptionCommand(
@@ -334,15 +376,18 @@ function evaluateOutputOptionCommand(
     commandName === "sort"
     && tokens.some((token) => token === "--compress-program" || token.startsWith("--compress-program="))
   ) {
-    return askAlways("Le programme de compression sort peut executer une commande externe.");
+    return askAlways("unclassified", "Le programme de compression sort peut executer une commande externe.");
   }
   const shortOption = commandName === "sort" ? "-o" : null;
   const targetPath = findOptionValue(tokens, "--output", shortOption);
-  if (!targetPath) return allow(`Commande ${commandName} de lecture autorisee par defaut.`);
-  if (isCriticalWritePath(targetPath, allowedWriteRoots)) {
-    return askAlways(`La sortie de ${commandName} cible un chemin hors des zones autorisees.`);
+  if (!targetPath) {
+    return allow("read-local", `Commande ${commandName} de lecture autorisee par defaut.`);
   }
-  return allow(`La sortie de ${commandName} reste dans une zone applicative autorisee.`);
+  const targetRisk = getUnsafeWriteRiskCategory([targetPath], allowedWriteRoots);
+  if (targetRisk) {
+    return askAlways(targetRisk, `La sortie de ${commandName} cible un chemin hors des zones autorisees.`);
+  }
+  return allow("workspace-write", `La sortie de ${commandName} reste dans une zone applicative autorisee.`);
 }
 
 function evaluateCommandWrapper(
@@ -350,16 +395,16 @@ function evaluateCommandWrapper(
   tokens: string[],
 ): DeviceCommandPermissionPolicy {
   if (commandName === "env" && tokens.length === 1) {
-    return allow("Lecture de l'environnement autorisee par defaut.");
+    return allow("read-local", "Lecture de l'environnement autorisee par defaut.");
   }
   if (
     commandName === "command"
     && tokens.length >= 3
     && tokens.slice(1, -1).every((token) => token === "-v" || token === "-V")
   ) {
-    return allow("Resolution de commande autorisee par defaut.");
+    return allow("read-local", "Resolution de commande autorisee par defaut.");
   }
-  return askAlways("Cette commande enveloppe une autre commande qui n'est pas analysee recursivement.");
+  return askAlways("unclassified", "Cette commande enveloppe une autre commande qui n'est pas analysee recursivement.");
 }
 
 function evaluateSafeWriteCommand(
@@ -372,22 +417,23 @@ function evaluateSafeWriteCommand(
     commandName === "cp"
     && tokens.some((token) => token === "-t" || token === "--target-directory" || token.startsWith("--target-directory="))
   ) {
-    return askAlways("Cette forme de cp ne permet pas d'identifier la cible de facon sure.");
+    return askAlways("unclassified", "Cette forme de cp ne permet pas d'identifier la cible de facon sure.");
   }
   const targetPaths = [
     ...writeTargets,
     ...extractWriteTargetPaths(commandName, tokens),
   ];
   if (commandName === "echo" && targetPaths.length === 0) {
-    return allow("Affichage echo sans ecriture autorise.");
+    return allow("read-local", "Affichage echo sans ecriture autorise.");
   }
   if (targetPaths.length === 0) {
-    return ask("Impossible de determiner les cibles d'ecriture de la commande.");
+    return askAlways("unclassified", "Impossible de determiner les cibles d'ecriture de la commande.");
   }
-  if (targetPaths.some((targetPath) => isCriticalWritePath(targetPath, allowedWriteRoots))) {
-    return askAlways("La commande modifie un chemin critique ou hors application.");
+  const targetRisk = getUnsafeWriteRiskCategory(targetPaths, allowedWriteRoots);
+  if (targetRisk) {
+    return askAlways(targetRisk, "La commande modifie un chemin critique ou hors application.");
   }
-  return allow("Modification locale non critique autorisee par defaut.");
+  return allow("workspace-write", "Modification locale non critique autorisee par defaut.");
 }
 
 function findCommandToken(tokens: string[]): CommandToken | null {
@@ -494,13 +540,33 @@ function looksLikePath(value: string): boolean {
   return /[\\/]/.test(value) || value.startsWith(".") || path.isAbsolute(value);
 }
 
-function isCriticalWritePath(targetPath: string, allowedWriteRoots: string[]): boolean {
-  if (hasDynamicPath(targetPath)) return true;
+function getUnsafeWriteRiskCategory(
+  targetPaths: string[],
+  allowedWriteRoots: string[],
+): DeviceCommandRiskCategory | null {
+  let finalCategory: DeviceCommandRiskCategory | null = null;
+  for (const targetPath of targetPaths) {
+    const category = classifyUnsafeWriteTarget(targetPath, allowedWriteRoots);
+    if (!category) continue;
+    if (category === "unclassified") return category;
+    if (category === "system") finalCategory = category;
+    else if (!finalCategory) finalCategory = category;
+  }
+  return finalCategory;
+}
+
+function classifyUnsafeWriteTarget(
+  targetPath: string,
+  allowedWriteRoots: string[],
+): DeviceCommandRiskCategory | null {
+  if (hasDynamicPath(targetPath)) return "unclassified";
   const expandedPath = expandHomePath(targetPath);
   const resolvedPath = path.resolve(process.cwd(), expandedPath);
-  if (DESTRUCTIVE_PATH_NAMES.has(path.basename(resolvedPath).toLowerCase())) return true;
-  if (isSystemLikePath(resolvedPath)) return true;
-  return !allowedWriteRoots.some((root) => isInsideRoot(resolvedPath, root));
+  if (DESTRUCTIVE_PATH_NAMES.has(path.basename(resolvedPath).toLowerCase())) return "system";
+  if (isSystemLikePath(resolvedPath)) return "system";
+  return allowedWriteRoots.some((root) => isInsideRoot(resolvedPath, root))
+    ? null
+    : "workspace-write";
 }
 
 function expandHomePath(value: string): string {
@@ -543,14 +609,51 @@ function normalizePathForComparison(value: string): string {
   return process.platform === "win32" ? value.toLowerCase() : value;
 }
 
-function allow(reason: string): DeviceCommandPermissionPolicy {
-  return { kind: "allow", reason };
+function mergePolicyDecisions(
+  current: DeviceCommandPermissionPolicy | null,
+  candidate: DeviceCommandPermissionPolicy,
+): DeviceCommandPermissionPolicy {
+  if (!current) return candidate;
+
+  const kindPriority: Record<DeviceCommandPermissionPolicy["kind"], number> = {
+    allow: 0,
+    ask: 1,
+    "ask-always": 2,
+  };
+  if (kindPriority[candidate.kind] !== kindPriority[current.kind]) {
+    return kindPriority[candidate.kind] > kindPriority[current.kind] ? candidate : current;
+  }
+
+  const categoryPriority: Record<DeviceCommandRiskCategory, number> = {
+    destructive: 5,
+    network: 2,
+    "read-local": 0,
+    system: 3,
+    unclassified: 4,
+    "workspace-write": 1,
+  };
+  return categoryPriority[candidate.category] > categoryPriority[current.category]
+    ? candidate
+    : current;
 }
 
-function ask(reason: string): DeviceCommandPermissionPolicy {
-  return { kind: "ask", reason };
+function allow(
+  category: DeviceCommandRiskCategory,
+  reason: string,
+): DeviceCommandPermissionPolicy {
+  return { category, kind: "allow", reason };
 }
 
-function askAlways(reason: string): DeviceCommandPermissionPolicy {
-  return { kind: "ask-always", reason };
+function ask(
+  category: DeviceCommandRiskCategory,
+  reason: string,
+): DeviceCommandPermissionPolicy {
+  return { category, kind: "ask", reason };
+}
+
+function askAlways(
+  category: DeviceCommandRiskCategory,
+  reason: string,
+): DeviceCommandPermissionPolicy {
+  return { category, kind: "ask-always", reason };
 }

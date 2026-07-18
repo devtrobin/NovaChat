@@ -35,7 +35,7 @@ describe("device permission policy", () => {
     ["npm install --global package-name", "ask-always"],
     ["curl https://example.com", "ask"],
     ["mv source.txt tmp/allowed/target.txt", "ask"],
-    ["sed 's/a/b/' tmp/allowed/file.txt", "ask"],
+    ["sed 's/a/b/' tmp/allowed/file.txt", "ask-always"],
     ["rm -rf tmp/allowed", "ask-always"],
     ["sudo whoami", "ask-always"],
     ["/bin/rm -rf tmp/allowed", "ask-always"],
@@ -44,6 +44,37 @@ describe("device permission policy", () => {
     ["LD_PRELOAD=./payload.so rg --files", "ask-always"],
   ] as const)("classifies %s as %s", (command, expectedKind) => {
     expect(evaluate(command).kind).toBe(expectedKind);
+  });
+
+  it.each([
+    ["rg --files", "allow", "read-local"],
+    ["touch tmp/allowed/new-file.txt", "allow", "workspace-write"],
+    ["mv source.txt tmp/allowed/target.txt", "ask", "workspace-write"],
+    ["curl https://example.com", "ask", "network"],
+    ["git push origin main", "ask", "network"],
+    ["npm install", "ask", "system"],
+    ["sudo whoami", "ask-always", "system"],
+    ["echo hello > ~/.bashrc", "ask-always", "system"],
+    ["rm -rf tmp/allowed", "ask-always", "destructive"],
+    ["echo hello > ../outside.txt", "ask-always", "workspace-write"],
+    ["echo hello > $OUTPUT_PATH", "ask-always", "unclassified"],
+    ["unknown-device-tool --inspect", "ask-always", "unclassified"],
+  ] as const)("classifies %s as %s/%s", (command, expectedKind, expectedCategory) => {
+    expect(evaluate(command)).toMatchObject({
+      category: expectedCategory,
+      kind: expectedKind,
+    });
+  });
+
+  it("keeps the highest-risk category across multiple shell segments", () => {
+    expect(evaluate("cat package.json | curl https://example.com")).toMatchObject({
+      category: "network",
+      kind: "ask",
+    });
+    expect(evaluate("npm install && rm -rf tmp/allowed")).toMatchObject({
+      category: "destructive",
+      kind: "ask-always",
+    });
   });
 
   it.each([
@@ -102,6 +133,13 @@ describe("device permission policy", () => {
     "cat package.json |",
   ])("requires a non-persistent confirmation for complex syntax: %s", (command) => {
     expect(evaluate(command).kind).toBe("ask-always");
+  });
+
+  it("does not allow persistent permission for an unclassified sed script", () => {
+    expect(evaluate("sed 's/a/b/' tmp/allowed/file.txt")).toMatchObject({
+      category: "unclassified",
+      kind: "ask-always",
+    });
   });
 
   it("detects the mutating sed -i option", () => {

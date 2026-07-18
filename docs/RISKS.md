@@ -10,9 +10,14 @@ calendaire.
 
 Les contournements connus par pipes, opérateurs, substitutions, wrappers,
 redirections, sous-commandes Git et options mutantes ont été fermés. La
-matrice Device comporte 74 tests normaux. Une construction inconnue ou trop
+matrice Device comporte 88 tests normaux. Une construction inconnue ou trop
 complexe devient `ask-always`, ce qui interdit de la contourner avec une règle
 permanente mémorisée.
+
+Chaque décision porte désormais une catégorie explicite : lecture locale,
+écriture workspace, réseau, installation/système, suppression/destruction ou
+action non classifiable. Cette catégorie est affichée dans la demande de
+permission.
 
 La policy reste cependant un mécanisme UX de demande de permission :
 
@@ -25,9 +30,10 @@ La policy reste cependant un mécanisme UX de demande de permission :
 
 Actions restantes :
 
-1. séparer explicitement lecture, écriture workspace, réseau,
-   installation/système et suppression ;
-2. conserver un refus non mémorisable pour toute syntaxe non comprise ;
+1. ~~séparer explicitement lecture, écriture workspace, réseau,
+   installation/système et suppression ;~~ terminé ;
+2. ~~conserver un refus non mémorisable pour toute syntaxe non comprise ;~~
+   terminé et couvert par les régressions ;
 3. durcir les chemins si la policy doit devenir une vraie frontière ;
 4. ne jamais étendre l’allowlist sans tests sûrs et adversariaux.
 
@@ -37,8 +43,7 @@ Actions restantes :
 
 Le socle Vitest couvre désormais la policy, les parsers OpenAI/Planner, le
 stockage chat, les commandes slash et les événements de conversation. Les
-112 tests réussissent,
-dont 74 cas de policy Device.
+126 tests réussissent, dont 88 cas de policy Device.
 
 Il manque encore les composants React, l’orchestrateur complet, les
 permissions asynchrones, le registre d’arrêt et les parcours end-to-end.

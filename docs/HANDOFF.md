@@ -12,7 +12,7 @@ NovaChat est un Electron + React fonctionnel avec :
 - permissions, historique, activité et arrêt de tâches.
 
 Tests, TypeScript, lint et packaging Windows x64 passent au 18 juillet 2026.
-La suite compte 112 réussites, dont 74 cas de policy Device.
+La suite compte 126 réussites, dont 88 cas de policy Device.
 
 ## Ce qu’il faut lire
 

@@ -82,23 +82,29 @@ export const SAFE_WRITE_COMMANDS = new Set([
   "touch",
 ]);
 
-export const PERMISSION_REQUIRED_COMMANDS = new Set([
+export const INSTALLATION_OR_SYSTEM_COMMANDS = new Set([
   "cargo",
-  "curl",
   "make",
-  "move",
-  "mv",
   "npm",
   "npx",
   "pip",
   "pip3",
   "pnpm",
-  "ren",
-  "rename",
+  "yarn",
+]);
+
+export const NETWORK_COMMANDS = new Set([
+  "curl",
   "scp",
   "ssh",
   "wget",
-  "yarn",
+]);
+
+export const WORKSPACE_MUTATION_COMMANDS = new Set([
+  "move",
+  "mv",
+  "ren",
+  "rename",
 ]);
 
 export const SHELL_WRAPPERS = new Set([
@@ -143,6 +149,34 @@ export const GIT_DESTRUCTIVE_SUBCOMMANDS = new Set([
   "reset",
   "restore",
   "rm",
+]);
+
+export const GIT_NETWORK_SUBCOMMANDS = new Set([
+  "clone",
+  "fetch",
+  "ls-remote",
+  "pull",
+  "push",
+  "submodule",
+]);
+
+export const GIT_WORKSPACE_WRITE_SUBCOMMANDS = new Set([
+  "add",
+  "am",
+  "apply",
+  "bisect",
+  "branch",
+  "checkout",
+  "cherry-pick",
+  "commit",
+  "init",
+  "merge",
+  "mv",
+  "rebase",
+  "revert",
+  "stash",
+  "switch",
+  "tag",
 ]);
 
 export const DESTRUCTIVE_PATH_NAMES = new Set([

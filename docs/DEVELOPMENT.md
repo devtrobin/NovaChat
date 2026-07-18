@@ -36,7 +36,7 @@ interdit `npm.ps1`; `npm.cmd` est donc nécessaire.
 ## État de validation au 18 juillet 2026
 
 - `npm.cmd exec tsc -- --noEmit` : réussi.
-- `npm.cmd test` : 112 réussites.
+- `npm.cmd test` : 126 réussites.
 - `npm.cmd run lint` : réussi.
 - `npm.cmd run package` : réussi pour `win32-x64`.
 - `npm.cmd run make` : non exécuté.
@@ -56,7 +56,7 @@ Vitest 4 exécute sept fichiers sous `src/` :
 - application des événements de conversation.
 - parsing et réponses des commandes slash locales.
 
-La matrice Device comporte 74 cas normaux. Elle couvre commandes de lecture,
+La matrice Device comporte 88 cas normaux. Elle couvre commandes de lecture,
 écritures bornées, séparateurs shell, substitutions, wrappers, redirections,
 sous-commandes Git et options mutantes. Toute nouvelle règle de policy doit
 ajouter ses cas sûrs et adversariaux dans cette matrice.

@@ -116,6 +116,12 @@ evaluateCommandPermissionPolicy
   └── ask-always -> demande utilisateur systématique
 ```
 
+Chaque résultat contient aussi une catégorie de risque : `read-local`,
+`workspace-write`, `network`, `system`, `destructive` ou `unclassified`. La
+catégorie la plus risquée des segments shell est conservée et présentée dans
+la demande de permission. `destructive` et `unclassified` restent toujours
+non mémorisables.
+
 Après exécution, le Device crée :
 
 - un message de commande/progression visible ;
