@@ -59,6 +59,10 @@ export function parseConversationId(value: unknown): string {
   return readSafeId(value, "conversationId");
 }
 
+export function parseRecoveryId(value: unknown): string {
+  return readSafeId(value, "recoveryId");
+}
+
 export function parseAgentContextPayload(value: unknown): { agentId: AgentId; context: AgentContextFile } {
   const payload = readRecord(value, "agentContext");
   const context = readRecord(payload.context, "agentContext.context");

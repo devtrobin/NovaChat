@@ -1,7 +1,7 @@
 import React from "react";
 import { createConversationIndicators } from "../../services/workspace/workspace.service";
 import { loadChatPageState } from "../../services/chat/chat.service";
-import { Conversation } from "../../../shared/chat.types";
+import { Conversation, StorageRecoveryNotice } from "../../../shared/chat.types";
 import { WorkspaceLayoutController } from "./WorkspaceLayout.types";
 import { AgentSettingsMap } from "../../../shared/settings.types";
 
@@ -23,6 +23,7 @@ export function useWorkspaceLayoutState() {
   const [isHydrated, setIsHydrated] = React.useState(false);
   const [hideInternalConversations, setHideInternalConversations] = React.useState(false);
   const [isPreviewMode, setIsPreviewMode] = React.useState(false);
+  const [storageRecovery, setStorageRecovery] = React.useState<StorageRecoveryNotice | null>(null);
 
   const activeConversation = conversations.find((item) => item.id === activeConversationId) ?? null;
   const isSending = activeConversationId ? sendingConversationIds.includes(activeConversationId) : false;
@@ -55,5 +56,7 @@ export function useWorkspaceLayoutState() {
     setIsHydrated,
     setIsPreviewMode,
     setSendingConversationIds,
+    setStorageRecovery,
+    storageRecovery,
   };
 }

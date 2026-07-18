@@ -9,10 +9,14 @@ import {
   recordAgentCommandExchange,
   saveAgentPermission,
 } from "./agent-storage.service";
+import { clearAgentStorageQueues } from "./agent-storage.queue";
+import { clearStorageRecoveryRegistry } from "../storage/storage-recovery.registry";
 
 const temporaryDirectories: string[] = [];
 
 afterEach(async () => {
+  clearAgentStorageQueues();
+  clearStorageRecoveryRegistry();
   await Promise.all(temporaryDirectories.splice(0)
     .map((directory) => rm(directory, { force: true, recursive: true })));
 });
@@ -96,6 +100,50 @@ describe("agent storage", () => {
         to: "assistant",
       },
     ]);
+  });
+
+  it("serializes concurrent writes for the same agent without losing data", async () => {
+    const rootDirectory = await createTemporaryDirectory();
+
+    await Promise.all([
+      saveAgentPermission(rootDirectory, "device-agent", "npm test", "allow", true),
+      saveAgentPermission(rootDirectory, "device-agent", "npm run lint", "deny", true),
+    ]);
+
+    const workspace = await loadAgentWorkspace(rootDirectory, "device-agent");
+    expect(workspace.permissions.rules).toEqual(expect.arrayContaining([
+      expect.objectContaining({ command: "npm test", decision: "allow" }),
+      expect.objectContaining({ command: "npm run lint", decision: "deny" }),
+    ]));
+  });
+
+  it("preserves concurrent history entries for one agent", async () => {
+    const rootDirectory = await createTemporaryDirectory();
+    const createExchange = (command: string) => recordAgentCommandExchange({
+      agentId: "device-agent" as const,
+      assistantRequest: `Executer ${command}`,
+      command,
+      result: {
+        output: `${command} termine`,
+        status: "success" as const,
+      },
+      rootDirectory,
+      triggerMessageId: `trigger-${command}`,
+      userAssistantConversationId: "conversation-1",
+      userPrompt: command,
+    });
+
+    await Promise.all([
+      createExchange("npm test"),
+      createExchange("npm run lint"),
+    ]);
+
+    const workspace = await loadAgentWorkspace(rootDirectory, "device-agent");
+    expect(workspace.history).toHaveLength(2);
+    expect(workspace.history.map((entry) => entry.command)).toEqual(
+      expect.arrayContaining(["npm test", "npm run lint"]),
+    );
+    expect(workspace.conversations.conversations).toHaveLength(2);
   });
 });
 

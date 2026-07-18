@@ -10,8 +10,10 @@ import {
 } from "./chat-storage.paths";
 import { splitMessageFiles, toIndex } from "./chat-storage.serialization";
 import { ConversationsIndex } from "./chat-storage.types";
+import { assertStorageWritable } from "../storage/storage-recovery.registry";
 
 async function writeConversationTree(rootDirectory: string, state: PersistedChatState): Promise<void> {
+  assertStorageWritable(rootDirectory);
   await mkdir(rootDirectory, { recursive: true });
 
   const previousIndex = await readJsonFile<ConversationsIndex>(path.join(rootDirectory, "conversations.json"));
@@ -66,6 +68,8 @@ export async function saveChatStateToDirectories(
   referenceDirectory: string,
   referenceIndexPath: string,
 ): Promise<void> {
+  assertStorageWritable(referenceDirectory);
+  assertStorageWritable(activeDirectory);
   await writeConversationTree(referenceDirectory, state);
   await writeJsonFile(referenceIndexPath, toIndex(state));
 

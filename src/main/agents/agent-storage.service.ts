@@ -3,6 +3,7 @@ export {
   deleteAgentPermission,
   getAgentPermission,
   loadAgentWorkspace,
+  loadAgentWorkspaceForUi,
   saveAgentContext,
   saveAgentPermission,
 } from "./agent-storage.workspace";

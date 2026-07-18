@@ -1,4 +1,9 @@
-import { ChatMessage, Conversation, PersistedChatState } from "../../shared/chat.types";
+import {
+  ChatLoadResult,
+  ChatMessage,
+  Conversation,
+  PersistedChatState,
+} from "../../shared/chat.types";
 
 const now = new Date().toISOString();
 
@@ -32,19 +37,26 @@ export function createDefaultChatState(): PersistedChatState {
   };
 }
 
-export async function loadStoredChatState(): Promise<PersistedChatState> {
-  const storedState = await window.nova.chat.load();
+export async function loadStoredChatState(): Promise<ChatLoadResult> {
+  const loaded = await window.nova.chat.load();
+  const storedState = loaded.state;
   if (storedState.conversations.length > 0) {
     return {
-      ...storedState,
-      conversations: storedState.conversations.map((conversation) => ({
-        ...conversation,
-        draft: conversation.draft ?? "",
-        messages: conversation.messages.filter((message) => message.from !== "system"),
-      })),
+      recovery: loaded.recovery,
+      state: {
+        ...storedState,
+        conversations: storedState.conversations.map((conversation) => ({
+          ...conversation,
+          draft: conversation.draft ?? "",
+          messages: conversation.messages.filter((message) => message.from !== "system"),
+        })),
+      },
     };
   }
-  return createDefaultChatState();
+  return {
+    recovery: loaded.recovery,
+    state: createDefaultChatState(),
+  };
 }
 
 export async function saveStoredChatState(state: PersistedChatState): Promise<void> {

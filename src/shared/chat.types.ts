@@ -73,6 +73,23 @@ export type PersistedChatState = {
   conversations: Conversation[];
 };
 
+export type StorageRecoveryNotice = {
+  id: string;
+  issues: Array<{
+    backupPath?: string;
+    filePath: string;
+    kind: "invalid-json" | "io-error" | "missing-indexed-data";
+    message: string;
+    recoveredFromBackup: boolean;
+  }>;
+  message: string;
+};
+
+export type ChatLoadResult = {
+  recovery: StorageRecoveryNotice | null;
+  state: PersistedChatState;
+};
+
 export type DeviceCommandResult = {
   commandId: string;
   code: number;

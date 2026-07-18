@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from "electron";
-import { PersistedChatState } from "./shared/chat.types";
+import { ChatLoadResult, PersistedChatState } from "./shared/chat.types";
 import {
   ChatTurnEvent,
   RunTurnRequest,
@@ -23,7 +23,9 @@ type AIEventListener = (event: ChatTurnEvent) => void;
 contextBridge.exposeInMainWorld("nova", {
   ping: () => ipcRenderer.invoke("nova:ping"),
   chat: {
-    load: () => ipcRenderer.invoke("nova:chat:load"),
+    acknowledgeRecovery: (recoveryId: string): Promise<boolean> =>
+      ipcRenderer.invoke("nova:chat:acknowledge-recovery", recoveryId),
+    load: (): Promise<ChatLoadResult> => ipcRenderer.invoke("nova:chat:load"),
     save: (state: PersistedChatState) => ipcRenderer.invoke("nova:chat:save", state),
   },
   settings: {

@@ -1,4 +1,4 @@
-import { PersistedChatState } from "./chat.types";
+import { PersistedChatState, StorageRecoveryNotice } from "./chat.types";
 
 export type AgentId = "agent-planner" | "device-agent";
 export type AgentConversationOrigin = "assistant" | "user";
@@ -71,6 +71,7 @@ export type AgentWorkspaceData = {
   history: AgentHistoryEntry[];
   id: AgentId;
   permissions: AgentPermissionsFile;
+  storageRecovery?: StorageRecoveryNotice;
 };
 
 export type ActiveAgentTask = {

@@ -1,5 +1,10 @@
 import { IpcMain } from "electron";
-import { deleteAgentPermission, loadAgentWorkspace, saveAgentContext, saveAgentPermission } from "../agents/agent-storage.service";
+import {
+  deleteAgentPermission,
+  loadAgentWorkspaceForUi,
+  saveAgentContext,
+  saveAgentPermission,
+} from "../agents/agent-storage.service";
 import { getActiveAgentTasks, stopTurnByAgentTask } from "../ai/ai.turn-registry";
 import { getAgentsPathFromSettings } from "../settings/settings.service";
 import {
@@ -16,7 +21,7 @@ import {
 
 export function registerAgentsHandlers(ipcMain: IpcMain): void {
   ipcMain.handle("nova:agents:load-workspace", async (_event, payload: unknown) => {
-    return loadAgentWorkspace(await getAgentsPathFromSettings(), parseAgentId(payload));
+    return loadAgentWorkspaceForUi(await getAgentsPathFromSettings(), parseAgentId(payload));
   });
 
   ipcMain.handle("nova:agents:save-context", async (_event, payload: unknown) => {

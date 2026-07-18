@@ -143,9 +143,24 @@ export function useDeviceAgentPageController({
     }
   }
 
+  async function acknowledgeStorageRecovery() {
+    const recoveryId = workspace?.storageRecovery?.id;
+    if (!recoveryId) return;
+    setIsBusy(true);
+    try {
+      const acknowledged = await window.nova.chat.acknowledgeRecovery(recoveryId);
+      if (acknowledged) {
+        await loadWorkspace();
+      }
+    } finally {
+      setIsBusy(false);
+    }
+  }
+
   return {
     activeTab,
     activeTasks,
+    acknowledgeStorageRecovery,
     contextDraft,
     deletePermission,
     isBusy,

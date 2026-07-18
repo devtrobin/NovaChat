@@ -1,4 +1,4 @@
-import { PersistedChatState } from "../shared/chat.types";
+import { ChatLoadResult, PersistedChatState } from "../shared/chat.types";
 import {
   ChatTurnEvent,
   RunTurnRequest,
@@ -24,7 +24,8 @@ declare global {
     nova: {
       ping: () => Promise<{ ok: boolean; message: string; at: string }>;
       chat: {
-        load: () => Promise<PersistedChatState>;
+        acknowledgeRecovery: (recoveryId: string) => Promise<boolean>;
+        load: () => Promise<ChatLoadResult>;
         save: (state: PersistedChatState) => Promise<void>;
       };
       settings: {

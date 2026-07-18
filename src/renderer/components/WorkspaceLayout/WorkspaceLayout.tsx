@@ -3,6 +3,7 @@ import AppSidebar from "../AppSidebar/AppSidebar";
 import AgentsPage from "../../pages/AgentsPage/AgentsPage";
 import ChatPage from "../../pages/ChatPage/ChatPage";
 import SettingsPage from "../../pages/SettingsPage/SettingsPage";
+import StorageRecoveryBanner from "./StorageRecoveryBanner";
 import { useWorkspaceLayoutController } from "./WorkspaceLayout.service";
 import "./WorkspaceLayout.css";
 
@@ -31,6 +32,12 @@ export default function WorkspaceLayout() {
         onSelectSettingsCategory={workspace.onSelectSettingsCategory}
       />
       <div className="workspace-layout__page">
+        {workspace.storageRecovery ? (
+          <StorageRecoveryBanner
+            notice={workspace.storageRecovery}
+            onAcknowledge={workspace.onAcknowledgeStorageRecovery}
+          />
+        ) : null}
         {workspace.activeSection === "conversations" ? (
           <ChatPage
             activeConversation={workspace.activeConversation}

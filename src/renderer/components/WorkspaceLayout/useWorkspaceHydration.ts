@@ -2,7 +2,7 @@ import React from "react";
 import { AgentSettingsMap } from "../../../shared/settings.types";
 import { loadStoredChatState, saveStoredChatState } from "../../services/conversation.service";
 import { createConversation, markConversationAsRead } from "../../services/chat/chat.service";
-import { Conversation } from "../../../shared/chat.types";
+import { Conversation, StorageRecoveryNotice } from "../../../shared/chat.types";
 
 type UseWorkspaceHydrationArgs = {
   activeConversationId: string | null;
@@ -14,6 +14,8 @@ type UseWorkspaceHydrationArgs = {
   setHideInternalConversations: React.Dispatch<React.SetStateAction<boolean>>;
   setIsHydrated: React.Dispatch<React.SetStateAction<boolean>>;
   setIsPreviewMode: React.Dispatch<React.SetStateAction<boolean>>;
+  setStorageRecovery: React.Dispatch<React.SetStateAction<StorageRecoveryNotice | null>>;
+  storageRecovery: StorageRecoveryNotice | null;
 };
 
 export function useWorkspaceHydration({
@@ -26,17 +28,21 @@ export function useWorkspaceHydration({
   setHideInternalConversations,
   setIsHydrated,
   setIsPreviewMode,
+  setStorageRecovery,
+  storageRecovery,
 }: UseWorkspaceHydrationArgs) {
   React.useEffect(() => {
     let active = true;
 
     async function hydrateWorkspace() {
-      const storedState = await loadStoredChatState();
+      const loaded = await loadStoredChatState();
+      const storedState = loaded.state;
       const settings = await window.nova.settings.load();
       if (!active) return;
       setAgentSettings(settings.agents);
       setHideInternalConversations(settings.hideInternalConversations);
       setIsPreviewMode(settings.previewMode);
+      setStorageRecovery(loaded.recovery);
       if (storedState.conversations.length === 0) {
         const nextConversation = createConversation();
         setConversations([nextConversation]);
@@ -57,13 +63,13 @@ export function useWorkspaceHydration({
     return () => {
       active = false;
     };
-  }, [setActiveConversationId, setAgentSettings, setConversations, setHideInternalConversations, setIsHydrated, setIsPreviewMode]);
+  }, [setActiveConversationId, setAgentSettings, setConversations, setHideInternalConversations, setIsHydrated, setIsPreviewMode, setStorageRecovery]);
 
   React.useEffect(() => {
-    if (!isHydrated) return;
+    if (!isHydrated || storageRecovery) return;
     void saveStoredChatState({
       activeConversationId,
       conversations,
     });
-  }, [activeConversationId, conversations, isHydrated]);
+  }, [activeConversationId, conversations, isHydrated, storageRecovery]);
 }

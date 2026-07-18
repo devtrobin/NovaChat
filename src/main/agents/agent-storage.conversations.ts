@@ -19,7 +19,8 @@ import {
   createAssistantToAgentMessage,
   upsertConversation,
 } from "./agent-storage.records";
-import { ensureAgentWorkspace } from "./agent-storage.workspace";
+import { runAgentStorageOperation } from "./agent-storage.queue";
+import { ensureAgentWorkspaceUnlocked } from "./agent-storage.workspace";
 
 type RecordAgentCommandExchangeArgs = {
   agentId: AgentId;
@@ -37,7 +38,14 @@ type RecordAgentCommandExchangeArgs = {
   userPrompt: string;
 };
 
-export async function recordAgentCommandExchange({
+export async function recordAgentCommandExchange(
+  args: RecordAgentCommandExchangeArgs,
+): Promise<{ agentConversationId: string }> {
+  return runAgentStorageOperation(args.rootDirectory, args.agentId, () =>
+    recordAgentCommandExchangeUnlocked(args));
+}
+
+async function recordAgentCommandExchangeUnlocked({
   agentId,
   agentConversationId = null,
   apiRequests = [],
@@ -49,7 +57,10 @@ export async function recordAgentCommandExchange({
   userAssistantConversationId,
   userPrompt,
 }: RecordAgentCommandExchangeArgs): Promise<{ agentConversationId: string }> {
-  const workspace = await ensureAgentWorkspace(rootDirectory, agentId);
+  const workspace = await ensureAgentWorkspaceUnlocked(rootDirectory, agentId);
+  if (workspace.storageRecovery) {
+    throw new Error("L'espace agent doit etre acquitte avant une nouvelle ecriture.");
+  }
   const assistantMessage = createAssistantToAgentMessage(agentId, assistantRequest, command);
   const resultMessage = createAgentResultMessage(
     agentId,

@@ -21,6 +21,8 @@ export function useWorkspaceLayoutController(): WorkspaceLayoutController {
     isHydrated,
     isPreviewMode,
     isSending,
+    setStorageRecovery,
+    storageRecovery,
     setSendingConversationIds,
     setActiveAgentId,
     setActiveConversationId,
@@ -42,6 +44,8 @@ export function useWorkspaceLayoutController(): WorkspaceLayoutController {
     setHideInternalConversations,
     setIsHydrated,
     setIsPreviewMode,
+    setStorageRecovery,
+    storageRecovery,
   });
   useWorkspaceEffects({
     activeConversationId,
@@ -101,6 +105,11 @@ export function useWorkspaceLayoutController(): WorkspaceLayoutController {
     isHydrated,
     isPreviewMode,
     isSending,
+    onAcknowledgeStorageRecovery: async () => {
+      if (!storageRecovery) return;
+      const acknowledged = await window.nova.chat.acknowledgeRecovery(storageRecovery.id);
+      if (acknowledged) setStorageRecovery(null);
+    },
     onCreateConversation: handleCreateConversation,
     onDeleteConversation: handleDeleteConversation,
     onKillCommand: handleKillCommand,
@@ -116,6 +125,7 @@ export function useWorkspaceLayoutController(): WorkspaceLayoutController {
     onSubmitPermissionDecision: handleSubmitPermissionDecision,
     onSubmitCommandInput: handleSubmitCommandInput,
     onUpdateConversationDraft: handleUpdateConversationDraft,
+    storageRecovery,
   };
 }
 

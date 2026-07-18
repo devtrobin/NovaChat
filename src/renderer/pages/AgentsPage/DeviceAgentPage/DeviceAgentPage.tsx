@@ -5,6 +5,7 @@ import DeviceAgentPermissionsTab from "./DeviceAgentPermissionsTab";
 import DeviceAgentTabs from "./DeviceAgentTabs";
 import { DeviceAgentPageProps } from "./DeviceAgentPage.types";
 import { useDeviceAgentPageController } from "./useDeviceAgentPageController";
+import StorageRecoveryBanner from "../../../components/WorkspaceLayout/StorageRecoveryBanner";
 import "../../ChatPage/ChatPage.css";
 import "./DeviceAgentPage.css";
 
@@ -22,6 +23,12 @@ export default function DeviceAgentPage(props: DeviceAgentPageProps) {
       </header>
       <section className="chat-page__content">
         <div className="chat-page__panel device-agent-page">
+          {controller.workspace?.storageRecovery ? (
+            <StorageRecoveryBanner
+              notice={controller.workspace.storageRecovery}
+              onAcknowledge={controller.acknowledgeStorageRecovery}
+            />
+          ) : null}
           <DeviceAgentTabs
             activeTab={controller.activeTab}
             onSelect={controller.setActiveTab}

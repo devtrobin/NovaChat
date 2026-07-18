@@ -7,37 +7,70 @@ import {
   MessageLifecycleEntry,
   PersistedChatState,
 } from "../../shared/chat.types";
-import { readJsonFile } from "./chat-storage.io";
+import { reportStorageIssue } from "../storage/storage-journal";
+import { StorageIssue } from "../storage/storage.types";
+import {
+  createStorageIssue,
+  readJsonFileDetailed,
+} from "./chat-storage.io";
 import { getConversationDirectory } from "./chat-storage.paths";
 import { mergeMessageFiles, orderMessages } from "./chat-storage.serialization";
 import { ConversationIndexEntry, ConversationsIndex } from "./chat-storage.types";
 
-async function readConversationMessages(rootDirectory: string, conversation: ConversationIndexEntry): Promise<ChatMessage[]> {
+export type ChatStorageLoadResult = {
+  issues: StorageIssue[];
+  state: PersistedChatState | null;
+};
+
+async function readConversationMessages(
+  rootDirectory: string,
+  conversation: ConversationIndexEntry,
+): Promise<{ issues: StorageIssue[]; messages: ChatMessage[] }> {
+  const issues: StorageIssue[] = [];
   const conversationDirectory = getConversationDirectory(rootDirectory, conversation.id);
-  const entries = await readdir(conversationDirectory, { withFileTypes: true }).catch(
-    (): Dirent[] => [],
-  );
+  const entries = await readDirectory(conversationDirectory, issues);
   const messages = await Promise.all(
     entries
       .filter((entry) => entry.isDirectory())
       .map(async (entry) => {
         const messageDirectory = path.join(conversationDirectory, entry.name);
-        const messageBody = await readJsonFile<Omit<ChatMessage, "apiRequests" | "lifecycleLog">>(
+        const messageBody = await readJsonFileDetailed<Omit<ChatMessage, "apiRequests" | "lifecycleLog">>(
           path.join(messageDirectory, "message.json"),
         );
-        if (!messageBody) return null;
+        issues.push(...messageBody.issues);
+        if (!messageBody.value) return null;
 
-        const lifecycleLog = await readJsonFile<MessageLifecycleEntry[]>(path.join(messageDirectory, "log.json"));
-        const apiRequests = await readJsonFile<ApiRequestRecord[]>(path.join(messageDirectory, "apis.json"));
+        const lifecycleLog = await readJsonFileDetailed<MessageLifecycleEntry[]>(
+          path.join(messageDirectory, "log.json"),
+        );
+        const apiRequests = await readJsonFileDetailed<ApiRequestRecord[]>(
+          path.join(messageDirectory, "apis.json"),
+        );
+        issues.push(...lifecycleLog.issues, ...apiRequests.issues);
 
-        return mergeMessageFiles(messageBody, lifecycleLog, apiRequests);
+        return mergeMessageFiles(messageBody.value, lifecycleLog.value, apiRequests.value);
       }),
   );
-
-  return orderMessages(
+  const orderedMessages = orderMessages(
     messages.filter((message): message is NonNullable<typeof message> => Boolean(message)),
     conversation,
   );
+  const loadedIds = new Set(orderedMessages.map((message) => message.id));
+  for (const expectedMessageId of conversation.messageIds) {
+    if (loadedIds.has(expectedMessageId)) continue;
+    const issue = createStorageIssue(
+      conversationDirectory,
+      "missing-indexed-data",
+      `Le message indexe ${expectedMessageId} n'a pas pu etre charge.`,
+    );
+    reportStorageIssue(issue);
+    issues.push(issue);
+  }
+
+  return {
+    issues,
+    messages: orderedMessages,
+  };
 }
 
 function createFallbackConversationEntry(
@@ -63,15 +96,23 @@ function createFallbackConversationEntry(
 }
 
 export async function loadChatStateFromDirectory(rootDirectory: string): Promise<PersistedChatState | null> {
-  const index = await readJsonFile<ConversationsIndex>(path.join(rootDirectory, "conversations.json"));
-  const directoryEntries = await readdir(rootDirectory, { withFileTypes: true }).catch(
-    (): Dirent[] => [],
+  return (await loadChatStateFromDirectoryWithRecovery(rootDirectory)).state;
+}
+
+export async function loadChatStateFromDirectoryWithRecovery(
+  rootDirectory: string,
+): Promise<ChatStorageLoadResult> {
+  const issues: StorageIssue[] = [];
+  const indexResult = await readJsonFileDetailed<ConversationsIndex>(
+    path.join(rootDirectory, "conversations.json"),
   );
+  issues.push(...indexResult.issues);
+  const index = indexResult.value;
+  const directoryEntries = await readDirectory(rootDirectory, issues);
   const indexedConversations = new Map(index?.conversations.map((conversation) => [conversation.id, conversation]) ?? []);
   const discoveredConversationIds = directoryEntries
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name);
-
   const allConversationIds = [
     ...new Set([
       ...indexedConversations.keys(),
@@ -79,7 +120,12 @@ export async function loadChatStateFromDirectory(rootDirectory: string): Promise
     ]),
   ];
 
-  if (!index && allConversationIds.length === 0) return null;
+  if (!index && allConversationIds.length === 0) {
+    return {
+      issues,
+      state: null,
+    };
+  }
 
   const conversations = await Promise.all(
     allConversationIds.map(async (conversationId) => {
@@ -91,15 +137,17 @@ export async function loadChatStateFromDirectory(rootDirectory: string): Promise
         title: conversationId,
         updatedAt: "",
       };
-      const messages = await readConversationMessages(rootDirectory, lookupEntry);
-      const conversation = indexedConversation ?? createFallbackConversationEntry(conversationId, messages);
+      const loadedMessages = await readConversationMessages(rootDirectory, lookupEntry);
+      issues.push(...loadedMessages.issues);
+      const conversation = indexedConversation
+        ?? createFallbackConversationEntry(conversationId, loadedMessages.messages);
 
       return {
         createdAt: conversation.createdAt,
         draft: conversation.draft ?? "",
         id: conversation.id,
         lastReadAt: conversation.lastReadAt,
-        messages,
+        messages: loadedMessages.messages,
         origin: conversation.origin ?? "assistant",
         title: conversation.title,
         updatedAt: conversation.updatedAt,
@@ -110,7 +158,26 @@ export async function loadChatStateFromDirectory(rootDirectory: string): Promise
   conversations.sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
 
   return {
-    activeConversationId: index?.activeConversationId ?? conversations[0]?.id ?? null,
-    conversations,
+    issues,
+    state: {
+      activeConversationId: index?.activeConversationId ?? conversations[0]?.id ?? null,
+      conversations,
+    },
   };
+}
+
+async function readDirectory(directoryPath: string, issues: StorageIssue[]): Promise<Dirent[]> {
+  try {
+    return await readdir(directoryPath, { withFileTypes: true });
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return [];
+    const issue = createStorageIssue(
+      directoryPath,
+      "io-error",
+      error instanceof Error ? error.message : "Lecture du dossier impossible.",
+    );
+    reportStorageIssue(issue);
+    issues.push(issue);
+    return [];
+  }
 }

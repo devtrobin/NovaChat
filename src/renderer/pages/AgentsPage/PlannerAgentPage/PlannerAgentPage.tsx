@@ -2,6 +2,7 @@ import { AppSettings } from "../../../../shared/settings.types";
 import React from "react";
 import { AgentDefinition } from "../../../services/workspace/workspace.types";
 import { ActiveAgentTask, AgentContextFile, AgentWorkspaceData } from "../../../../shared/agent.types";
+import StorageRecoveryBanner from "../../../components/WorkspaceLayout/StorageRecoveryBanner";
 import "../../ChatPage/ChatPage.css";
 import "../DeviceAgentPage/DeviceAgentPage.css";
 
@@ -113,6 +114,18 @@ export default function PlannerAgentPage({ agent, onSavedSettings }: PlannerAgen
     }
   }
 
+  async function handleAcknowledgeStorageRecovery() {
+    const recoveryId = workspace?.storageRecovery?.id;
+    if (!recoveryId) return;
+    setIsBusy(true);
+    try {
+      const acknowledged = await window.nova.chat.acknowledgeRecovery(recoveryId);
+      if (acknowledged) await loadWorkspace();
+    } finally {
+      setIsBusy(false);
+    }
+  }
+
   return (
     <section className="chat-page chat-page--static">
       <header className="chat-page__section-header">
@@ -123,6 +136,12 @@ export default function PlannerAgentPage({ agent, onSavedSettings }: PlannerAgen
       </header>
       <section className="chat-page__content">
         <div className="chat-page__panel device-agent-page">
+          {workspace?.storageRecovery ? (
+            <StorageRecoveryBanner
+              notice={workspace.storageRecovery}
+              onAcknowledge={handleAcknowledgeStorageRecovery}
+            />
+          ) : null}
           <nav className="device-agent-page__tabs">
             <button className={`device-agent-page__tab${activeTab === "general" ? " device-agent-page__tab--active" : ""}`} onClick={() => setActiveTab("general")} type="button">
               General

@@ -1,6 +1,6 @@
 import { AppSettings } from "../../../shared/settings.types";
 import { SubmitPermissionDecisionRequest } from "../../../shared/ai.types";
-import { Conversation } from "../../../shared/chat.types";
+import { Conversation, StorageRecoveryNotice } from "../../../shared/chat.types";
 import {
   AgentDefinition,
   ConversationIndicator,
@@ -21,6 +21,7 @@ export type WorkspaceLayoutController = {
   isHydrated: boolean;
   isPreviewMode: boolean;
   isSending: boolean;
+  onAcknowledgeStorageRecovery: () => Promise<void>;
   onCreateConversation: () => void;
   onDeleteConversation: (conversationId: string) => void;
   onKillCommand: (commandId: string) => Promise<void>;
@@ -36,4 +37,5 @@ export type WorkspaceLayoutController = {
   onSubmitCommandInput: (commandId: string, value: string) => Promise<void>;
   onMarkConversationAsRead: (conversationId: string) => void;
   onUpdateConversationDraft: (conversationId: string, draft: string) => void;
+  storageRecovery: StorageRecoveryNotice | null;
 };
