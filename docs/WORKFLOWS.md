@@ -1,209 +1,271 @@
 # Workflows
 
-## Purpose
+## 1. Démarrage
 
-Ce document decrit les flux metier concrets du projet.  
-Il sert a comprendre rapidement comment les pieces techniques collaborent.
+```text
+Electron ready
+  -> createMainWindow
+  -> renderer React
+  -> LoadingScreen
+  -> nova:ping
+  -> WorkspaceLayout
+  -> chat.load + settings.load
+  -> abonnement nova:ai:event
+```
 
-## 1. User Message -> Assistant Reply
+Le boot affiche plusieurs délais simulés. Après hydratation, toute modification
+des conversations déclenche une sauvegarde complète.
 
-Flux nominal :
+Fichiers :
+
+- `src/index.ts`
+- `src/renderer/App.tsx`
+- `src/renderer/components/LoadingScreen/`
+- `src/renderer/components/WorkspaceLayout/useWorkspaceHydration.ts`
+
+## 2. Message utilisateur vers réponse directe
 
 ```text
 ChatInput
-  -> ChatPage
-  -> WorkspaceLayout handlers
-  -> window.nova.ai.runTurn(...)
-  -> main ai orchestrator
-  -> OpenAI
-  -> ai events
-  -> renderer state update
+  -> onSendMessage
+  -> window.nova.ai.runTurn
+  -> nova:ai:run-turn
+  -> runTurn
+  -> generateOpenAIReply
+  -> ProviderResponse(to=user)
+  -> append-messages
 ```
 
-Etapes :
-1. l'utilisateur envoie un message dans `ChatInput`
-2. `ChatPage` delegue a `WorkspaceLayout`
-3. le renderer appelle `window.nova.ai.runTurn(request)`
-4. le `main` charge les settings actifs
-5. `ai.orchestrator` cree le message user et le message systeme de travail
-6. OpenAI est appele
-7. le `main` emet des events `append-messages`, `replace-message`, `remove-message`
-8. le renderer applique ces events a la conversation active
+Étapes :
 
-Fichiers cles :
-- [src/preload.ts](/Users/trobin/workspace/nova-chat/src/preload.ts)
-- [src/main/ipc/ai.handlers.ts](/Users/trobin/workspace/nova-chat/src/main/ipc/ai.handlers.ts)
-- [src/main/ai/ai.orchestrator.ts](/Users/trobin/workspace/nova-chat/src/main/ai/ai.orchestrator.ts)
-- [src/renderer/pages/ChatPage/ChatPage.tsx](/Users/trobin/workspace/nova-chat/src/renderer/pages/ChatPage/ChatPage.tsx)
-- [src/renderer/pages/ChatPage/ChatPage.events.ts](/Users/trobin/workspace/nova-chat/src/renderer/pages/ChatPage/ChatPage.events.ts)
+1. le draft est vidé et la conversation passe en état d’envoi ;
+2. le main charge les settings ;
+3. Nova crée le message user et un message système de progression ;
+4. la conversation complète est transformée en JSON pour OpenAI ;
+5. OpenAI doit renvoyer un objet Nova minifié ;
+6. le parser accepte une réponse user ou un handoff agent/device ;
+7. les traces API sont attachées au message user et au message final ;
+8. le renderer applique les événements puis auto-sauvegarde.
 
-## 2. Assistant -> Device-Agent -> Assistant
+Le titre devient les 36 premiers caractères du premier prompt visible.
 
-Flux :
+## 3. Handoff vers le Planner
+
+Le Planner peut être demandé par la réponse OpenAI :
+
+```json
+{"from":"assistant","to":"agent","agentId":"agent-planner","content":"..."}
+```
+
+Un handoff peut aussi être forcé au premier cycle si :
+
+- Planner est activé ;
+- le prompt dépasse 140 caractères ou contient un signal heuristique
+  (`analyse`, `debug`, `plan`, `refactor`, etc.) ;
+- aucun résultat agent/device n’est déjà présent dans le tour ;
+- la réponse assistant ne mentionne pas déjà le Planner.
+
+Le Planner reçoit son contexte, la plateforme, le shell, la demande et le
+prompt utilisateur. Il renvoie un format textuel :
 
 ```text
-OpenAI reply
-  -> providerResponse to=device
-  -> internal agent conversation
-  -> optional permission request
-  -> local command execution
-  -> device-agent result message
-  -> new OpenAI cycle
+STATUS: ready|needs-info|blocked
+SUMMARY: ...
+AGENT: device-agent|none
+MODE: goal|command|analysis|none
+GOAL: ...
+REQUEST: ...
+SUCCESS: ...
+MISSING:
+- ...
+COMPLETED:
+- ...
+DEBUG: ...
 ```
 
-Etapes :
-1. OpenAI renvoie un message Nova `from=assistant` `to=device`
-2. l'orchestrateur cree une nouvelle conversation `assistant <-> device-agent`
-3. `agent-storage.service.ts` journalise la demande et prepare `historique.json`
-4. si la commande est inconnue, `ai.permission.service.ts` injecte une demande utilisateur dans la conversation principale
-5. si la commande est autorisee, `device.service` la lance localement
-6. les updates de progression sont renvoyees au renderer
-7. la commande se termine
-8. le resultat devient un message `device -> assistant`
-9. l'orchestrateur relance un cycle IA avec ce nouveau contexte
+Nova parse le plan :
 
-Fichiers cles :
-- [src/main/ai/ai.orchestrator.cycle.ts](/Users/trobin/workspace/nova-chat/src/main/ai/ai.orchestrator.cycle.ts)
-- [src/main/ai/ai.device-flow.ts](/Users/trobin/workspace/nova-chat/src/main/ai/ai.device-flow.ts)
-- [src/main/ai/ai.permission.service.ts](/Users/trobin/workspace/nova-chat/src/main/ai/ai.permission.service.ts)
-- [src/main/agents/agent-storage.service.ts](/Users/trobin/workspace/nova-chat/src/main/agents/agent-storage.service.ts)
-- [src/main/device/device.service.ts](/Users/trobin/workspace/nova-chat/src/main/device/device.service.ts)
-- [src/main/device/device.runtime.ts](/Users/trobin/workspace/nova-chat/src/main/device/device.runtime.ts)
+- invalide : réponse d’erreur explicative à l’utilisateur ;
+- `needs-info` : question/résumé à l’utilisateur ;
+- `blocked` : message de blocage ;
+- `none` : réponse avec le résumé ;
+- `device-agent` : délégation de `REQUEST`.
 
-## 3. `/cmd`
+Une signature des étapes déjà exécutées empêche la répétition exacte dans un
+tour.
 
-Le mot-cle `/cmd` bypass l'appel OpenAI.
+## 4. Handoff vers le Device
 
-Exemple :
+Le Device reçoit l’un des deux formats :
+
+- commande exacte, mode `command` ;
+- objectif, généralement préfixé `GOAL:`, mode `goal`.
+
+Pour un objectif, `generateDeviceAgentCommand` effectue un appel OpenAI dédié
+et exige uniquement une commande shell en texte brut.
+
+La commande passe ensuite dans :
+
 ```text
-/cmd ls
+evaluateCommandPermissionPolicy
+  ├── allow -> exécution
+  ├── ask -> règle exacte mémorisée ?
+  │   ├── allow -> exécution
+  │   ├── deny -> refus
+  │   └── absente -> demande utilisateur
+  └── ask-always -> demande utilisateur systématique
 ```
 
-Etapes :
-1. `ai.orchestrator` detecte `/cmd`
-2. il cree un message user standard
-3. il cree ensuite une execution `device` directe
-4. la commande s'affiche dans la meme pipeline que les commandes assistant
-5. le resultat revient vers l'utilisateur, pas vers l'assistant
+Après exécution, le Device crée :
 
-Fichiers cles :
-- [src/main/ai/ai.orchestrator.commands.ts](/Users/trobin/workspace/nova-chat/src/main/ai/ai.orchestrator.commands.ts)
+- un message de commande/progression visible ;
+- un message agent de synthèse vers l’assistant ;
+- une conversation interne assistant/agent ;
+- une entrée d’historique.
 
-## 4. Device Interactive Input
+Nova réinjecte le résultat dans `turnMessages` et relance un cycle assistant
+pour produire la réponse finale.
 
-Supporte :
-- prompt mot de passe
-- demandes de saisie simples
+## 5. Permission utilisateur
 
-Etapes :
-1. la commande ecrit sur `stdout` / `stderr`
-2. `device.progress.ts` detecte qu'une entree utilisateur est attendue
-3. le renderer affiche un champ de saisie dans la bulle `device`
-4. l'utilisateur envoie une valeur
-5. `window.nova.ai.submitCommandInput(...)` pousse cette valeur dans `stdin`
+Le main ajoute un message système avec :
 
-Fichiers cles :
-- [src/main/device/device.progress.ts](/Users/trobin/workspace/nova-chat/src/main/device/device.progress.ts)
-- [src/main/ipc/ai.handlers.ts](/Users/trobin/workspace/nova-chat/src/main/ipc/ai.handlers.ts)
+- `Oui` → `allow`, ponctuel ;
+- `Oui permanent` → `allow-always`, mémorisé seulement pour une commande
+  classée `ask` ;
+- `Non` → `deny`.
 
-## 5. Conversation Loading / Saving
+La promesse du tour reste en attente jusqu’à la décision. Une seule permission
+peut être active par conversation principale.
+
+Attention : pour une commande classée `ask`, le chemin actuel enregistre aussi
+`Non` comme règle permanente. Voir `RISKS.md`.
+
+Les commandes `ask-always` redemandent toujours une permission, même si une
+règle existe.
+
+## 6. Exécution locale
+
+`startDeviceCommand` :
+
+1. normalise la commande ;
+2. rejette seulement vide/NUL ;
+3. choisit le shell ;
+4. spawn le processus avec stdin/stdout/stderr en pipes ;
+5. enregistre la commande en mémoire ;
+6. accumule stdout et stderr ;
+7. émet la progression ;
+8. tue après 15 secondes ;
+9. produit `DeviceCommandResult`.
+
+Une sortie terminant par `password:`, `mot de passe:`, `passphrase:`, `?` ou
+`:` peut passer le message en `waiting-input`. Le renderer renvoie alors la
+valeur via `submitCommandInput`.
+
+## 7. `/cmd`
+
+Un prompt correspondant à `/cmd <commande>` ne fait aucun appel OpenAI et ne
+passe pas par les permissions de l’agent.
+
+```text
+user /cmd
+  -> runDirectCommandTurn
+  -> executeDeviceCommand
+  -> résultat device -> user
+```
+
+La commande reste soumise au contrôle minimal de `assertCommandAllowed`.
+
+## 8. Arrêt d’un tour ou d’une tâche
+
+`ai.turn-registry.ts` associe à un tour :
+
+- conversation principale ;
+- tâches agent ;
+- abort controllers provider ;
+- commandes locales ;
+- demande de permission ;
+- conversations agents internes.
+
+Un arrêt depuis le chat ou la vue activité :
+
+1. marque le tour arrêté ;
+2. abort les requêtes provider ;
+3. résout la permission en `cancel` ;
+4. tue toutes les commandes connues ;
+5. propage `TurnStoppedError` ;
+6. ajoute un message système d’interruption.
+
+Le registre est en mémoire : un redémarrage ne restaure pas un tour.
+
+## 9. Persistance du chat principal
 
 Chargement :
-1. le renderer appelle `window.nova.chat.load()`
-2. `main/ipc/chat.handlers.ts` choisit le bon dossier
-3. `chat-storage.reader.ts` reconstruit l'etat depuis les dossiers
+
+1. lire le dossier configuré ;
+2. fallback vers le dossier de référence ;
+3. lire l’index s’il existe ;
+4. découvrir aussi les dossiers non indexés ;
+5. reconstruire et trier les messages ;
+6. fallback vers une conversation d’accueil.
 
 Sauvegarde :
-1. le renderer appelle `window.nova.chat.save(state)`
-2. le `main` serialize les sauvegardes avec une queue
-3. `chat-storage.writer.ts` ecrit :
-   - `conversations.json`
-   - un dossier par conversation
-   - un dossier par message
 
-Fichiers cles :
-- [src/main/ipc/chat.handlers.ts](/Users/trobin/workspace/nova-chat/src/main/ipc/chat.handlers.ts)
-- [src/main/chat/chat-storage.reader.ts](/Users/trobin/workspace/nova-chat/src/main/chat/chat-storage.reader.ts)
-- [src/main/chat/chat-storage.writer.ts](/Users/trobin/workspace/nova-chat/src/main/chat/chat-storage.writer.ts)
+1. filtrer les messages système ;
+2. mettre la sauvegarde dans la queue du handler ;
+3. synchroniser le dossier de référence ;
+4. écrire l’index de référence à la racine ;
+5. synchroniser le dossier configuré s’il diffère.
 
-## 6. Settings Loading / Saving
+## 10. Persistance et vues agent
+
+`loadWorkspace(agentId)` crée les fichiers manquants et renvoie :
+
+- contexte ;
+- permissions ;
+- conversations internes ;
+- historique.
+
+Les pages Planner et Device interrogent les tâches actives chaque seconde et
+se rafraîchissent aussi après un événement IA.
+
+La vue globale `AgentsActivityView` agrège les deux workspaces, conserve les 24
+entrées récentes et permet l’arrêt d’une tâche.
+
+## 11. Conversations directes agent
+
+Le main et le preload savent :
+
+- créer une conversation agent d’origine `assistant-test` ;
+- envoyer un message direct ;
+- empêcher l’écriture dans une conversation interne d’origine `assistant`.
+
+Cette capacité n’est appelée par aucun composant UI actuel. Elle doit être
+considérée comme backend dormant.
+
+## 12. Settings
 
 Chargement :
-1. le renderer ouvre `SettingsPage`
-2. `SettingsPanel` charge via `window.nova.settings.load()`
 
-Test :
-1. le renderer appelle `window.nova.settings.test(settings)`
-2. le `main` teste le provider actif
-3. aujourd'hui seul `OpenAI` est supporte
+1. defaults ;
+2. fichier de référence ;
+3. merge et compatibilité `diagnostic-agent` ;
+4. éventuel fichier configuré.
 
-Sauvegarde :
-1. `window.nova.settings.save(settings)`
-2. `main/settings.service.ts` ecrit les chemins et la config provider
+Sauvegarde UI :
 
-Fichiers cles :
-- [src/main/ipc/settings.handlers.ts](/Users/trobin/workspace/nova-chat/src/main/ipc/settings.handlers.ts)
-- [src/main/settings/settings.service.ts](/Users/trobin/workspace/nova-chat/src/main/settings/settings.service.ts)
+1. validation des chemins conversations/settings ;
+2. si provider actif OpenAI, test réseau obligatoire ;
+3. écriture du fichier de référence et de l’éventuel fichier secondaire.
 
-## 7. Permission Request Workflow
+Le chemin `agentsDirectory` n’est pas validé comme non vide aujourd’hui.
 
-Flux :
+## 13. Navigation et messages non lus
 
-```text
-assistant asks device-agent
-  -> command unknown
-  -> system message in main conversation
-  -> user decision
-  -> allow / allow-always / deny
-```
-
-Etapes :
-1. l'assistant delegue une commande au `device-agent`
-2. `permissions.json` est verifie
-3. si la commande exacte n'existe pas, Nova cree un message systeme structure
-4. l'utilisateur choisit :
-   - `Oui`
-   - `Oui permanent`
-   - `Non`
-5. la decision est renvoyee au `main` via `submitPermissionDecision`
-6. le `device-agent` execute, memorise ou refuse selon le cas
-
-Fichiers cles :
-- [src/main/ai/ai.permission.service.ts](/Users/trobin/workspace/nova-chat/src/main/ai/ai.permission.service.ts)
-- [src/main/ipc/ai.handlers.ts](/Users/trobin/workspace/nova-chat/src/main/ipc/ai.handlers.ts)
-- [src/renderer/components/MessageItem/MessageItemSystem.tsx](/Users/trobin/workspace/nova-chat/src/renderer/components/MessageItem/MessageItemSystem.tsx)
-
-## 8. Sidebar Navigation
-
-Le shell global est `WorkspaceLayout`.
-
-Fonctionnement :
-- `AppSidebar` change la section active
-- `WorkspaceLayout` choisit la page de droite
-- `ChatPage`, `AgentsPage`, `SettingsPage` ne gerent que leur contenu
-
-Fichiers cles :
-- [src/renderer/components/WorkspaceLayout/WorkspaceLayout.tsx](/Users/trobin/workspace/nova-chat/src/renderer/components/WorkspaceLayout/WorkspaceLayout.tsx)
-- [src/renderer/components/AppSidebar/AppSidebar.tsx](/Users/trobin/workspace/nova-chat/src/renderer/components/AppSidebar/AppSidebar.tsx)
-
-## 9. Search In Active Conversation
-
-Supporte :
-- `Ctrl+F` / `Cmd+F`
-- surlignage
-- navigation dans les resultats
-- centrage du message actif
-
-Fichiers cles :
-- [src/renderer/pages/ChatPage/useConversationSearch.ts](/Users/trobin/workspace/nova-chat/src/renderer/pages/ChatPage/useConversationSearch.ts)
-- [src/renderer/pages/ChatPage/ChatSearchBar.tsx](/Users/trobin/workspace/nova-chat/src/renderer/pages/ChatPage/ChatSearchBar.tsx)
-
-## 10. Useful Recovery Paths
-
-Si un bug apparait :
-- bug UI conversation : commencer par `renderer/pages/ChatPage/*`
-- bug sidebar/navigation : `WorkspaceLayout` + `AppSidebar`
-- bug provider : `main/ai/*`
-- bug shell/command : `main/device/*`
-- bug persistence : `main/chat/*`
-- bug settings : `main/settings/*` + `main/ipc/settings.handlers.ts`
+- `AppSidebar` pilote les sections et catégories.
+- Sélectionner une conversation la marque comme lue.
+- Atteindre le bas du scroll la marque aussi comme lue.
+- Une conversation affiche un loader si elle contient un message système
+  `running`.
+- `hideInternalConversations` filtre les délégations, messages agent et tous
+  les messages device dans la vue active, sans modifier le stockage.

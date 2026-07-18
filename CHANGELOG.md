@@ -3,6 +3,12 @@
 ## Unreleased
 
 ### Added
+- base de connaissance de reprise auditee contre le code au 18 juillet 2026
+  - index `docs/README.md`
+  - guide `docs/DEVELOPMENT.md`
+  - modele de donnees et contrat IPC `docs/DATA_MODEL.md`
+  - registre priorise `docs/RISKS.md`
+  - consignes automatiques `AGENTS.md`
 - documentation de reprise dans `docs/`
   - `ARCHITECTURE.md`
   - `PROJECT_STATE.md`
@@ -25,6 +31,9 @@
 - traces `message.json`, `log.json`, `apis.json` par message
 
 ### Changed
+- mise a jour complete de l'architecture, de l'etat, des workflows, du plan
+  agents, du handoff et de la feuille de route pour refleter `agent-planner`,
+  la generation de commande Device et le registre de taches
 - la section `Agents` n'est plus reservee au mode preview
 - refacto majeure du renderer autour de `WorkspaceLayout`
 - refacto de la navigation gauche vers `AppSidebar`

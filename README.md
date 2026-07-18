@@ -1,128 +1,144 @@
-# Nova Chat
+# NovaChat
 
-Nova Chat est une application desktop Electron + React pensee comme une interface de chat type ChatGPT, avec une persistance locale complete, une configuration provider, un canal `device` et maintenant un premier agent interne `device-agent` capable d'executer des commandes locales avec workflow de permission.
+NovaChat est une application desktop Electron + React qui combine un chat
+persistant, l’API OpenAI Responses, un agent de planification et un agent
+d’exécution locale.
 
-![Capture de Nova Chat](docs/screenshot.png)
+## État actuel
 
-## Fonctionnalites
+Fonctionnalités branchées :
 
-- Interface de chat desktop avec theme Nova
-- Conversations sauvegardees localement en JSON
-- Parametres OpenAI sauvegardes localement
-- Appel OpenAI via `Responses API`
-- Execution de commandes locales via le canal `device`
-- Premiere vue `Agents` avec page dediee `Device`
-- Workflow `assistant -> device-agent -> system -> utilisateur`
-- Permissions exactes stockees localement pour les commandes device
-- Historique local des executions de l'agent device
-- Boucle d'orchestration cote Electron :
-  - `assistant -> device`
-  - execution locale
-  - `device -> assistant`
-  - nouvel appel IA
+- conversations locales, drafts, non-lus, recherche et renommage ;
+- configuration OpenAI locale ;
+- assistant principal Nova ;
+- `agent-planner` pour proposer la prochaine étape atomique ;
+- `device-agent` pour concevoir ou exécuter une commande ;
+- workflow de permission `Oui`, `Oui permanent`, `Non` ;
+- `/cmd` pour une commande explicitement lancée par l’utilisateur ;
+- progression, saisie interactive et arrêt de commande/tour ;
+- contextes, permissions, conversations et historiques agents sur disque ;
+- vue d’activité globale des agents.
+
+Seul OpenAI est réellement implémenté. Les autres providers visibles en mode
+preview sont des placeholders.
+
+Important : le canal `device` est fonctionnel mais sa policy actuelle n’est
+pas une frontière de sécurité complète. Lire
+[docs/RISKS.md](docs/RISKS.md) avant de l’étendre.
 
 ## Stack
 
-- Electron
-- React
-- TypeScript
-- Electron Forge
+- Electron 39
+- React 19
+- TypeScript 5.9
+- Electron Forge 7
+- Webpack
+- i18next
 
-## Lancer le projet
+## Installation et lancement
 
-Installer les dependances :
-
-```bash
-npm install
+```powershell
+npm.cmd ci
+npm.cmd start
 ```
 
-Lancer l'application en developpement :
+Sous macOS/Linux ou dans `cmd.exe`, `npm ci` et `npm start` conviennent. La
+forme `npm.cmd` évite le blocage de `npm.ps1` sur certains PowerShell.
 
-```bash
-npm start
+## Validation
+
+```powershell
+npm.cmd exec tsc -- --noEmit
+npm.cmd run lint
+npm.cmd run package
 ```
+
+Au 18 juillet 2026, les trois commandes passent sur Windows x64.
+
+Il n’existe pas encore de vraie suite de tests : les fichiers `*.test.tsx`
+sont des placeholders et aucun script `test` n’est défini.
 
 ## Configuration OpenAI
 
-Depuis l'application :
+Dans `Paramètres > OpenAI` :
 
-1. Ouvrir `Parametres` dans la navigation de gauche
-2. Renseigner :
-   - `OpenAI API Key`
-   - `Model`
-   - `Base URL` si necessaire
-3. Cliquer sur `Tester la connexion`
-4. Valider
+1. renseigner la clé API ;
+2. renseigner un modèle compatible avec la Responses API ;
+3. conserver ou adapter la Base URL ;
+4. tester la connexion ;
+5. valider.
 
-Valeur classique pour `Base URL` :
+Base URL standard :
 
 ```text
 https://api.openai.com/v1
 ```
 
+La clé est actuellement stockée en clair dans `settings.json`, fichier ignoré
+par Git.
+
 ## Stockage local
 
-Les donnees sont ecrites dans les chemins configures dans `Parametres > Fichier local` :
-
-- conversations utilisateur :
-  - `conversations.json`
-  - un dossier par conversation
-  - un dossier par message avec `message.json`, `log.json`, `apis.json`
-- agents :
-  - un dossier par agent
-  - `contexte.json`
-  - `permissions.json`
-  - `historique.json`
-  - `conversations/`
-- parametres : `settings.json`
-
-Sur macOS, avec la configuration actuelle du projet, cela donne generalement :
+En développement, les chemins par défaut sont à la racine du dépôt :
 
 ```text
-~/Library/Application Support/nova-chat/nova-chat/
+settings.json
+conversations.json
+conversations/
+agents/
 ```
 
-## Architecture
+Les conversations sont éclatées par conversation et message. Chaque message
+possède :
 
-- `src/renderer` : interface utilisateur React
-- `src/main` : orchestration IA, execution device, gestion des settings
-- `src/preload.ts` : pont IPC securise entre renderer et main
-- `src/shared` : types partages entre Electron et le renderer
+```text
+message.json
+log.json
+apis.json
+```
 
-Le renderer n'appelle pas OpenAI directement. Il envoie l'etat de conversation au main process, qui :
+Chaque agent possède :
 
-1. charge la configuration active
-2. appelle le provider IA
-3. delegue au `device-agent` si l'assistant cible `device`
-4. demande une permission utilisateur si la commande est inconnue
-5. execute la commande locale si elle est autorisee
-6. renvoie au renderer uniquement les nouveaux messages et mises a jour
+```text
+contexte.json
+permissions.json
+historique.json
+conversations/
+```
 
-## Compatibilite
+En application packagée, le code actuel utilise par défaut le dossier
+contenant l’exécutable, et non le répertoire standard `userData`. Ce point
+fait partie des chantiers prioritaires.
 
-- macOS : OK
-- Windows : OK pour l'infrastructure Electron et le lancement des commandes `device`
-- Linux : OK sur le principe
+## Architecture courte
 
-Attention : les commandes generees par l'agent doivent rester coherentes avec l'OS cible. Une commande Unix comme `ls -la` ne fonctionnera pas sous `cmd.exe`.
+```text
+React renderer
+  -> preload window.nova
+  -> Electron main
+      -> OpenAI
+      -> agents
+      -> shell local
+      -> stockage JSON
+```
 
-## Etat actuel
+Le renderer n’appelle jamais directement OpenAI ni le shell.
 
-Le projet est fonctionnel pour :
+## Base de connaissance
 
-- discuter avec OpenAI
-- sauvegarder les conversations localement
-- tester et enregistrer une configuration provider
-- executer des commandes locales via `device`
-- afficher une vue `Agents` stable
-- visualiser l'agent `Device`
-- stocker le contexte, les permissions et l'historique du `device-agent`
-- demander une validation utilisateur pour une commande inconnue
+La documentation de reprise commence dans
+[docs/README.md](docs/README.md).
 
-Les ameliorations naturelles ensuite seraient :
+Lecture recommandée :
 
-- capacite du `device-agent` a concevoir lui-meme une commande
-- rafraichissement live de `DeviceAgentPage`
-- support de providers locaux type Ollama
-- streaming
-- garde-fous supplementaires sur les commandes device
+- [état du projet](docs/PROJECT_STATE.md) ;
+- [architecture](docs/ARCHITECTURE.md) ;
+- [workflows](docs/WORKFLOWS.md) ;
+- [données et IPC](docs/DATA_MODEL.md) ;
+- [développement](docs/DEVELOPMENT.md) ;
+- [risques](docs/RISKS.md) ;
+- [prochaines étapes](docs/NEXT_STEPS.md) ;
+- [handoff express](docs/HANDOFF.md).
+
+`docs/screenshot.png` est une capture historique et ne représente plus tous
+les écrans Agents actuels.

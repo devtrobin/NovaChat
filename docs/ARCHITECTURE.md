@@ -1,198 +1,253 @@
 # Architecture
 
-## Purpose
+## Vue d’ensemble
 
-Nova Chat est une application desktop Electron + React qui :
-- affiche une interface de chat
-- persiste localement les conversations et les settings
-- appelle un provider IA depuis le process `main`
-- peut executer des commandes locales via un canal `device`
-- expose une vue `Agents` avec un premier `device-agent`
-
-Le renderer ne parle jamais directement a OpenAI ni au shell local.
-
-## High-Level Flow
+NovaChat est une application desktop Electron composée de trois zones de
+confiance :
 
 ```text
-Renderer
-  -> preload API
-  -> main process
-  -> provider IA / device / storage
-  -> events de retour vers le renderer
+React renderer
+    │  window.nova
+    ▼
+Electron preload
+    │  IPC invoke / events
+    ▼
+Electron main
+    ├── OpenAI Responses API
+    ├── orchestration Planner / Device
+    ├── shell local
+    └── stockage JSON local
 ```
 
-Flux standard :
-1. le renderer envoie la conversation + le nouveau message
-2. le `main` orchestre le tour IA
-3. si l'assistant demande `device`, le `main` delegue au `device-agent`
-4. le `device-agent` verifie `permissions.json` et peut demander une validation utilisateur
-5. la commande locale est executee si elle est autorisee
-6. le `main` renvoie des events `append/replace/remove`
-7. le renderer met a jour la conversation locale
+Le renderer ne doit posséder ni clé provider, ni accès Node, ni accès direct
+au shell. Le preload expose un contrat limité. Le main porte les effets de
+bord.
 
-## Main Folders
+Le packaging active `asar` et plusieurs fuses Electron : désactivation de
+`RunAsNode`, des options Node par variable d’environnement et des arguments
+d’inspection, chiffrement des cookies, validation d’intégrité de l’ASAR et
+chargement limité à l’ASAR.
 
-### `src/main`
+## Points d’entrée
 
-- `ai/`
-  - orchestration du tour IA
-  - appel provider OpenAI
-  - boucle `assistant -> device-agent -> assistant`
-  - workflow de permissions utilisateur
-- `agents/`
-  - stockage du contexte agent
-  - stockage des permissions agent
-  - historique et conversations internes agent
-- `chat/`
-  - lecture/ecriture des conversations sur disque
-- `device/`
-  - execution shell
-  - policy de commandes
-  - suivi des commandes en cours
-- `ipc/`
-  - enregistrement des handlers IPC par domaine
-- `settings/`
-  - lecture/ecriture de la configuration applicative
-- `window/`
-  - creation de la fenetre Electron
+| Couche | Fichier | Responsabilité |
+| --- | --- | --- |
+| Electron main | `src/index.ts` | cycle de vie de l’app et enregistrement IPC |
+| Fenêtre | `src/main/window/create-main-window.ts` | création de `BrowserWindow` |
+| Preload | `src/preload.ts` | exposition de `window.nova` |
+| Renderer | `src/renderer.tsx` | montage React et i18n |
+| App React | `src/renderer/App.tsx` | boot puis workspace |
+| Orchestrateur IA | `src/main/ai/ai.orchestrator.ts` | tour utilisateur complet |
 
-### `src/renderer`
+## Renderer
 
-- `components/WorkspaceLayout`
-  - shell global de l'application
-- `components/AppSidebar`
-  - navigation gauche : conversations / agents / parametres
-- `components/SettingsPanel`
-  - contenu de la page de parametres
-- `components/MessageItem`
-  - rendu des messages chat / device / system
-- `pages/ChatPage`
-  - page de chat
-- `pages/AgentsPage`
-  - pages dediees par agent
-  - `DeviceAgentPage` aujourd'hui
-- `pages/SettingsPage`
-  - page parametres
-- `services/workspace`
-  - types et helpers du shell workspace
-
-### `src/shared`
-
-Types partages entre `main`, `preload` et `renderer`.
-
-## Renderer Layout
-
-Le layout courant est :
+### Arbre principal
 
 ```text
 App
-  -> LoadingScreen
-  -> WorkspaceLayout
-       -> AppSidebar
-       -> ChatPage | AgentsPage | SettingsPage
+├── LoadingScreen
+└── WorkspaceLayout
+    ├── AppSidebar
+    └── page active
+        ├── ChatPage
+        ├── AgentsPage
+        │   ├── DeviceAgentPage
+        │   └── PlannerAgentPage
+        └── SettingsPage
+            └── SettingsPanel
 ```
 
-`WorkspaceLayout` porte :
-- la navigation de haut niveau
-- la conversation active
-- les handlers transmis aux pages
+`WorkspaceLayout` est le contrôleur du shell :
 
-## AI Architecture
+- hydratation des conversations et settings ;
+- section, conversation et agent actifs ;
+- drafts et état d’envoi par conversation ;
+- abonnement aux événements IA ;
+- sauvegarde du chat après chaque changement d’état ;
+- filtrage optionnel des messages internes.
 
-Entrypoint principal :
-- [src/main/ai/ai.orchestrator.ts](/Users/trobin/workspace/nova-chat/src/main/ai/ai.orchestrator.ts)
+La logique est répartie entre `WorkspaceLayout.service.ts` et les hooks
+`useWorkspace*`.
 
-Sous-modules importants :
-- `ai.orchestrator.commands.ts`
-  - gestion de `/cmd`
-- `ai.orchestrator.cycle.ts`
-  - cycle assistant / device-agent / assistant
-- `ai.permission.service.ts`
-  - demandes de permission et resolution utilisateur
-- `ai.orchestrator.errors.ts`
-  - classification et rendu des erreurs
-- `openai.service.ts`
-  - point d'entree OpenAI
-- `openai.payload.ts`
-  - construction du payload
-- `openai.parser.ts`
-  - parsing de la reponse provider
+### État de conversation
 
-## Device Architecture
+Le renderer conserve l’état canonique affiché. Le main n’envoie que des
+événements :
 
-Entrypoints :
-- [src/main/device/device.service.ts](/Users/trobin/workspace/nova-chat/src/main/device/device.service.ts)
-- [src/main/device/device.runtime.ts](/Users/trobin/workspace/nova-chat/src/main/device/device.runtime.ts)
+```text
+append-messages
+replace-message
+remove-message
+set-title
+```
 
-Responsabilites :
-- `device.policy.ts`
-  - validation / blocage de commandes
-- `device.shell.ts`
-  - choix du shell selon l'OS
-- `device.registry.ts`
-  - commandes en cours
-- `device.progress.ts`
-  - detection des prompts interactifs
-- `device.results.ts`
-  - objets de retour standardises
+`chat.events.ts` applique ces événements de manière immuable. L’auto-sauvegarde
+renvoie ensuite tout `PersistedChatState` au main.
 
-## Storage
+### Rendu des messages
 
-Les conversations sont eclatees :
-- un index global `conversations.json`
-- un dossier par conversation
-- un dossier par message
+`MessageItem` route selon `from`, `to`, `status` et `commandId` :
 
-Dans chaque dossier message :
-- `message.json`
-- `log.json`
-- `apis.json`
+- `MessageItemChat` : user, assistant, agent et délégations ;
+- `MessageItemDevice` : commande, progression, input et résultat ;
+- `MessageItemSystem` : état transitoire, erreur de configuration et
+  permission.
 
-Le stockage est gere par :
-- [src/main/chat/chat-storage.service.ts](/Users/trobin/workspace/nova-chat/src/main/chat/chat-storage.service.ts)
-- `chat-storage.reader.ts`
-- `chat-storage.writer.ts`
+## Main process
 
-Stockage agent :
-- un dossier par agent dans `localFiles.agentsDirectory`
-- `contexte.json`
-- `permissions.json`
-- `historique.json`
-- `conversations/`
+### Domaine `ai`
 
-Le stockage agent est gere par :
-- [src/main/agents/agent-storage.service.ts](/Users/trobin/workspace/nova-chat/src/main/agents/agent-storage.service.ts)
+Le tour principal suit cette structure :
 
-## Settings
+```text
+runTurn
+├── /cmd ? -> runDirectCommandTurn
+├── validation OpenAI
+├── création du tour annulable
+└── jusqu’à 4 cycles
+    ├── generateOpenAIReply
+    ├── réponse utilisateur -> fin
+    └── handoff agent
+        ├── agent-planner
+        │   └── parse du plan puis éventuel device-agent
+        └── device-agent
+            └── génération/exécution de commande
+```
 
-Type racine :
-- [src/shared/settings.types.ts](/Users/trobin/workspace/nova-chat/src/shared/settings.types.ts)
+Fichiers clés :
 
-Settings actuels :
-- `activeProvider`
-- `openai`
-- `localFiles`
-- `previewMode`
+- `ai.orchestrator.ts` : boucle, limite et traitement du Planner ;
+- `ai.orchestrator.cycle.ts` : un appel assistant et une délégation ;
+- `ai.planner.ts` : parsing du format textuel du Planner ;
+- `ai.turn-registry.ts` : tours, tâches, abort controllers, commandes et
+  permissions en cours ;
+- `ai.permission.service.ts` : attente et résolution d’une permission ;
+- `ai.device-flow.ts` : adaptation d’une commande en messages Nova ;
+- `openai.*` : payload, transport, parsing et erreurs provider.
 
-Le `main` lit/ecrit les settings. Le renderer ne fait qu'utiliser l'API exposee par `preload`.
+Le transport utilise `fetch` et accepte un `AbortSignal` pour les tours. Le
+test de connexion Settings n’a pas de timeout explicite.
 
-## Naming Conventions
+### Domaine `agents`
 
-Conventions actuelles :
-- `Page` : ecran principal du workspace
-- `Panel` : bloc UI integre dans une page
-- `Layout` : structure globale de l'ecran
-- `service` / `use*` : logique et orchestration
+Deux agents sont définis.
 
-Noms a retenir :
-- `WorkspaceLayout`
-- `AppSidebar`
-- `SettingsPanel`
-- `DeviceAgentPage`
+`agent-planner` :
 
-## What Not To Do
+- reçoit une demande de planification ;
+- appelle OpenAI avec son contexte propre ;
+- renvoie un texte structuré `STATUS`, `SUMMARY`, `AGENT`, `MODE`, etc. ;
+- n’exécute aucune action ;
+- ne peut recommander actuellement que `device-agent` ou `none`.
 
-- Ne pas appeler OpenAI depuis le renderer
-- Ne pas executer de commande shell depuis le renderer
-- Ne pas remettre de logique metier lourde dans les composants React
-- Ne pas reintroduire des composants nommes `Modal` pour des pages integrees
+`device-agent` :
+
+- accepte une commande exacte ou un objectif ;
+- pour un objectif, appelle OpenAI afin de produire une commande ;
+- évalue la policy de permission ;
+- consulte les règles exactes mémorisées ;
+- demande éventuellement une décision à l’utilisateur ;
+- exécute la commande et résume le résultat.
+
+`agent-orchestrator.service.ts` concentre encore une grande partie de cette
+logique. `agent-storage.service.ts` conserve contexte, permissions, historique
+et conversations internes.
+
+### Domaine `device`
+
+```text
+command string
+  -> normalizeCommand
+  -> assertCommandAllowed
+  -> resolveShell
+  -> spawn
+  -> registry
+  -> stdout/stderr progress
+  -> timeout / input / kill
+  -> DeviceCommandResult
+```
+
+Sur Windows : `cmd.exe /d /s /c`.
+
+Sur macOS/Linux : `$SHELL -lc`, avec `/bin/zsh` en fallback.
+
+Le timeout est fixé à 15 secondes. Le registre est uniquement mémoire.
+
+La classification de permission de `device.policy.ts` intervient dans le flux
+agent, avant `startDeviceCommand`. Elle ne s’applique pas à `/cmd`, qui est une
+exécution explicitement demandée par l’utilisateur. Voir
+[RISKS.md](RISKS.md) pour ses limites.
+
+### Domaine `chat`
+
+Le stockage est un arbre JSON éclaté. Le reader sait reconstruire une
+conversation à partir de l’index et découvrir des dossiers orphelins. Le
+writer synchronise l’arbre avec l’état reçu, y compris par suppressions
+récursives.
+
+Le chat principal sérialise ses sauvegardes avec une queue dans
+`chat.handlers.ts`. Les espaces agents ne bénéficient pas encore de cette
+protection.
+
+### Domaine `settings`
+
+Le main calcule les chemins par défaut, fusionne les anciennes configurations,
+lit le fichier de référence puis un éventuel fichier configuré et écrit les
+deux à la sauvegarde.
+
+Seul le bloc OpenAI est opérationnel. Les autres IDs provider servent à l’UI
+preview et au contexte runtime des agents.
+
+## Contrats transversaux
+
+### Types
+
+- `src/renderer/types/chat.types.ts` : message, conversation, commande ;
+- `src/shared/ai.types.ts` : requêtes et événements du tour ;
+- `src/shared/agent.types.ts` : tâches et espace de travail agent ;
+- `src/shared/settings.types.ts` : configuration.
+
+Le positionnement du type `ChatMessage` sous `renderer` est une dette :
+`main` et `shared` l’importent aussi.
+
+### Identité des agents
+
+Les IDs actifs sont :
+
+```text
+agent-planner
+device-agent
+```
+
+`diagnostic-agent` est un ancien nom partiellement pris en charge pour
+compatibilité.
+
+### Persistance et observabilité
+
+Chaque message peut porter deux catégories de traces séparées :
+
+- `lifecycleLog` : événements internes Nova ;
+- `apiRequests` : payloads et réponses provider.
+
+Ces traces ne sont pas envoyées dans le message Nova simplifié au provider,
+mais elles sont persistées sur disque.
+
+## Dépendances structurelles à préserver
+
+- OpenAI et le shell restent dans le main.
+- `window.nova` reste la seule surface renderer vers les effets de bord.
+- L’orchestration multi-agent reste centralisée par Nova, pas distribuée entre
+  agents autonomes.
+- Le Planner recommande ; Nova décide et exécute.
+- Le Device exécute une étape atomique puis rend la main.
+- Les messages Nova restent la représentation commune des flux visibles.
+
+## Zones à ne pas confondre
+
+- `activeProvider` n’est pas encore un vrai routage multi-provider.
+- `device.policy.ts` décide d’une demande de permission ; ce n’est pas un
+  sandbox.
+- Les conversations internes stockées ne sont pas actuellement navigables
+  depuis les pages agent.
+- Les messages `system` sont des états UI transitoires, pas un historique
+  durable.

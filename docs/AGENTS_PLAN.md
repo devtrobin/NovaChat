@@ -1,129 +1,146 @@
-# Agents Plan
+# Architecture des agents
 
-## Goal
+## État
 
-Le but est d'introduire un vrai systeme d'agents specialises, sans casser l'architecture actuelle.
-
-L'idee generale :
-- un assistant principal parle a l'utilisateur
-- un agent specialise `device-agent` gere les actions machine
-- les permissions utilisateur passent par un message systeme structure
-
-## Why Agents
-
-Benefices attendus :
-- separation nette des responsabilites
-- prompts plus courts et plus robustes
-- meilleur controle du workflow
-- meilleure securite autour des commandes `device`
-- meilleure lisibilite produit
-
-## Planned Agents
-
-### 1. Assistant principal
-
-Mission :
-- comprendre la demande utilisateur
-- garder le fil de la conversation
-- decider quoi faire ensuite
-- deleguer quand une action specialisee est necessaire
-- produire la reponse finale visible par l'utilisateur
-
-Ne doit pas :
-- executer directement la logique shell detaillee
-- contourner le workflow de permissions
-
-### 2. Device agent
-
-Mission :
-- preparer ou executer les commandes locales
-- interpreter les retours machine
-- demander une autorisation explicite si necessaire
-
-Ne doit pas :
-- prendre le controle de la conversation utilisateur
-- decider seul de politiques sensibles hors workflow etabli
-
-## Current Reality
-
-Aujourd'hui, une premiere iteration fonctionnelle existe deja.
-
-Ce qui existe :
-- `assistant -> device-agent`
-- `device-agent -> assistant`
-- `/cmd`
-- messages systeme structures pour les permissions
-- page `Agents`
-- `DeviceAgentPage` avec onglets `General`, `Conversation`, `Contexte`
-- stockage local dedie :
-  - `contexte.json`
-  - `permissions.json`
-  - `historique.json`
-  - `conversations/`
-
-## Likely Target Architecture
+Le système d’agents n’est plus un plan futur : deux agents spécialisés sont
+implémentés et activés par défaut.
 
 ```text
-user
-  -> main assistant
-  -> optional handoff
-  -> device agent
-  -> result back to main assistant
-  -> final answer to user
+Utilisateur
+  -> Nova, assistant principal
+  -> agent-planner (optionnel)
+  -> device-agent (optionnel)
+  -> Nova
+  -> Utilisateur
 ```
 
-## UI Direction
+Nova reste l’unique orchestrateur. Les agents ne s’appellent pas entre eux.
 
-La navigation `Agents` existe deja dans `AppSidebar`.
+## Nova
 
-Ce qui est prevu plus tard :
-- une liste d'agents
-- une fiche de configuration par agent
-- une vue du role / mission / tools / statut
-- des permissions et regles plus fines par agent
+Responsabilités :
 
-## Data Needed Per Agent
+- maintenir la conversation utilisateur ;
+- décider de répondre ou déléguer ;
+- interpréter le résultat d’un agent ;
+- limiter le tour à quatre cycles ;
+- produire la réponse finale.
 
-Format cible probable :
-- `id`
-- `name`
-- `description`
-- `mission`
-- `instructions`
-- `capabilities`
-- `tools`
-- `handoffTargets`
-- `requiresApprovalFor`
+Nova reçoit tous les messages visibles du tour dans le format JSON interne.
 
-## Constraints
+## Agent Planner
 
-Le systeme d'agents devra respecter les decisions deja prises :
-- orchestration dans le `main`
-- renderer simple et declaratif
-- messages Nova structures
-- workflow `device` tracable dans les logs
+ID : `agent-planner`.
 
-## Current Device Workflow
+Mission :
 
-Workflow actuel :
-1. l'utilisateur parle a l'assistant principal
-2. l'assistant peut repondre avec `to:"device"`
-3. Nova cree une nouvelle conversation `assistant <-> device-agent`
-4. le `device-agent` verifie `permissions.json`
-5. si la commande est inconnue, Nova injecte un message systeme dans la conversation principale
-6. l'utilisateur choisit `Oui`, `Oui permanent` ou `Non`
-7. le resultat est renvoye a l'assistant principal
-8. l'execution est enregistree dans `historique.json`
+- analyser une demande non triviale ;
+- identifier un blocage ou une information manquante ;
+- proposer une seule prochaine étape atomique ;
+- recommander `device-agent` ou aucune délégation.
 
-## Do Later, Not Now
+Contraintes :
 
-Ne pas melanger tout de suite avec :
-- resume LLM de conversation
-- multi-provider complet
-- permissions par pattern
-- agent device autonome avec son propre appel LLM
+- aucun shell ;
+- aucun appel direct à un autre agent ;
+- aucune réponse finale utilisateur ;
+- format textuel à labels stricts ;
+- une seule étape, pas un plan complet.
 
-Les prochaines etapes naturelles sont :
-- donner au `device-agent` sa propre generation de commande
-- rafraichir `DeviceAgentPage` en live
-- etendre ensuite le systeme a d'autres agents
+Le Planner est un appel OpenAI distinct utilisant son `contexte.json`.
+
+## Agent Device
+
+ID : `device-agent`.
+
+Mission :
+
+- transformer un objectif en une commande adaptée à la plateforme, si besoin ;
+- classifier la permission ;
+- exécuter une commande locale ;
+- remonter un résultat concis et des détails techniques ;
+- journaliser l’échange.
+
+Modes :
+
+- `command` : commande déjà formée ;
+- `goal` : génération d’une commande puis exécution ;
+- `analysis` existe dans les types mais n’a pas de branche Device spécifique ;
+- `goal` est préféré pour les demandes de haut niveau.
+
+## Cycle et mémoire
+
+Pour un même tour, le registre mémorise l’ID de conversation interne par
+agent. Plusieurs étapes du même agent peuvent donc continuer la même
+conversation interne.
+
+L’historique relie :
+
+- conversation utilisateur ;
+- message déclencheur ;
+- conversation agent ;
+- commande/requête ;
+- résultat et statut.
+
+## Activation
+
+Chaque agent possède `settings.agents[agentId].enabled`.
+
+- Un agent désactivé reste visible dans l’UI.
+- Nova reçoit la liste des agents activés dans son prompt.
+- Un handoff vers un agent désactivé est transformé en réponse d’erreur
+  contrôlée.
+
+## UI
+
+- `PlannerAgentPage` : général, activation, tâches actives, contexte.
+- `DeviceAgentPage` : général, contexte, permissions, historique.
+- `AgentsActivityView` : tâches actives globales et historique récent.
+
+Les pages interrogent périodiquement le main. Elles ne lisent jamais
+directement les fichiers agent.
+
+## Conversations directes
+
+Le backend permet une conversation directe d’origine `assistant-test`, mais
+les pages actuelles n’exposent plus de composer ni de liste de conversations
+internes. Cette surface doit être terminée ou supprimée.
+
+## Compatibilité historique
+
+L’ancien ID `diagnostic-agent` est converti vers Planner dans deux endroits :
+
+- merge du flag d’activation ;
+- parsing d’une réponse provider.
+
+Les fichiers sous `agents/diagnostic-agent/` ne sont pas migrés. Une migration
+de données explicite reste nécessaire.
+
+## Limites actuelles
+
+- Planner et Device utilisent le même modèle/configuration OpenAI que Nova.
+- Pas de budget token ou coût par agent.
+- Pas de structured output provider : respect du format par prompt.
+- Pas de validation réelle du critère de succès du Planner.
+- Pas de récupération de tâche après redémarrage.
+- Pas de queue de stockage agent.
+- Policy Device insuffisante comme frontière de sécurité.
+
+## Direction recommandée
+
+Avant tout troisième agent :
+
+1. tests des formats et du cycle ;
+2. sécurisation Device ;
+3. robustesse de stockage ;
+4. métriques coût/durée/statut ;
+5. décision sur les conversations directes.
+
+Un nouvel agent devra :
+
+- avoir un ID ajouté aux types et settings ;
+- avoir un contexte par défaut ;
+- avoir une stratégie de prompt et parsing explicite ;
+- être routé par Nova ;
+- avoir une UI minimale d’état ;
+- ne pas contourner le registre de tour ni les permissions.

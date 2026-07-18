@@ -1,0 +1,232 @@
+# Registre des risques et de la dette
+
+Ce document distingue les risques avérés dans le code des améliorations
+produit. Les priorités indiquent l’ordre recommandé, pas une estimation
+calendaire.
+
+## P0 — À traiter avant d’élargir les capacités locales
+
+### Policy `device` contournable
+
+`src/main/device/device.policy.ts` classe des chaînes shell avec un parseur
+maison. Il ne modélise pas correctement toutes les constructions shell :
+
+- pipe simple `|` et exécution en arrière-plan `&` ;
+- substitutions `$(...)` et backticks ;
+- options mutantes de commandes classées en lecture (`sed -i`,
+  `find -delete`, `xargs`, etc.) ;
+- sous-commandes Git autres que quatre cas explicitement bloqués ;
+- redirections ou quoting complexes.
+
+Exemple de conséquence : une commande dont le premier exécutable est classé
+lecture seule peut embarquer une écriture ou une suppression secondaire sans
+déclencher la permission attendue.
+
+De plus, `assertCommandAllowed()` ne bloque que chaîne vide et octet nul. La
+policy actuelle est donc un mécanisme UX de demande de permission, pas une
+frontière de sécurité.
+
+Action recommandée :
+
+1. écrire une matrice de tests adversariaux ;
+2. remplacer la classification de chaîne par une approche explicite et
+   restrictive ;
+3. séparer lecture, écriture dans workspace, réseau et action destructive ;
+4. refuser par défaut les constructions non analysables ;
+5. documenter que `/cmd` est une exécution explicite utilisateur qui contourne
+   les permissions agent.
+
+### Absence de tests comportementaux
+
+Le projet n’a aucun runner de test ni script `test`. Les fichiers de test sont
+vides. Les composants les plus sensibles (`device.policy`, stockage,
+orchestrateur, parser provider) ne sont donc protégés par aucune régression
+automatique.
+
+Action recommandée : commencer par des tests unitaires Node sur la policy, le
+parser OpenAI, le planner, la sérialisation et les reducers de conversation,
+avant les tests UI.
+
+## P1 — Risques de données, sécurité et cohérence produit
+
+### Écritures non atomiques et erreurs silencieuses
+
+`readJsonFile` et la lecture des settings absorbent toute erreur et retournent
+`null`. Les writes utilisent directement `writeFile`, sans fichier temporaire
+ni renommage atomique.
+
+Une coupure pendant une écriture peut produire un JSON invalide. Au prochain
+chargement, un message illisible peut disparaître de l’état puis être supprimé
+du disque lors de l’auto-sauvegarde du renderer.
+
+Action recommandée : writes atomiques, journal d’erreur visible, sauvegarde de
+secours et refus de réécrire automatiquement un état partiellement récupéré.
+
+### Concurrence du stockage agent
+
+La sauvegarde du chat principal possède une queue. Les écritures des
+conversations et de l’historique agents n’en ont pas. Deux tâches concurrentes
+sur un même agent peuvent charger le même état puis écraser mutuellement une
+entrée.
+
+Action recommandée : queue par espace agent ou couche transactionnelle
+commune.
+
+### Emplacement par défaut en application packagée
+
+`settings.service.ts` utilise le dossier de l’exécutable lorsque l’application
+est packagée. Ce dossier n’est pas un emplacement de données utilisateur
+portable et peut être non inscriptible ou invalidé par une mise à jour.
+
+Action recommandée : migrer les données vers `app.getPath("userData")`, avec
+une stratégie explicite de migration depuis les chemins actuels.
+
+### Clé API et traces en clair
+
+La clé OpenAI est stockée en clair dans `settings.json`. Les requêtes et
+réponses provider complètes sont persistées dans `apis.json`.
+
+Action recommandée : coffre de secrets OS pour la clé, politique de rétention
+et option de désactivation/redaction des traces.
+
+### Validation IPC insuffisante
+
+Les types TypeScript ne valident rien à l’exécution. Les handlers acceptent des
+IDs, chemins et objets issus du renderer sans schéma runtime. Les IDs de
+conversation sont ensuite utilisés dans des chemins de fichiers.
+
+Action recommandée : valider tous les payloads IPC, borner les chaînes,
+normaliser les IDs et vérifier que les chemins résolus restent dans leur
+racine.
+
+### Durcissement Electron incomplet
+
+`index.html` ne définit pas de Content Security Policy. La fenêtre ne rend pas
+explicites les choix `contextIsolation`, `sandbox` et `nodeIntegration`, et
+aucune règle de navigation/nouvelle fenêtre n’est installée.
+
+Action recommandée : configuration explicite, CSP stricte et blocage des
+navigations externes non approuvées.
+
+### Sémantique de refus trompeuse
+
+Le bouton de permission `Non` enregistre une règle `deny` permanente pour les
+commandes classées `ask`. L’UI ne dit pas que le refus sera mémorisé.
+
+Action recommandée : faire de `Non` un refus ponctuel ou renommer l’action et
+ajouter une action distincte “Toujours refuser”.
+
+### Providers preview incohérents
+
+L’UI permet de sauvegarder Anthropic, Google, Mistral, Ollama ou LM Studio
+comme provider actif sans configuration complète. `runTurn` utilise malgré
+tout OpenAI.
+
+Action recommandée : empêcher l’activation d’un provider non implémenté ou
+introduire une vraie abstraction de provider.
+
+### Sauvegarde des settings couplée au réseau
+
+Quand OpenAI est le provider actif, toute validation du panneau Settings teste
+d’abord la connexion OpenAI, même si seul un chemin local a changé. Une panne
+réseau ou une clé absente empêche donc d’enregistrer les chemins. Le test de
+connexion n’a pas de timeout explicite.
+
+Le validateur exige le fichier settings et le dossier conversations, mais pas
+`agentsDirectory`.
+
+Action recommandée : validation par section, sauvegarde locale indépendante du
+test provider, timeout/abort et validation de tous les chemins.
+
+### Migration `diagnostic-agent` incomplète
+
+Le code convertit l’ancien flag et les réponses vers `agent-planner`, mais ne
+migre ni ne masque complètement l’ancienne clé de settings, ni le dossier de
+données `diagnostic-agent`.
+
+Action recommandée : migration idempotente avec sauvegarde et journal.
+
+### Masquage des messages internes trop large
+
+`hideInternalConversations` filtre tous les messages `device`, y compris le
+résultat visible d’un `/cmd` lancé directement par l’utilisateur.
+
+Action recommandée : distinguer messages internes d’agent et résultat
+explicitement demandé par l’utilisateur.
+
+### Exécution interactive fragile
+
+- timeout global fixe de 15 secondes, y compris en attente de saisie ;
+- détection de prompt par expressions régulières sur stdout/stderr ;
+- absence de pseudo-terminal ;
+- kill Windows potentiellement limité au processus shell et non à tout
+  l’arbre enfant ;
+- sortie accumulée sans plafond mémoire.
+
+Action recommandée : état d’attente qui suspend le timeout, PTY si nécessaire,
+kill d’arbre et limite de sortie.
+
+## P2 — Maintenabilité et dette fonctionnelle
+
+### Fichiers denses malgré les règles
+
+Plusieurs fichiers dépassent largement l’objectif de 100 lignes :
+
+- `agent-orchestrator.service.ts` ;
+- `agent-storage.service.ts` ;
+- `device.policy.ts` ;
+- `DeviceAgentPage.tsx` ;
+- `ai.orchestrator.cycle.ts`.
+
+Le seuil de `CODING_GUIDELINES.md` doit être compris comme une cible, pas comme
+l’état actuel. Découper uniquement avec des frontières métier claires.
+
+### Types partagés couplés au renderer
+
+`src/shared/*.types.ts` et le main importent
+`src/renderer/types/chat.types.ts`. Le contrat transversal devrait vivre sous
+`src/shared`.
+
+### APIs et code orphelins
+
+- handlers directs `nova:device:*` non exposés dans le preload ;
+- API de conversations directes agents exposée mais sans UI ;
+- ancien `src/renderer/services/chat.service.ts` mock non utilisé ;
+- `settings.reset` exposé mais sans action UI ;
+- état `streaming` et curseur présents sans streaming provider ;
+- traces retournées lors de la génération de commande Device non rattachées au
+  message ni à l’historique.
+
+Décider pour chaque surface : terminer, tester et exposer, ou supprimer.
+
+### Démarrage artificiellement lent
+
+L’écran de boot contient plusieurs délais simulés et impose plus de quatre
+secondes avant l’accès au workspace.
+
+### Configuration Webpack partagée par mutation
+
+`webpack.renderer.config.ts` pousse des règles dans le tableau importé depuis
+`webpack.rules.ts`. Comme `mainConfig` et `rendererConfig` partagent cette
+référence, l’ordre d’import influence les deux configurations.
+
+### Documentation visuelle obsolète
+
+`docs/screenshot.png` montre une version antérieure sans la section Agents
+actuelle. Elle ne doit pas servir de référence fonctionnelle.
+
+### Hygiène de distribution incomplète
+
+`package.json` conserve une description placeholder, aucun script CI n’est
+présent et le dépôt ne contient pas de fichier `LICENSE` malgré la déclaration
+`MIT`.
+
+## Ce qui est sain aujourd’hui
+
+- TypeScript `--noEmit` passe.
+- ESLint passe.
+- Le packaging Windows x64 passe.
+- Les domaines main/renderer/preload sont identifiables.
+- Le contrat événementiel du chat est simple.
+- La persistance éclatée facilite l’inspection manuelle.
+- L’arrêt de tour regroupe abort provider, permission et commandes actives.

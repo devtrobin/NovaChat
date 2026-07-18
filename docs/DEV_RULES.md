@@ -79,6 +79,9 @@ Eviter :
 Avant commit significatif :
 1. `npm exec tsc -- --noEmit`
 2. `npm run lint`
+3. lancer la suite de tests quand elle aura ete ajoutee
+
+Sous PowerShell avec execution de scripts desactivee, utiliser `npm.cmd`.
 
 Si le chantier touche un flux critique, verifier aussi manuellement :
 - envoi d'un message
@@ -86,13 +89,15 @@ Si le chantier touche un flux critique, verifier aussi manuellement :
 - navigation sidebar
 - si concerne : `/cmd` ou `device`
 
-## Agent Rules For Future Work
+## Agent Rules
 
-Quand le systeme d'agents arrivera :
-- ne pas le greffer en contournant l'orchestrateur `main`
-- garder l'agent principal comme chef d'orchestre
-- garder l'agent `device` specialise
-- brancher les permissions sur ce workflow, pas en parallele
+Le systeme d'agents existe :
+- garder Nova comme chef d'orchestre
+- garder `agent-planner` consultatif
+- garder `device-agent` specialise et atomique
+- brancher tout nouvel agent sur le registre de tour du `main`
+- ne pas contourner le workflow de permissions
+- lire `docs/RISKS.md` avant toute extension de `device`
 
 ## When In Doubt
 
@@ -100,4 +105,5 @@ En cas d'incertitude :
 1. lire `docs/ARCHITECTURE.md`
 2. lire `docs/WORKFLOWS.md`
 3. lire `docs/PROJECT_STATE.md`
-4. choisir l'option la plus simple qui preserve l'architecture actuelle
+4. lire `docs/RISKS.md`
+5. choisir l'option la plus simple qui preserve l'architecture actuelle

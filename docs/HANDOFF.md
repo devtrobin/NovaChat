@@ -1,97 +1,81 @@
-# Handoff
+# Handoff express
 
-## Purpose
+## Où en est le projet ?
 
-Ce document sert de point de reprise court apres une interruption, une compression de contexte, ou un changement d'agent.
+NovaChat est un Electron + React fonctionnel avec :
 
-## Current Branch Status
+- chat local persistant ;
+- OpenAI Responses API ;
+- assistant principal Nova ;
+- `agent-planner` pour la prochaine étape atomique ;
+- `device-agent` pour générer/exécuter une commande locale ;
+- permissions, historique, activité et arrêt de tâches.
 
-Etat attendu au moment de la redaction :
-- grosse refacto structurelle terminee
-- base stable
-- `tsc` et `lint` doivent passer
-- premiere iteration `device-agent` fonctionnelle
+TypeScript, lint et packaging Windows x64 passent au 18 juillet 2026.
 
-## What Was Just Finished
+## Ce qu’il faut lire
 
-Chantiers recents termines :
-- architecture renderer en `WorkspaceLayout` + `AppSidebar` + pages dediees
-- remplacement des anciens concepts `Modal` par `SettingsPanel` / `SettingsPage`
-- decoupage du `main` par domaines :
-  - `ai`
-  - `device`
-  - `chat`
-  - `ipc`
-  - `window`
-- decoupage des composants de messages
-- creation de fichiers de contexte dans `docs/`
-- premiere vue `Agents` stable
-- premiere boucle `assistant -> device-agent -> permission -> execution`
+1. [PROJECT_STATE.md](PROJECT_STATE.md)
+2. [RISKS.md](RISKS.md)
+3. [ARCHITECTURE.md](ARCHITECTURE.md)
+4. [NEXT_STEPS.md](NEXT_STEPS.md)
 
-## Current Safe Assumptions
+Pour un flux précis, consulter [WORKFLOWS.md](WORKFLOWS.md). Pour les fichiers
+et contrats, consulter [DATA_MODEL.md](DATA_MODEL.md).
 
-On peut considerer comme stables :
-- stockage local des conversations
-- settings OpenAI
-- pipeline `/cmd`
-- pipeline `assistant -> device-agent -> assistant`
-- navigation UI globale
-- workflow de permission exact par commande
-- stockage local du `device-agent`
+## Première action recommandée
 
-## What Should Be Done Next
+Mettre en place un runner de tests et verrouiller
+`src/main/device/device.policy.ts` avec une matrice adversariale. Ne pas
+étendre les commandes autorisées avant cette étape.
 
-Priorite produit recommandee :
-1. consolider `device-agent`
-2. ameliorer la lisibilite et le rafraichissement de `DeviceAgentPage`
-3. ensuite seulement etendre le systeme a d'autres agents
+## Commandes de départ
 
-## Next Technical Entry Points
+```powershell
+git status --short
+npm.cmd ci
+npm.cmd exec tsc -- --noEmit
+npm.cmd run lint
+```
 
-Pour commencer le systeme d'agents :
-- [docs/AGENTS_PLAN.md](/Users/trobin/workspace/nova-chat/docs/AGENTS_PLAN.md)
-- [src/renderer/pages/AgentsPage/AgentsPage.tsx](/Users/trobin/workspace/nova-chat/src/renderer/pages/AgentsPage/AgentsPage.tsx)
-- [src/renderer/pages/AgentsPage/DeviceAgentPage/DeviceAgentPage.tsx](/Users/trobin/workspace/nova-chat/src/renderer/pages/AgentsPage/DeviceAgentPage/DeviceAgentPage.tsx)
-- [src/main/agents/agent-storage.service.ts](/Users/trobin/workspace/nova-chat/src/main/agents/agent-storage.service.ts)
-- [src/main/ai/ai.permission.service.ts](/Users/trobin/workspace/nova-chat/src/main/ai/ai.permission.service.ts)
+Utiliser `npm` au lieu de `npm.cmd` hors PowerShell Windows si approprié.
 
-## What Not To Reopen Without Reason
+## Invariants
 
-Eviter de repartir en grosse refacto sur :
-- layout global
-- nommage `WorkspaceLayout`
-- nommage `AppSidebar`
-- nommage `SettingsPanel`
-- arborescence `main/ai`, `main/device`, `main/chat`
+- orchestration IA et agents dans le main ;
+- shell uniquement dans `src/main/device` ;
+- renderer uniquement via `window.nova` ;
+- stockage des conversations éclaté par message ;
+- Planner consultatif, Device atomique, Nova orchestrateur ;
+- ne pas traiter la policy actuelle comme un sandbox.
 
-Ne reouvrir ces sujets que si le systeme d'agents casse vraiment l'architecture.
+## Données à ne pas toucher
 
-## Known Risks
+Les chemins suivants sont des données locales ou artefacts ignorés :
 
-Risques encore presents :
-- le contexte global du projet est large
-- le sujet multi-agents peut reintroduire de la complexite rapidement
-- `device` reste un sujet sensible cote securite / UX
+```text
+settings.json
+conversations.json
+conversations/
+agents/
+.webpack/
+out/
+```
 
-## Before Starting A New Large Task
+`settings.json` peut contenir une clé API en clair. Ne jamais la journaliser.
 
-Checklist :
-1. relire `docs/ARCHITECTURE.md`
-2. relire `docs/PROJECT_STATE.md`
-3. relire `docs/AGENTS_PLAN.md`
-4. lancer `npm exec tsc -- --noEmit`
-5. lancer `npm run lint`
-6. cadrer le chantier en une responsabilite principale
+## Pièges immédiats
 
-## Commit Rhythm Recommendation
+- pas de tests malgré la présence de fichiers `*.test.tsx` ;
+- `activeProvider` n’effectue pas encore de routage multi-provider ;
+- `diagnostic-agent` est un ancien ID partiellement migré ;
+- le refus “Non” d’une permission peut devenir permanent ;
+- les writes JSON ne sont pas atomiques ;
+- les API de conversations directes agent n’ont pas d’UI ;
+- la capture du README historique n’est plus représentative.
 
-Pour les prochains gros sujets :
-- faire des commits plus petits
-- un commit par etape logique
-- eviter les megacommits de refacto + produit melanges
+## Phrase de reprise
 
-## Recovery Sentence
-
-Si un autre agent reprend ce projet, la phrase de demarrage recommandee est :
-
-> Lire `docs/ARCHITECTURE.md`, `docs/PROJECT_STATE.md` et `docs/AGENTS_PLAN.md`, puis reprendre le chantier agents sans relancer de refacto globale.
+> Reprendre NovaChat au socle : ajouter les tests de policy et de stockage,
+> fermer les contournements shell, puis rendre la persistance atomique avant
+> toute nouvelle capacité agent.
