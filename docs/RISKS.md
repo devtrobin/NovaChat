@@ -42,8 +42,9 @@ Actions restantes :
 ### Couverture de tests encore limitée
 
 Le socle Vitest couvre désormais la policy, les parsers OpenAI/Planner, le
-stockage chat, les commandes slash et les événements de conversation. Les
-126 tests réussissent, dont 88 cas de policy Device.
+stockage chat, les commandes slash, les messages de tâche agent et les
+événements de conversation. Les 137 tests réussissent, dont 88 cas de policy
+Device.
 
 Il manque encore les composants React, l’orchestrateur complet, les
 permissions asynchrones, le registre d’arrêt et les parcours end-to-end.
@@ -171,9 +172,8 @@ kill d’arbre et limite de sortie.
 
 ### Fichiers denses malgré les règles
 
-Plusieurs fichiers dépassent largement l’objectif de 100 lignes :
+Plusieurs fichiers dépassent encore largement l’objectif de 100 lignes :
 
-- `agent-orchestrator.service.ts` ;
 - `agent-storage.service.ts` ;
 - `DeviceAgentPage.tsx` ;
 - `ai.orchestrator.cycle.ts`.
@@ -184,6 +184,11 @@ l’état actuel. Découper uniquement avec des frontières métier claires.
 `device.policy.ts`, auparavant à plus de 600 lignes, a été découpé en une
 façade publique et cinq modules cohérents : règles spécialisées, évaluation de
 segment, chemins, tokens et contrat de décision.
+
+`agent-orchestrator.service.ts`, auparavant à plus de 600 lignes, est désormais
+une façade d’environ 110 lignes. Les phases Planner, Device, permission,
+résolution de commande, messages et conversations directes vivent dans des
+modules dédiés.
 
 ### Types partagés couplés au renderer
 

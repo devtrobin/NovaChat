@@ -150,9 +150,12 @@ Deux agents sont définis.
 - demande éventuellement une décision à l’utilisateur ;
 - exécute la commande et résume le résultat.
 
-`agent-orchestrator.service.ts` concentre encore une grande partie de cette
-logique. `agent-storage.service.ts` conserve contexte, permissions, historique
-et conversations internes.
+`agent-orchestrator.service.ts` coordonne le cycle de vie commun. Les phases
+sont séparées entre `agent-task.planner.ts`, `agent-task.device.ts`,
+`agent-task.device-command.ts`, `agent-task.device-permission.ts`,
+`agent-task.messages.ts` et `agent-direct-conversation.service.ts`.
+`agent-storage.service.ts` conserve contexte, permissions, historique et
+conversations internes.
 
 ### Domaine `device`
 
