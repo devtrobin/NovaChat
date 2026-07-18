@@ -4,12 +4,13 @@ import {
   loadSettingsFromDisk,
   saveSettingsToDisk,
 } from "../settings/settings.service";
-import { AppSettings } from "../../shared/settings.types";
+import { parseAppSettings } from "../validation/ipc-payload.validation";
 
 export function registerSettingsHandlers(ipcMain: IpcMain): void {
   ipcMain.handle("nova:settings:load", async () => loadSettingsFromDisk());
 
-  ipcMain.handle("nova:settings:test", async (_event, settings: AppSettings) => {
+  ipcMain.handle("nova:settings:test", async (_event, payload: unknown) => {
+    const settings = parseAppSettings(payload);
     if (settings.activeProvider !== "openai") {
       return {
         message: "Provider non supporte.",
@@ -20,7 +21,8 @@ export function registerSettingsHandlers(ipcMain: IpcMain): void {
     return testOpenAIConnection(settings.openai);
   });
 
-  ipcMain.handle("nova:settings:save", async (_event, settings: AppSettings) => {
+  ipcMain.handle("nova:settings:save", async (_event, payload: unknown) => {
+    const settings = parseAppSettings(payload);
     await saveSettingsToDisk(settings);
     return settings;
   });

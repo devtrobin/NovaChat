@@ -2,6 +2,7 @@ import { app } from "electron";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { AgentSettingsMap, AppSettings } from "../../shared/settings.types";
+import { parseAppSettings } from "../validation/ipc-payload.validation";
 
 function getApplicationDirectory(): string {
   return app.isPackaged ? path.dirname(process.execPath) : process.cwd();
@@ -24,7 +25,7 @@ export function getReferenceAgentsDirectory(): string {
 }
 
 export function createDefaultSettings(): AppSettings {
-  return {
+  return parseAppSettings({
     activeProvider: "openai",
     agents: createDefaultAgentSettings(),
     hideInternalConversations: false,
@@ -40,7 +41,7 @@ export function createDefaultSettings(): AppSettings {
       provider: "openai",
     },
     previewMode: false,
-  };
+  });
 }
 
 function createDefaultAgentSettings(): AgentSettingsMap {
@@ -54,7 +55,7 @@ function mergeSettings(partial: unknown): AppSettings {
   const defaults = createDefaultSettings();
   const parsed = (partial ?? {}) as Partial<AppSettings>;
 
-  return {
+  return parseAppSettings({
     ...defaults,
     ...parsed,
     agents: {
@@ -78,7 +79,7 @@ function mergeSettings(partial: unknown): AppSettings {
       ...defaults.openai,
       ...parsed.openai,
     },
-  };
+  });
 }
 
 async function readSettingsFile(filePath: string): Promise<AppSettings | null> {

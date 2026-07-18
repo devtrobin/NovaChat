@@ -1,25 +1,25 @@
-import path from "node:path";
+import { resolvePathWithinRoot } from "../filesystem/safe-path";
 
 export function getAgentDirectory(rootDirectory: string, agentId: string): string {
-  return path.join(rootDirectory, agentId);
+  return resolvePathWithinRoot(rootDirectory, agentId);
 }
 
 export function getAgentContextPath(rootDirectory: string, agentId: string): string {
-  return path.join(getAgentDirectory(rootDirectory, agentId), "contexte.json");
+  return resolvePathWithinRoot(rootDirectory, agentId, "contexte.json");
 }
 
 export function getAgentPermissionsPath(rootDirectory: string, agentId: string): string {
-  return path.join(getAgentDirectory(rootDirectory, agentId), "permissions.json");
+  return resolvePathWithinRoot(rootDirectory, agentId, "permissions.json");
 }
 
 export function getAgentHistoryPath(rootDirectory: string, agentId: string): string {
-  return path.join(getAgentDirectory(rootDirectory, agentId), "historique.json");
+  return resolvePathWithinRoot(rootDirectory, agentId, "historique.json");
 }
 
 export function getAgentConversationsDirectory(rootDirectory: string, agentId: string): string {
-  return path.join(getAgentDirectory(rootDirectory, agentId), "conversations");
+  return resolvePathWithinRoot(rootDirectory, agentId, "conversations");
 }
 
 export function getAgentConversationsIndexPath(rootDirectory: string, agentId: string): string {
-  return path.join(getAgentConversationsDirectory(rootDirectory, agentId), "conversations.json");
+  return resolvePathWithinRoot(rootDirectory, agentId, "conversations", "conversations.json");
 }

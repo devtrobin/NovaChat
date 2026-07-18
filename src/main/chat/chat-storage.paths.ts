@@ -1,5 +1,5 @@
-import path from "node:path";
 import { ChatMessage } from "../../shared/chat.types";
+import { resolvePathWithinRoot } from "../filesystem/safe-path";
 
 export function sanitizeTimestamp(value: string): string {
   return value
@@ -9,12 +9,13 @@ export function sanitizeTimestamp(value: string): string {
 }
 
 export function getConversationDirectory(rootDirectory: string, conversationId: string): string {
-  return path.join(rootDirectory, conversationId);
+  return resolvePathWithinRoot(rootDirectory, conversationId);
 }
 
 export function getMessageDirectory(rootDirectory: string, conversationId: string, message: ChatMessage): string {
-  return path.join(
-    getConversationDirectory(rootDirectory, conversationId),
+  return resolvePathWithinRoot(
+    rootDirectory,
+    conversationId,
     `${sanitizeTimestamp(message.createdAt)}__${message.id}`,
   );
 }

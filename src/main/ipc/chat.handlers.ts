@@ -7,13 +7,15 @@ import {
 } from "../settings/settings.service";
 import { PersistedChatState } from "../../shared/chat.types";
 import { createDefaultChatState } from "../../renderer/services/conversation.service";
+import { parsePersistedChatState } from "../validation/ipc-payload.validation";
 
 export function registerChatHandlers(ipcMain: IpcMain): void {
   let chatSaveQueue = Promise.resolve();
 
   ipcMain.handle("nova:chat:load", async () => loadChatStateFromDisk());
 
-  ipcMain.handle("nova:chat:save", async (_event, state: PersistedChatState) => {
+  ipcMain.handle("nova:chat:save", async (_event, payload: unknown) => {
+    const state = parsePersistedChatState(payload);
     chatSaveQueue = chatSaveQueue.then(() => saveChatStateToDisk(state));
     await chatSaveQueue;
   });
