@@ -5,7 +5,7 @@ import {
   getReferenceConversationsDirectory,
   getReferenceConversationsPath,
 } from "../settings/settings.service";
-import { PersistedChatState } from "../../renderer/types/chat.types";
+import { PersistedChatState } from "../../shared/chat.types";
 import { createDefaultChatState } from "../../renderer/services/conversation.service";
 
 export function registerChatHandlers(ipcMain: IpcMain): void {

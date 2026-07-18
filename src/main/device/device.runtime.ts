@@ -1,6 +1,6 @@
 import type { ChildProcess } from "node:child_process";
 import { spawn } from "node:child_process";
-import { DeviceCommandResult } from "../../renderer/types/chat.types";
+import { DeviceCommandResult } from "../../shared/chat.types";
 import { buildProgress, detectInputRequest } from "./device.progress";
 import { registerRunningCommand, unregisterRunningCommand } from "./device.registry";
 import { createPendingCommandResult } from "./device.results";

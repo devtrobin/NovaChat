@@ -1,7 +1,7 @@
 import { Dirent } from "node:fs";
 import { mkdir, readdir, rm } from "node:fs/promises";
 import path from "node:path";
-import { PersistedChatState } from "../../renderer/types/chat.types";
+import { PersistedChatState } from "../../shared/chat.types";
 import { readJsonFile, writeJsonFile } from "./chat-storage.io";
 import {
   getConversationDirectory,

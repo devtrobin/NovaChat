@@ -1,4 +1,4 @@
-import { ChatMessage } from "../../renderer/types/chat.types";
+import { ChatMessage } from "../../shared/chat.types";
 import { AgentId, AgentTaskRequest, AgentTaskResult } from "../../shared/agent.types";
 import { AppSettings } from "../../shared/settings.types";
 import type { PipelineStage } from "../ai/ai.orchestrator.cycle.messages";

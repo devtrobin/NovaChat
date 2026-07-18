@@ -1,4 +1,4 @@
-import { ApiRequestRecord, ChatMessage } from "../../renderer/types/chat.types";
+import { ApiRequestRecord, ChatMessage } from "../../shared/chat.types";
 import { AgentId } from "../../shared/agent.types";
 import {
   attachAssistantApiTrace,

@@ -2,9 +2,8 @@
 
 ## Messages Nova
 
-Le type central est `ChatMessage` dans
-`src/renderer/types/chat.types.ts`. Malgré son emplacement sous `renderer`, il
-est aussi importé par `main` et `shared`.
+Le type central est `ChatMessage` dans `src/shared/chat.types.ts`. Il constitue
+le contrat commun importé par `main`, `preload` et `renderer`.
 
 Champs obligatoires :
 

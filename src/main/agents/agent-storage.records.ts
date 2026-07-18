@@ -6,7 +6,7 @@ import {
   ChatMessage,
   Conversation,
   PersistedChatState,
-} from "../../renderer/types/chat.types";
+} from "../../shared/chat.types";
 
 type AgentExchangeStatus = "denied" | "error" | "interrupted" | "partial-success" | "success";
 

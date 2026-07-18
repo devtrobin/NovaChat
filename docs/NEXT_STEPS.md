@@ -77,7 +77,9 @@ Découper sans refonte globale :
    dédiés aux règles, segments, chemins, tokens et types ;
 4. ~~`DeviceAgentPage.tsx` en vues d’onglets ;~~ terminé avec un hook
    contrôleur et des vues General, Contexte, Permissions et Historique ;
-5. déplacer les types de chat transversaux vers `src/shared`.
+5. ~~déplacer les types de chat transversaux vers `src/shared` ;~~ terminé,
+   `shared/chat.types.ts` est désormais la source unique des contrats de
+   message, conversation et commande.
 
 Corriger aussi la mutation du tableau de règles Webpack.
 

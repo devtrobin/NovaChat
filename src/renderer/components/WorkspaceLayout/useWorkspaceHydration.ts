@@ -2,7 +2,7 @@ import React from "react";
 import { AgentSettingsMap } from "../../../shared/settings.types";
 import { loadStoredChatState, saveStoredChatState } from "../../services/conversation.service";
 import { createConversation, markConversationAsRead } from "../../services/chat/chat.service";
-import { Conversation } from "../../types/chat.types";
+import { Conversation } from "../../../shared/chat.types";
 
 type UseWorkspaceHydrationArgs = {
   activeConversationId: string | null;

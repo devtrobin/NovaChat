@@ -2,7 +2,7 @@ import { ChildProcess } from "node:child_process";
 import {
   DeviceCommandProgress,
   DeviceCommandResult,
-} from "../../renderer/types/chat.types";
+} from "../../shared/chat.types";
 
 export type ProgressListener = (progress: DeviceCommandProgress) => void;
 

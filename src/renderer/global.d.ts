@@ -1,4 +1,4 @@
-import { PersistedChatState } from "./types/chat.types";
+import { PersistedChatState } from "../shared/chat.types";
 import {
   ChatTurnEvent,
   RunTurnRequest,

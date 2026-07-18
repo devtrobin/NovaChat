@@ -1,4 +1,4 @@
-import { ChatMessage } from "../../renderer/types/chat.types";
+import { ChatMessage } from "../../shared/chat.types";
 import { appendLifecycleLog } from "./ai.orchestrator.runtime";
 import { Emit } from "./ai.orchestrator.types";
 

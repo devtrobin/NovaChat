@@ -1,5 +1,5 @@
 import { PermissionDecision } from "../../shared/ai.types";
-import { ChatMessage } from "../../renderer/types/chat.types";
+import { ChatMessage } from "../../shared/chat.types";
 import { createPermissionRequestSystemMessage, createPermissionResolutionSystemMessage } from "./ai.message-factory";
 import { Emit } from "./ai.orchestrator.types";
 import { clearPendingPermissionRequest, setPendingPermissionRequest } from "./ai.turn-registry";

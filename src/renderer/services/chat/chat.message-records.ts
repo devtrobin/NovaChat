@@ -1,4 +1,4 @@
-import { ChatMessage } from "../../types/chat.types";
+import { ChatMessage } from "../../../shared/chat.types";
 
 export function removeMessage(messages: ChatMessage[], messageId: string): ChatMessage[] {
   return messages.filter((message) => message.id !== messageId);

@@ -132,7 +132,7 @@ mais doit rester traité comme un secret.
 - Ne pas modifier les données ignorées locales pour “nettoyer” le dépôt.
 - Vérifier `git status --short` avant et après le chantier.
 - Un changement du schéma de message nécessite une mise à jour coordonnée de
-  `renderer/types/chat.types.ts`, `shared`, `preload`, `main` et du stockage.
+  `shared/chat.types.ts`, `preload`, `main`, `renderer` et du stockage.
 - Un changement d’IPC nécessite une mise à jour simultanée du handler, du
   preload et de `renderer/global.d.ts`.
 - Un changement du canal `device` doit inclure des tests de policy avant toute

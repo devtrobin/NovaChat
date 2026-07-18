@@ -1,4 +1,4 @@
-import { DeviceCommandResult, StartedDeviceCommand } from "../../renderer/types/chat.types";
+import { DeviceCommandResult, StartedDeviceCommand } from "../../shared/chat.types";
 
 export function createStartedCommand(
   commandId: string,

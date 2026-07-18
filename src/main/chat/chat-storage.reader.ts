@@ -6,7 +6,7 @@ import {
   ChatMessage,
   MessageLifecycleEntry,
   PersistedChatState,
-} from "../../renderer/types/chat.types";
+} from "../../shared/chat.types";
 import { readJsonFile } from "./chat-storage.io";
 import { getConversationDirectory } from "./chat-storage.paths";
 import { mergeMessageFiles, orderMessages } from "./chat-storage.serialization";

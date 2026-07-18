@@ -1,5 +1,5 @@
 import { buildAgentDefinitions } from "../../services/workspace/workspace.service";
-import { Conversation } from "../../types/chat.types";
+import { Conversation } from "../../../shared/chat.types";
 import { WorkspaceLayoutController } from "./WorkspaceLayout.types";
 import { useWorkspaceConversationActions } from "./useWorkspaceConversationActions";
 import { useWorkspaceEffects } from "./useWorkspaceEffects";

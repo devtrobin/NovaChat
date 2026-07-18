@@ -1,4 +1,4 @@
-import { ChatMessage } from "../../types/chat.types";
+import { ChatMessage } from "../../../shared/chat.types";
 
 export function formatMessageTime(value: string): string {
   return new Intl.DateTimeFormat("fr-FR", {

@@ -1,5 +1,5 @@
 import React from "react";
-import { Conversation } from "../../types/chat.types";
+import { Conversation } from "../../../shared/chat.types";
 import {
   createConversation,
   deleteConversation,

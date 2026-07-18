@@ -1,4 +1,4 @@
-import { ApiRequestRecord } from "../../renderer/types/chat.types";
+import { ApiRequestRecord } from "../../shared/chat.types";
 import { createResponseRecord } from "./openai.client";
 import { NovaResponseParseError, OpenAIRequestError } from "./openai.types";
 

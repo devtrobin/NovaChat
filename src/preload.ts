@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from "electron";
-import { PersistedChatState } from "./renderer/types/chat.types";
+import { PersistedChatState } from "./shared/chat.types";
 import {
   ChatTurnEvent,
   RunTurnRequest,

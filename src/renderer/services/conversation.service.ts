@@ -1,4 +1,4 @@
-import { ChatMessage, Conversation, PersistedChatState } from "../types/chat.types";
+import { ChatMessage, Conversation, PersistedChatState } from "../../shared/chat.types";
 
 const now = new Date().toISOString();
 

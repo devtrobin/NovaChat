@@ -1,4 +1,4 @@
-import { ApiRequestRecord } from "../../renderer/types/chat.types";
+import { ApiRequestRecord } from "../../shared/chat.types";
 
 export async function postOpenAIResponse(
   baseUrl: string,

@@ -1,4 +1,4 @@
-import { Conversation } from "../../types/chat.types";
+import { Conversation } from "../../../shared/chat.types";
 import { SubmitPermissionDecisionRequest } from "../../../shared/ai.types";
 
 export type ConversationViewProps = {

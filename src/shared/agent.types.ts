@@ -1,4 +1,4 @@
-import { PersistedChatState } from "../renderer/types/chat.types";
+import { PersistedChatState } from "./chat.types";
 
 export type AgentId = "agent-planner" | "device-agent";
 export type AgentConversationOrigin = "assistant" | "assistant-test" | "user";

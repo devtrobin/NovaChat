@@ -3,7 +3,7 @@ import {
   ChatMessage,
   MessageLifecycleEntry,
   PersistedChatState,
-} from "../../renderer/types/chat.types";
+} from "../../shared/chat.types";
 import { ConversationIndexEntry, ConversationsIndex } from "./chat-storage.types";
 
 export function toIndex(state: PersistedChatState): ConversationsIndex {

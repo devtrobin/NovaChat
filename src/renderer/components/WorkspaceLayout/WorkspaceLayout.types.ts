@@ -1,6 +1,6 @@
 import { AppSettings } from "../../../shared/settings.types";
 import { SubmitPermissionDecisionRequest } from "../../../shared/ai.types";
-import { Conversation } from "../../types/chat.types";
+import { Conversation } from "../../../shared/chat.types";
 import {
   AgentDefinition,
   ConversationIndicator,

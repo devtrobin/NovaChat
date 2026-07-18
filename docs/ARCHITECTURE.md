@@ -216,13 +216,12 @@ preview et au contexte runtime des agents.
 
 ### Types
 
-- `src/renderer/types/chat.types.ts` : message, conversation, commande ;
+- `src/shared/chat.types.ts` : message, conversation, commande ;
 - `src/shared/ai.types.ts` : requêtes et événements du tour ;
 - `src/shared/agent.types.ts` : tâches et espace de travail agent ;
 - `src/shared/settings.types.ts` : configuration.
 
-Le positionnement du type `ChatMessage` sous `renderer` est une dette :
-`main` et `shared` l’importent aussi.
+Ces contrats sont indépendants des couches `main`, `preload` et `renderer`.
 
 ### Identité des agents
 

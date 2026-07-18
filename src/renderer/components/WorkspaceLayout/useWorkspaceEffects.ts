@@ -1,6 +1,6 @@
 import React from "react";
 import { PREVIEW_PROVIDER_CATEGORIES } from "../../services/workspace/workspace.service";
-import { Conversation } from "../../types/chat.types";
+import { Conversation } from "../../../shared/chat.types";
 import {
   applyChatTurnEvent,
   markConversationAsRead,

@@ -1,4 +1,4 @@
-import { DeviceCommandProgress } from "../../renderer/types/chat.types";
+import { DeviceCommandProgress } from "../../shared/chat.types";
 import { RunningCommand } from "./device.types";
 
 export function detectInputRequest(output: string): { awaitingInput: boolean; inputPlaceholder?: string; inputSecret?: boolean } {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ChatMessage, Conversation } from "../../types/chat.types";
+import { ChatMessage, Conversation } from "../../../shared/chat.types";
 import { applyChatTurnEvent } from "./chat.events";
 
 const initialConversation: Conversation = {

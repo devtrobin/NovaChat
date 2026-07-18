@@ -1,7 +1,7 @@
 import React from "react";
 import { createConversationIndicators } from "../../services/workspace/workspace.service";
 import { loadChatPageState } from "../../services/chat/chat.service";
-import { Conversation } from "../../types/chat.types";
+import { Conversation } from "../../../shared/chat.types";
 import { WorkspaceLayoutController } from "./WorkspaceLayout.types";
 import { AgentSettingsMap } from "../../../shared/settings.types";
 

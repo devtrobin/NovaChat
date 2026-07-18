@@ -1,4 +1,4 @@
-import { ChatMessage, Conversation } from "../types/chat.types";
+import { ChatMessage, Conversation } from "../../shared/chat.types";
 
 type ChatResponse = {
   messages: ChatMessage[];

@@ -1,5 +1,5 @@
 import { ChatTurnEvent } from "../../../shared/ai.types";
-import { Conversation } from "../../types/chat.types";
+import { Conversation } from "../../../shared/chat.types";
 import {
   createConversationRecord,
   replaceConversation,

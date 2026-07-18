@@ -1,4 +1,4 @@
-import { ChatMessage } from "../../renderer/types/chat.types";
+import { ChatMessage } from "../../shared/chat.types";
 
 export type PlannerStepMode = "analysis" | "command" | "goal" | "none";
 export type PlannerRecommendedAgent = "device-agent" | "none";

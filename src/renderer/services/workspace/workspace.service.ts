@@ -6,7 +6,7 @@ import {
   getConversationUnreadCount,
   hasConversationRunningSystemMessage,
 } from "../chat/chat.service";
-import { Conversation } from "../../types/chat.types";
+import { Conversation } from "../../../shared/chat.types";
 import { AgentSettingsMap } from "../../../shared/settings.types";
 
 export const AGENTS = [

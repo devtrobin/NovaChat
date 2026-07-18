@@ -1,5 +1,5 @@
 import path from "node:path";
-import { ChatMessage } from "../../renderer/types/chat.types";
+import { ChatMessage } from "../../shared/chat.types";
 
 export function sanitizeTimestamp(value: string): string {
   return value

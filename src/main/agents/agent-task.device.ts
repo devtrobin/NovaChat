@@ -1,4 +1,4 @@
-import { ChatMessage } from "../../renderer/types/chat.types";
+import { ChatMessage } from "../../shared/chat.types";
 import { recordAgentCommandExchange } from "./agent-storage.service";
 import { resolveDeviceAgentCommand } from "./agent-task.device-command";
 import { resolveDevicePermission } from "./agent-task.device-permission";

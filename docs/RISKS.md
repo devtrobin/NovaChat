@@ -195,11 +195,11 @@ records persistés et les écritures conversationnelles sont séparés.
 `DeviceAgentPage.tsx`, auparavant à plus de 400 lignes, compose désormais un
 hook contrôleur et quatre vues d’onglets dédiées.
 
-### Types partagés couplés au renderer
+### Types partagés couplés au renderer — corrigé
 
-`src/shared/*.types.ts` et le main importent
-`src/renderer/types/chat.types.ts`. Le contrat transversal devrait vivre sous
-`src/shared`.
+Le contrat transversal de chat vit désormais dans `src/shared/chat.types.ts`.
+Le main, le preload et le renderer l’importent sans dépendance vers une couche
+applicative.
 
 ### APIs et code orphelins
 

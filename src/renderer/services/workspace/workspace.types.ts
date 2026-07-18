@@ -1,5 +1,5 @@
 import { AgentId } from "../../../shared/agent.types";
-import { Conversation } from "../../types/chat.types";
+import { Conversation } from "../../../shared/chat.types";
 
 export type WorkspaceSection = "agents" | "conversations" | "settings";
 

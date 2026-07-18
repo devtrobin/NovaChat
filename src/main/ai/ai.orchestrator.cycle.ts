@@ -1,4 +1,4 @@
-import { ApiRequestRecord, ChatMessage } from "../../renderer/types/chat.types";
+import { ApiRequestRecord, ChatMessage } from "../../shared/chat.types";
 import { AgentId, AgentTaskRequest } from "../../shared/agent.types";
 import { AppSettings } from "../../shared/settings.types";
 import { runAgentTask } from "../agents/agent-orchestrator.service";

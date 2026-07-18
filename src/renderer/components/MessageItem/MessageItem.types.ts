@@ -1,4 +1,4 @@
-import { ChatMessage } from "../../types/chat.types";
+import { ChatMessage } from "../../../shared/chat.types";
 import { SubmitPermissionDecisionRequest } from "../../../shared/ai.types";
 
 export type MessageItemProps = {

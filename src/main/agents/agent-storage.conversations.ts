@@ -5,7 +5,7 @@ import {
 import {
   ChatMessage,
   Conversation,
-} from "../../renderer/types/chat.types";
+} from "../../shared/chat.types";
 import { saveChatStateToDirectory } from "../chat/chat-storage.service";
 import { writeJsonFile } from "../chat/chat-storage.io";
 import {

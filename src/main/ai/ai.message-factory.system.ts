@@ -1,4 +1,4 @@
-import { ChatMessage } from "../../renderer/types/chat.types";
+import { ChatMessage } from "../../shared/chat.types";
 import { createLifecycleEntry } from "./ai.orchestrator.runtime";
 
 export function createSystemMessage(content: string, actionLabel?: string): ChatMessage {

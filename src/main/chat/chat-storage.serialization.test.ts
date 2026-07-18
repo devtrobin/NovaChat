@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ChatMessage, PersistedChatState } from "../../renderer/types/chat.types";
+import { ChatMessage, PersistedChatState } from "../../shared/chat.types";
 import {
   mergeMessageFiles,
   orderMessages,

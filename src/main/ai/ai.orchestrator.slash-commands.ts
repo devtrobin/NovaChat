@@ -1,4 +1,4 @@
-import { ChatMessage } from "../../renderer/types/chat.types";
+import { ChatMessage } from "../../shared/chat.types";
 import { RunTurnRequest, RunTurnResult } from "../../shared/ai.types";
 import { AppSettings } from "../../shared/settings.types";
 import { createAssistantMessage, createSystemMessage } from "./ai.message-factory";

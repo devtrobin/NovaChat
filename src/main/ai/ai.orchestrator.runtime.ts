@@ -1,4 +1,4 @@
-import { ChatMessage } from "../../renderer/types/chat.types";
+import { ChatMessage } from "../../shared/chat.types";
 import { RunTurnRequest } from "../../shared/ai.types";
 import { parseSlashCommand } from "./ai.slash-commands";
 

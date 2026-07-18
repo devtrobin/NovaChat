@@ -2,7 +2,7 @@ import {
   AgentHistoryEntry,
   AgentPermissionsFile,
 } from "../../shared/agent.types";
-import { PersistedChatState } from "../../renderer/types/chat.types";
+import { PersistedChatState } from "../../shared/chat.types";
 
 export function createDefaultPermissions(): AgentPermissionsFile {
   return {

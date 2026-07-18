@@ -1,4 +1,4 @@
-import { ChatMessage, DeviceCommandResult } from "../../renderer/types/chat.types";
+import { ChatMessage, DeviceCommandResult } from "../../shared/chat.types";
 import { DevicePolicyError } from "../device/device.types";
 import { createLifecycleEntry } from "./ai.orchestrator.runtime";
 

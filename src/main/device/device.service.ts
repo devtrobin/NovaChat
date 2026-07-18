@@ -1,7 +1,7 @@
 import {
   DeviceCommandResult,
   StartedDeviceCommand,
-} from "../../renderer/types/chat.types";
+} from "../../shared/chat.types";
 import { assertCommandAllowed, normalizeCommand } from "./device.policy";
 import { buildProgress } from "./device.progress";
 import { getRunningCommand } from "./device.registry";

@@ -1,4 +1,4 @@
-import { ApiRequestRecord, ChatMessage } from "../../renderer/types/chat.types";
+import { ApiRequestRecord, ChatMessage } from "../../shared/chat.types";
 import { RunTurnRequest, RunTurnResult } from "../../shared/ai.types";
 import { DevicePolicyError } from "../device/device.types";
 import {
