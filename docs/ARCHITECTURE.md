@@ -154,8 +154,10 @@ Deux agents sont définis.
 sont séparées entre `agent-task.planner.ts`, `agent-task.device.ts`,
 `agent-task.device-command.ts`, `agent-task.device-permission.ts`,
 `agent-task.messages.ts` et `agent-direct-conversation.service.ts`.
-`agent-storage.service.ts` conserve contexte, permissions, historique et
-conversations internes.
+`agent-storage.service.ts` reste la façade publique du stockage agent. Les
+responsabilités sont séparées entre `agent-storage.paths.ts`,
+`agent-storage.recovery.ts`, `agent-storage.workspace.ts`,
+`agent-storage.records.ts` et `agent-storage.conversations.ts`.
 
 ### Domaine `device`
 

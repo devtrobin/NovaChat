@@ -11,7 +11,7 @@ fiabiliser les capacités qu’il possède avant de l’élargir.
 - Policy Device testée avec cas sûrs et cas adversariaux.
 - Parsers OpenAI et Planner testés.
 - Sérialisation, round-trip du stockage et reducers d’événements testés.
-- 137 tests réussissent, dont 88 cas de policy Device.
+- 141 tests réussissent, dont 88 cas de policy Device.
 
 La priorité active reste la phase 2. Les anciens `it.fails` sont désormais des
 tests de régression normaux.
@@ -70,7 +70,9 @@ Découper sans refonte globale :
 1. ~~`agent-orchestrator.service.ts` par agent et par phase ;~~ terminé avec
    une façade d’orchestration et des modules Planner, Device, permission,
    résolution de commande, messages et conversations directes ;
-2. `agent-storage.service.ts` entre chemins, migrations et écritures ;
+2. ~~`agent-storage.service.ts` entre chemins, récupération et écritures ;~~
+   terminé avec une façade et des modules paths, recovery, workspace, records
+   et conversations ;
 3. ~~`device.policy.ts` entre parsing et règles ;~~ terminé avec des modules
    dédiés aux règles, segments, chemins, tokens et types ;
 4. `DeviceAgentPage.tsx` en vues d’onglets ;

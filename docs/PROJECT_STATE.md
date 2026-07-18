@@ -43,7 +43,7 @@ la robustesse du stockage et la gestion des secrets restent des bloqueurs.
 | Conversations directes agent | Backend seulement | IPC exposé, aucune UI active |
 | Providers alternatifs | Placeholder | sélection possible mais non exécutée |
 | Internationalisation | Partielle | écran de boot seulement |
-| Tests automatisés | Socle fonctionnel | 137 réussites, aucun échec attendu |
+| Tests automatisés | Socle fonctionnel | 141 réussites, aucun échec attendu |
 | Packaging Windows x64 | Vérifié | `npm.cmd run package` réussi |
 
 ## Agents actuels
@@ -106,11 +106,11 @@ Le package vérifié est `win32-x64`.
 Le démarrage de développement a également atteint le lancement de
 l’application et du serveur renderer sur `http://localhost:9000`.
 
-La suite comprend 137 cas répartis dans huit fichiers. Elle couvre la policy
+La suite comprend 141 cas répartis dans neuf fichiers. Elle couvre la policy
 Device, les parsers OpenAI/Planner, les commandes slash, les messages de tâche
-agent, le stockage chat et les reducers d’événements. La matrice Device
-comporte 88 cas et tous les anciens contournements connus sont des tests de
-régression normaux.
+agent, les stockages chat/agents et les reducers d’événements. La matrice
+Device comporte 88 cas et tous les anciens contournements connus sont des
+tests de régression normaux.
 
 Non vérifié :
 

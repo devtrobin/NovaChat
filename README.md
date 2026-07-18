@@ -57,7 +57,7 @@ npm.cmd run package
 ```
 
 Au 18 juillet 2026, ces commandes passent sur Windows x64. La suite Vitest
-exécute 137 cas, tous réussis. Les anciens contournements connus de la policy
+exécute 141 cas, tous réussis. Les anciens contournements connus de la policy
 Device sont maintenant couverts par des tests de régression normaux.
 
 ## Configuration OpenAI
