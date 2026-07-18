@@ -162,7 +162,22 @@ Une sortie terminant par `password:`, `mot de passe:`, `passphrase:`, `?` ou
 `:` peut passer le message en `waiting-input`. Le renderer renvoie alors la
 valeur via `submitCommandInput`.
 
-## 7. `/cmd`
+## 7. Commandes slash locales et `/cmd`
+
+Les commandes suivantes sont résolues localement, avant la validation de la
+configuration OpenAI :
+
+```text
+/help [commande]
+/status
+/agents
+/settings
+```
+
+`/aide`, `/commands`, `/?`, `/etat` et `/parametres` sont des alias. Une
+commande slash inconnue produit une aide locale au lieu d’être envoyée au
+provider. `/settings` affiche l’action existante permettant d’ouvrir les
+paramètres.
 
 Un prompt correspondant à `/cmd <commande>` ne fait aucun appel OpenAI et ne
 passe pas par les permissions de l’agent.

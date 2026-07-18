@@ -8,10 +8,12 @@ import {
 } from "./ai.message-factory";
 import {
   isDirectCommand,
+  isSlashCommand,
   shouldSetTitle,
 } from "./ai.orchestrator.runtime";
 import { Emit } from "./ai.orchestrator.types";
 import { runDirectCommandTurn } from "./ai.orchestrator.commands";
+import { runSlashCommandTurn } from "./ai.orchestrator.slash-commands";
 import {
   createPlannerBlockedResponse,
   createPlannerInvalidResponse,
@@ -41,6 +43,9 @@ export async function runTurn(
   const userMessage = createUserMessage(request.userInput);
   if (isDirectCommand(request.userInput)) {
     return runDirectCommandTurn(request, userMessage, emit);
+  }
+  if (isSlashCommand(request.userInput)) {
+    return runSlashCommandTurn(request, settings, userMessage, emit);
   }
 
   if (!settings.openai.apiKey || !settings.openai.model) {

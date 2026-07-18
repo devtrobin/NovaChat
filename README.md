@@ -14,7 +14,9 @@ Fonctionnalités branchées :
 - `agent-planner` pour proposer la prochaine étape atomique ;
 - `device-agent` pour concevoir ou exécuter une commande ;
 - workflow de permission `Oui`, `Oui permanent`, `Non` ;
-- `/cmd` pour une commande explicitement lancée par l’utilisateur ;
+- commandes locales `/help`, `/status`, `/agents` et `/settings` sans appel
+  provider ;
+- `/cmd <commande>` pour une commande explicitement lancée par l’utilisateur ;
 - progression, saisie interactive et arrêt de commande/tour ;
 - contextes, permissions, conversations et historiques agents sur disque ;
 - vue d’activité globale des agents.
@@ -55,7 +57,7 @@ npm.cmd run package
 ```
 
 Au 18 juillet 2026, ces commandes passent sur Windows x64. La suite Vitest
-exécute 97 cas, tous réussis. Les anciens contournements connus de la policy
+exécute 112 cas, tous réussis. Les anciens contournements connus de la policy
 Device sont maintenant couverts par des tests de régression normaux.
 
 ## Configuration OpenAI

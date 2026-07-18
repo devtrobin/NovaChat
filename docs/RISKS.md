@@ -36,7 +36,8 @@ Actions restantes :
 ### Couverture de tests encore limitée
 
 Le socle Vitest couvre désormais la policy, les parsers OpenAI/Planner, le
-stockage chat et les événements de conversation. Les 97 tests réussissent,
+stockage chat, les commandes slash et les événements de conversation. Les
+112 tests réussissent,
 dont 74 cas de policy Device.
 
 Il manque encore les composants React, l’orchestrateur complet, les

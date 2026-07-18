@@ -1,16 +1,22 @@
 import { ChatMessage } from "../../renderer/types/chat.types";
 import { RunTurnRequest } from "../../shared/ai.types";
+import { parseSlashCommand } from "./ai.slash-commands";
 
 export function shouldSetTitle(request: RunTurnRequest): boolean {
   return request.messages.filter((message) => message.from !== "system").length === 0;
 }
 
 export function isDirectCommand(input: string): boolean {
-  return /^\/cmd(?:\s+.+)?$/i.test(input.trim());
+  const parsed = parseSlashCommand(input);
+  return parsed?.definition?.name === "cmd" && Boolean(parsed.args);
 }
 
 export function extractDirectCommand(input: string): string {
-  return input.trim().replace(/^\/cmd\s*/i, "").trim();
+  return parseSlashCommand(input)?.args ?? "";
+}
+
+export function isSlashCommand(input: string): boolean {
+  return parseSlashCommand(input) !== null;
 }
 
 export function createLifecycleEntry(event: string, details?: string, metadata?: Record<string, unknown>) {

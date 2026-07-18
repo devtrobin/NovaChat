@@ -11,7 +11,7 @@ fiabiliser les capacités qu’il possède avant de l’élargir.
 - Policy Device testée avec cas sûrs et cas adversariaux.
 - Parsers OpenAI et Planner testés.
 - Sérialisation, round-trip du stockage et reducers d’événements testés.
-- 97 tests réussissent, dont 74 cas de policy Device.
+- 112 tests réussissent, dont 74 cas de policy Device.
 
 La priorité active reste la phase 2. Les anciens `it.fails` sont désormais des
 tests de régression normaux.

@@ -36,7 +36,7 @@ interdit `npm.ps1`; `npm.cmd` est donc nécessaire.
 ## État de validation au 18 juillet 2026
 
 - `npm.cmd exec tsc -- --noEmit` : réussi.
-- `npm.cmd test` : 97 réussites.
+- `npm.cmd test` : 112 réussites.
 - `npm.cmd run lint` : réussi.
 - `npm.cmd run package` : réussi pour `win32-x64`.
 - `npm.cmd run make` : non exécuté.
@@ -46,7 +46,7 @@ ignoré par Git.
 
 ## Tests
 
-Vitest 4 exécute six fichiers sous `src/` :
+Vitest 4 exécute sept fichiers sous `src/` :
 
 - policy de permissions Device ;
 - parser des réponses OpenAI ;
@@ -54,6 +54,7 @@ Vitest 4 exécute six fichiers sous `src/` :
 - sérialisation du stockage chat ;
 - round-trip du stockage sur un dossier temporaire ;
 - application des événements de conversation.
+- parsing et réponses des commandes slash locales.
 
 La matrice Device comporte 74 cas normaux. Elle couvre commandes de lecture,
 écritures bornées, séparateurs shell, substitutions, wrappers, redirections,

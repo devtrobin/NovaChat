@@ -42,7 +42,7 @@ export default function ChatInput({ isSending, onChange, onStop, onSubmit, value
           rows={1}
           value={value}
         />
-        <p className="chat-input__hint">Entrer pour envoyer · Maj + Entrer pour une nouvelle ligne</p>
+        <p className="chat-input__hint">Entrer pour envoyer · Maj + Entrer pour une nouvelle ligne · /help pour les commandes</p>
       </div>
       {isSending ? (
         <button className="chat-input__button chat-input__button--stop" onClick={() => void onStop()} type="button">

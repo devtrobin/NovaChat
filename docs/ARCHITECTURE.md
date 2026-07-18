@@ -101,7 +101,8 @@ Le tour principal suit cette structure :
 
 ```text
 runTurn
-├── /cmd ? -> runDirectCommandTurn
+├── commande slash locale ? -> runSlashCommandTurn
+├── /cmd <commande> ? -> runDirectCommandTurn
 ├── validation OpenAI
 ├── création du tour annulable
 └── jusqu’à 4 cycles

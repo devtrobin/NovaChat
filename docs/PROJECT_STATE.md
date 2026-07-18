@@ -30,6 +30,7 @@ la robustesse du stockage et la gestion des secrets restent des bloqueurs.
 | Persistance locale | Fonctionnel avec risques | JSON éclaté, non atomique |
 | OpenAI Responses API | Fonctionnel | seul provider réel |
 | Streaming | Non implémenté | type et UI préparés uniquement |
+| Commandes slash locales | Fonctionnel | aide, état, agents et paramètres sans appel provider |
 | `/cmd` utilisateur | Fonctionnel | exécution directe sans permission agent |
 | Device agent | Fonctionnel | commande exacte ou générée depuis un objectif |
 | Planner agent | Fonctionnel | plan textuel structuré, étape atomique |
@@ -42,7 +43,7 @@ la robustesse du stockage et la gestion des secrets restent des bloqueurs.
 | Conversations directes agent | Backend seulement | IPC exposé, aucune UI active |
 | Providers alternatifs | Placeholder | sélection possible mais non exécutée |
 | Internationalisation | Partielle | écran de boot seulement |
-| Tests automatisés | Socle fonctionnel | 97 réussites, aucun échec attendu |
+| Tests automatisés | Socle fonctionnel | 112 réussites, aucun échec attendu |
 | Packaging Windows x64 | Vérifié | `npm.cmd run package` réussi |
 
 ## Agents actuels
@@ -105,10 +106,10 @@ Le package vérifié est `win32-x64`.
 Le démarrage de développement a également atteint le lancement de
 l’application et du serveur renderer sur `http://localhost:9000`.
 
-La suite comprend 97 cas répartis dans six fichiers. Elle couvre la policy
-Device, les parsers OpenAI/Planner, le stockage chat et les reducers
-d’événements. La matrice Device comporte 74 cas et tous les anciens
-contournements connus sont des tests de régression normaux.
+La suite comprend 112 cas répartis dans sept fichiers. Elle couvre la policy
+Device, les parsers OpenAI/Planner, les commandes slash, le stockage chat et
+les reducers d’événements. La matrice Device comporte 74 cas et tous les
+anciens contournements connus sont des tests de régression normaux.
 
 Non vérifié :
 
