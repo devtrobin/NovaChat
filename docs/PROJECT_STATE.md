@@ -29,7 +29,7 @@ la robustesse du stockage et la gestion des secrets restent des bloqueurs.
 | Recherche dans la conversation | Fonctionnel | `Ctrl/Cmd+F`, navigation et surlignage |
 | Persistance locale | Fonctionnel avec risques | JSON éclaté, non atomique |
 | OpenAI Responses API | Fonctionnel | seul provider réel |
-| Streaming | Non implémenté | type et UI préparés uniquement |
+| Streaming | Non implémenté | aucune surface inactive conservée |
 | Commandes slash locales | Fonctionnel | aide, état, agents et paramètres sans appel provider |
 | `/cmd` utilisateur | Fonctionnel | exécution directe sans permission agent |
 | Device agent | Fonctionnel | commande exacte ou générée depuis un objectif |
@@ -40,10 +40,9 @@ la robustesse du stockage et la gestion des secrets restent des bloqueurs.
 | Activité agents | Fonctionnel | polling 1 s + rafraîchissement sur événement |
 | Contexte agent éditable | Fonctionnel | `contexte.json` |
 | Historique agent | Fonctionnel | stockage et vue |
-| Conversations directes agent | Backend seulement | IPC exposé, aucune UI active |
 | Providers alternatifs | Placeholder | sélection possible mais non exécutée |
 | Internationalisation | Partielle | écran de boot seulement |
-| Tests automatisés | Socle fonctionnel | 148 réussites, aucun échec attendu |
+| Tests automatisés | Socle fonctionnel | 154 réussites, aucun échec attendu |
 | Packaging Windows x64 | Vérifié | `npm.cmd run package` réussi |
 
 ## Agents actuels
@@ -98,6 +97,8 @@ npm.cmd test
 npm.cmd exec tsc -- --noEmit
 npm.cmd run lint
 npm.cmd run package
+npm.cmd run check
+npm.cmd run ci
 npm.cmd audit
 npm.cmd audit --omit=dev
 ```
@@ -106,10 +107,11 @@ Le package vérifié est `win32-x64`.
 Le démarrage de développement a également atteint le lancement de
 l’application et du serveur renderer sur `http://localhost:9000`.
 
-La suite comprend 148 cas répartis dans dix fichiers. Elle couvre la policy
-Device, les parsers OpenAI/Planner, les commandes slash, les messages de tâche
-agent, le formatage de la page Device, les stockages chat/agents et les
-reducers d’événements. La matrice Device comporte 88 cas et tous les anciens
+La suite comprend 154 cas répartis dans douze fichiers. Elle couvre la policy
+Device, les parsers OpenAI/Planner, les commandes slash, les handoffs
+assistant-agent, la conservation des traces, les messages de tâche agent, le
+formatage de la page Device, les stockages chat/agents et les reducers
+d’événements. La matrice Device comporte 88 cas et tous les anciens
 contournements connus sont des tests de régression normaux.
 
 Non vérifié :
@@ -141,17 +143,16 @@ Les documents précédents indiquaient notamment que :
 - les fichiers principaux étaient peu denses.
 
 Ces points ne sont plus exacts. Le Planner, la génération de commande, le
-polling d’activité et plusieurs écrans agents sont présents. En revanche,
-plusieurs fichiers dépassent 250 à 600 lignes.
+polling d’activité et plusieurs écrans agents sont présents. Les anciens
+fichiers monolithiques explicitement recensés en P2 ont été découpés selon
+leurs frontières métier.
 
 ## État du dépôt
 
 Le code source audité ne présentait pas de modification suivie avant le
 chantier documentaire. Le dossier `agents/` était déjà non suivi. Les
-artefacts `.webpack/` et `out/` sont ignorés.
-
-La capture `docs/screenshot.png` représente une ancienne version de
-l’interface et ne montre pas les écrans Agents actuels.
+artefacts `.webpack/` et `out/` sont ignorés. La capture historique obsolète a
+été retirée de la documentation.
 
 ## Verdict de reprise
 

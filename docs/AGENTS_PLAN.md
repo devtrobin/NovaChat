@@ -100,11 +100,12 @@ Chaque agent possède `settings.agents[agentId].enabled`.
 Les pages interrogent périodiquement le main. Elles ne lisent jamais
 directement les fichiers agent.
 
-## Conversations directes
+## Conversations internes
 
-Le backend permet une conversation directe d’origine `assistant-test`, mais
-les pages actuelles n’exposent plus de composer ni de liste de conversations
-internes. Cette surface doit être terminée ou supprimée.
+L’orchestrateur crée les conversations internes nécessaires aux tâches et à
+leur historique. Elles sont d’origine `assistant`, ne possèdent pas de
+composer dédié et aucune API de conversation directe n’est exposée au
+renderer.
 
 ## Compatibilité historique
 
@@ -133,8 +134,7 @@ Avant tout troisième agent :
 1. tests des formats et du cycle ;
 2. sécurisation Device ;
 3. robustesse de stockage ;
-4. métriques coût/durée/statut ;
-5. décision sur les conversations directes.
+4. métriques coût/durée/statut.
 
 Un nouvel agent devra :
 

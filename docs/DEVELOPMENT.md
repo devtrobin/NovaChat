@@ -26,6 +26,8 @@ Sous macOS ou Linux, la forme habituelle est `npm ci`.
 | Lancer les tests en watch | `npm.cmd run test:watch` |
 | Vérifier TypeScript | `npm.cmd exec tsc -- --noEmit` |
 | Linter | `npm.cmd run lint` |
+| Tests + TypeScript + lint | `npm.cmd run check` |
+| Validation CI avec packaging | `npm.cmd run ci` |
 | Créer un dossier applicatif | `npm.cmd run package` |
 | Créer un installateur/une archive | `npm.cmd run make` |
 | Publier via Forge | `npm.cmd run publish` |
@@ -36,9 +38,10 @@ interdit `npm.ps1`; `npm.cmd` est donc nécessaire.
 ## État de validation au 18 juillet 2026
 
 - `npm.cmd exec tsc -- --noEmit` : réussi.
-- `npm.cmd test` : 148 réussites.
+- `npm.cmd test` : 154 réussites.
 - `npm.cmd run lint` : réussi.
 - `npm.cmd run package` : réussi pour `win32-x64`.
+- `npm.cmd run ci` : réussi.
 - `npm.cmd run make` : non exécuté.
 
 Le packaging produit actuellement `out/nova-chat-win32-x64/`. `out/` est
@@ -46,7 +49,7 @@ ignoré par Git.
 
 ## Tests
 
-Vitest 4 exécute dix fichiers sous `src/` :
+Vitest 4 exécute douze fichiers sous `src/` :
 
 - policy de permissions Device ;
 - parser des réponses OpenAI ;
@@ -58,6 +61,8 @@ Vitest 4 exécute dix fichiers sous `src/` :
 - formatage des résultats agent et détection des commandes Device.
 - initialisation, permissions, conversations et historique du stockage agent.
 - formatage des statuts et sorties de la page Device.
+- résolution des handoffs explicites et heuristiques.
+- fusion des traces de délégation et de génération Device.
 
 La matrice Device comporte 88 cas normaux. Elle couvre commandes de lecture,
 écritures bornées, séparateurs shell, substitutions, wrappers, redirections,
@@ -80,17 +85,10 @@ minimum :
 
 ## Démarrage de l’application
 
-`src/renderer/App.tsx` affiche d’abord `LoadingScreen`. Le flux réalise :
-
-1. un délai de 100 ms ;
-2. un ping IPC avec timeout de 3 s ;
-3. un faux chargement de bibliothèques de 500 ms ;
-4. un délai de finalisation de 1 s ;
-5. un écran de bienvenue pendant 2 s puis une transition de 1 s.
-
-Le délai minimal de démarrage visible est donc artificiellement supérieur à
-quatre secondes. Ce comportement est produit par
-`src/renderer/components/LoadingScreen/`.
+`src/renderer/App.tsx` affiche d’abord `LoadingScreen`. Le flux réalise
+uniquement un ping IPC avec timeout de trois secondes. En cas de succès, le
+workspace est affiché immédiatement ; en cas d’échec, l’écran conserve le
+détail et une action de nouvelle tentative.
 
 ## Configuration locale
 

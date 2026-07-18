@@ -136,9 +136,9 @@ Le contrat public du renderer est `window.nova`, exposé par
 | --- | --- |
 | `ping` | test de disponibilité du main |
 | `chat` | `load`, `save` |
-| `settings` | `load`, `save`, `reset`, `test` |
+| `settings` | `load`, `save`, `test` |
 | `ai` | `runTurn`, `stopTurn`, événements, permission, stdin, kill |
-| `agents` | workspace, contexte, permissions, tâches actives, conversation directe |
+| `agents` | workspace, contexte, permissions, tâches actives |
 
 Les événements `nova:ai:event` sont :
 
@@ -150,16 +150,17 @@ Les événements `nova:ai:event` sont :
 Le renderer les applique dans
 `src/renderer/services/chat/chat.events.ts`.
 
-Les handlers `nova:device:*` sont enregistrés dans le main, mais ne sont pas
-exposés par le preload actuel. Les méthodes de conversation directe des agents
-sont exposées par le preload, mais aucune page du renderer ne les appelle.
+Le contrat public ne contient aucun canal Device direct ni API de conversation
+agent sans interface. Toute exécution locale passe par le flux `ai` dans le
+main et par les contrôles de permission associés.
 
 ## Traces et volumétrie
 
 Les appels de l’assistant principal et des agents textuels attachent le
-payload de requête et la réponse complète à `apis.json`. Le test de connexion
-ne les persiste pas et la génération de commande Device retourne actuellement
-des traces qui ne sont pas rattachées au message final.
+payload de requête et la réponse complète à `apis.json`. Les traces de
+génération de commande Device sont fusionnées avec celles de la délégation,
+rattachées au message final et persistées dans la conversation agent. Le test
+de connexion ne persiste aucune trace.
 
 Les résultats envoyés au provider sont tronqués à 4 000 caractères, mais les
 traces locales persistées ne le sont pas. Les sorties de commande ne sont pas

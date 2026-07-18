@@ -13,7 +13,8 @@ Electron ready
   -> abonnement nova:ai:event
 ```
 
-Le boot affiche plusieurs délais simulés. Après hydratation, toute modification
+Le boot exécute uniquement le ping IPC réel, avec un timeout de trois secondes
+et une action de reprise en cas d’erreur. Après hydratation, toute modification
 des conversations déclenche une sauvegarde complète.
 
 Fichiers :
@@ -253,16 +254,17 @@ se rafraîchissent aussi après un événement IA.
 La vue globale `AgentsActivityView` agrège les deux workspaces, conserve les 24
 entrées récentes et permet l’arrêt d’une tâche.
 
-## 11. Conversations directes agent
+## 11. Conversations internes agent
 
-Le main et le preload savent :
+Les tâches Planner et Device créent automatiquement une conversation interne
+d’origine `assistant`. Elle sert à :
 
-- créer une conversation agent d’origine `assistant-test` ;
-- envoyer un message direct ;
-- empêcher l’écriture dans une conversation interne d’origine `assistant`.
+- conserver les demandes et résultats successifs d’un même tour ;
+- rattacher les traces provider aux messages de l’agent ;
+- reconstruire le contexte d’une étape après un handoff.
 
-Cette capacité n’est appelée par aucun composant UI actuel. Elle doit être
-considérée comme backend dormant.
+Ces conversations sont pilotées par l’orchestrateur et restent en lecture
+seule côté renderer. Aucun canal IPC de conversation directe n’est exposé.
 
 ## 12. Settings
 

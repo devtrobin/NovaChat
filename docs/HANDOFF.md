@@ -12,7 +12,8 @@ NovaChat est un Electron + React fonctionnel avec :
 - permissions, historique, activité et arrêt de tâches.
 
 Tests, TypeScript, lint et packaging Windows x64 passent au 18 juillet 2026.
-La suite compte 148 réussites, dont 88 cas de policy Device.
+La suite compte 154 réussites, dont 88 cas de policy Device.
+La priorité P2 de maintenabilité recensée dans `RISKS.md` est terminée.
 
 ## Ce qu’il faut lire
 
@@ -26,9 +27,9 @@ et contrats, consulter [DATA_MODEL.md](DATA_MODEL.md).
 
 ## Première action recommandée
 
-Poursuivre la phase 2 en séparant explicitement les catégories de permission
-Device, puis corriger la sémantique du refus `Non`. Ne pas étendre les
-commandes autorisées sans cas sûr et adversarial correspondant.
+Poursuivre la phase 2 en corrigeant la sémantique du refus `Non`, puis valider
+les payloads IPC et les chemins. Ne pas étendre les commandes autorisées sans
+cas sûr et adversarial correspondant.
 
 ## Commandes de départ
 
@@ -38,6 +39,7 @@ npm.cmd ci
 npm.cmd test
 npm.cmd exec tsc -- --noEmit
 npm.cmd run lint
+npm.cmd run ci
 ```
 
 Utiliser `npm` au lieu de `npm.cmd` hors PowerShell Windows si approprié.
@@ -72,9 +74,7 @@ out/
 - `activeProvider` n’effectue pas encore de routage multi-provider ;
 - `diagnostic-agent` est un ancien ID partiellement migré ;
 - le refus “Non” d’une permission peut devenir permanent ;
-- les writes JSON ne sont pas atomiques ;
-- les API de conversations directes agent n’ont pas d’UI ;
-- la capture du README historique n’est plus représentative.
+- les writes JSON ne sont pas atomiques.
 
 ## Phrase de reprise
 

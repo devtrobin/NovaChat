@@ -43,7 +43,7 @@ Actions restantes :
 
 Le socle Vitest couvre désormais la policy, les parsers OpenAI/Planner, le
 stockage chat, les commandes slash, les messages de tâche agent et les
-événements de conversation. Les 148 tests réussissent, dont 88 cas de policy
+événements de conversation. Les 154 tests réussissent, dont 88 cas de policy
 Device.
 
 Il manque encore les composants React, l’orchestrateur complet, les
@@ -168,74 +168,72 @@ explicitement demandé par l’utilisateur.
 Action recommandée : état d’attente qui suspend le timeout, PTY si nécessaire,
 kill d’arbre et limite de sortie.
 
-## P2 — Maintenabilité et dette fonctionnelle
+## P2 — Maintenabilité et dette fonctionnelle — terminée
 
-### Fichiers denses malgré les règles
+Les éléments explicitement recensés dans cette priorité sont clos sans ajout
+de capacité produit.
 
-Plusieurs fichiers dépassent encore largement l’objectif de 100 lignes :
+### Fichiers denses — corrigé
 
-- `ai.orchestrator.cycle.ts`.
+`ai.orchestrator.cycle.ts` est passé de 306 à 100 lignes. L’appel
+provider, la résolution des handoffs, l’heuristique Planner, l’exécution agent
+et les transitions de cycle vivent dans des modules métier dédiés.
 
-Le seuil de `CODING_GUIDELINES.md` doit être compris comme une cible, pas comme
-l’état actuel. Découper uniquement avec des frontières métier claires.
+Les précédents découpages restent en place :
 
-`device.policy.ts`, auparavant à plus de 600 lignes, a été découpé en une
-façade publique et cinq modules cohérents : règles spécialisées, évaluation de
-segment, chemins, tokens et contrat de décision.
+- `device.policy.ts` est une façade sur les règles, segments, chemins, tokens
+  et types ;
+- `agent-orchestrator.service.ts` délègue les phases Planner, Device,
+  permission, commande et messages ;
+- `agent-storage.service.ts` sépare chemins, récupération, workspace, records
+  et conversations ;
+- `DeviceAgentPage.tsx` compose un contrôleur et quatre vues d’onglets.
 
-`agent-orchestrator.service.ts`, auparavant à plus de 600 lignes, est désormais
-une façade d’environ 110 lignes. Les phases Planner, Device, permission,
-résolution de commande, messages et conversations directes vivent dans des
-modules dédiés.
+Le seuil de `CODING_GUIDELINES.md` reste une cible. Un nouveau découpage ne
+doit être engagé qu’avec une frontière métier explicite.
 
-`agent-storage.service.ts`, auparavant proche de 500 lignes, est désormais une
-façade minimale. Les chemins, la récupération d’historique, le workspace, les
-records persistés et les écritures conversationnelles sont séparés.
+### Types partagés — corrigé
 
-`DeviceAgentPage.tsx`, auparavant à plus de 400 lignes, compose désormais un
-hook contrôleur et quatre vues d’onglets dédiées.
-
-### Types partagés couplés au renderer — corrigé
-
-Le contrat transversal de chat vit désormais dans `src/shared/chat.types.ts`.
-Le main, le preload et le renderer l’importent sans dépendance vers une couche
+Le contrat transversal de chat vit dans `src/shared/chat.types.ts`. Le main,
+le preload et le renderer l’importent sans dépendance vers une couche
 applicative.
 
-### APIs et code orphelins
+### APIs, états et code orphelins — corrigé
 
-- handlers directs `nova:device:*` non exposés dans le preload ;
-- API de conversations directes agents exposée mais sans UI ;
-- ancien `src/renderer/services/chat.service.ts` mock non utilisé ;
-- `settings.reset` exposé mais sans action UI ;
-- état `streaming` et curseur présents sans streaming provider ;
-- traces retournées lors de la génération de commande Device non rattachées au
-  message ni à l’historique.
+- les handlers `nova:device:*` sans consommateur ont été retirés ;
+- l’API, le service et le stockage de conversation agent directe sans UI ont
+  été retirés ;
+- l’ancien mock `renderer/services/chat.service.ts` a été supprimé ;
+- `settings.reset`, le statut `streaming` et son curseur dormant ont été
+  supprimés ;
+- les traces de génération de commande Device sont fusionnées avec la
+  délégation, attachées au message final et persistées dans la conversation
+  agent.
 
-Décider pour chaque surface : terminer, tester et exposer, ou supprimer.
+### Démarrage artificiellement lent — corrigé
 
-### Démarrage artificiellement lent
+Le boot n’exécute plus que le ping IPC réel. Le workspace s’affiche
+immédiatement après sa réussite ; le timeout et la nouvelle tentative restent
+disponibles en cas d’erreur.
 
-L’écran de boot contient plusieurs délais simulés et impose plus de quatre
-secondes avant l’accès au workspace.
+### Configuration Webpack partagée par mutation — corrigé
 
-### Configuration Webpack partagée par mutation — corrigée
+`mainConfig` et `rendererConfig` construisent chacun leur propre tableau à
+partir des règles communes. Les règles spécifiques au renderer sont ajoutées
+localement, sans mutation de la configuration main.
 
-`mainConfig` et `rendererConfig` construisent désormais chacun leur propre
-tableau à partir des règles communes. Les règles spécifiques au renderer sont
-ajoutées localement, sans mutation de la configuration main.
+### Documentation visuelle obsolète — corrigé
 
-### Documentation visuelle obsolète
+La capture historique non représentative a été supprimée ainsi que ses
+références.
 
-`docs/screenshot.png` montre une version antérieure sans la section Agents
-actuelle. Elle ne doit pas servir de référence fonctionnelle.
+### Hygiène de distribution — corrigé
 
-### Hygiène de distribution incomplète
+`package.json` possède une description réelle et les scripts `check` et `ci`.
+Le workflow `.github/workflows/ci.yml` valide le projet sous Windows et la
+licence MIT déclarée est matérialisée par `LICENSE`.
 
-`package.json` conserve une description placeholder, aucun script CI n’est
-présent et le dépôt ne contient pas de fichier `LICENSE` malgré la déclaration
-`MIT`.
-
-### Résolutions npm transitives à surveiller
+### Résolutions npm transitives — surveillance continue
 
 L’audit npm est revenu à zéro grâce aux mises à jour directes et à quatre
 résolutions transitives : `tar`, `tmp`, `uuid` et `webpack-dev-server`.

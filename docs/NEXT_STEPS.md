@@ -11,7 +11,7 @@ fiabiliser les capacités qu’il possède avant de l’élargir.
 - Policy Device testée avec cas sûrs et cas adversariaux.
 - Parsers OpenAI et Planner testés.
 - Sérialisation, round-trip du stockage et reducers d’événements testés.
-- 148 tests réussissent, dont 88 cas de policy Device.
+- 154 tests réussissent, dont 88 cas de policy Device.
 
 La priorité active reste la phase 2. Les anciens `it.fails` sont désormais des
 tests de régression normaux.
@@ -55,21 +55,22 @@ Critère de sortie : arrêt brutal ou JSON corrompu sans perte silencieuse.
 
 1. Désactiver la sélection des providers non implémentés, ou implémenter une
    abstraction provider réelle.
-2. Décider du sort des conversations directes agent :
-   - remettre une UI ;
-   - ou retirer IPC et code orphelin.
+2. ~~Décider du sort des conversations directes agent ;~~ terminé : IPC,
+   preload, service et code de stockage orphelin ont été retirés.
 3. Corriger `hideInternalConversations` pour conserver les résultats `/cmd`.
-4. Réduire le délai artificiel du boot.
-5. Mettre à jour la capture d’écran.
+4. ~~Réduire le délai artificiel du boot ;~~ terminé : seul le ping IPC réel
+   reste avant le workspace.
+5. ~~Mettre à jour la capture d’écran ;~~ terminé par suppression de la
+   capture historique obsolète et de ses références.
 6. Étendre i18n au reste de l’interface si le bilingue est un objectif.
 
-## Phase 5 — Maintenabilité ciblée
+## Phase 5 — Maintenabilité ciblée — terminée
 
 Découper sans refonte globale :
 
 1. ~~`agent-orchestrator.service.ts` par agent et par phase ;~~ terminé avec
    une façade d’orchestration et des modules Planner, Device, permission,
-   résolution de commande, messages et conversations directes ;
+   résolution de commande et messages ;
 2. ~~`agent-storage.service.ts` entre chemins, récupération et écritures ;~~
    terminé avec une façade et des modules paths, recovery, workspace, records
    et conversations ;
@@ -79,14 +80,17 @@ Découper sans refonte globale :
    contrôleur et des vues General, Contexte, Permissions et Historique ;
 5. ~~déplacer les types de chat transversaux vers `src/shared` ;~~ terminé,
    `shared/chat.types.ts` est désormais la source unique des contrats de
-   message, conversation et commande.
+   message, conversation et commande ;
+6. ~~découper `ai.orchestrator.cycle.ts` ;~~ terminé avec des modules dédiés à
+   l’appel provider, aux handoffs, au cycle agent et aux transitions.
 
 ~~Corriger aussi la mutation du tableau de règles Webpack.~~ Terminé : les
 configurations main et renderer construisent désormais des tableaux de règles
 indépendants.
 
-Le prochain découpage ciblé concerne `ai.orchestrator.cycle.ts`, en conservant
-la boucle et les effets de bord dans le process main.
+Les surfaces sans consommateur, les délais simulés et l’hygiène de distribution
+recensés en P2 sont également traités. Les prochains travaux actifs reviennent
+aux phases 2 à 4, centrées sur sécurité, données et cohérence produit.
 
 ## Phase 6 — Nouvelles capacités
 

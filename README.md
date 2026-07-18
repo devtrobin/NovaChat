@@ -54,10 +54,11 @@ npm.cmd exec tsc -- --noEmit
 npm.cmd test
 npm.cmd run lint
 npm.cmd run package
+npm.cmd run ci
 ```
 
 Au 18 juillet 2026, ces commandes passent sur Windows x64. La suite Vitest
-exécute 148 cas, tous réussis. Les anciens contournements connus de la policy
+exécute 154 cas, tous réussis. Les anciens contournements connus de la policy
 Device sont maintenant couverts par des tests de régression normaux.
 
 ## Configuration OpenAI
@@ -142,5 +143,4 @@ Lecture recommandée :
 - [prochaines étapes](docs/NEXT_STEPS.md) ;
 - [handoff express](docs/HANDOFF.md).
 
-`docs/screenshot.png` est une capture historique et ne représente plus tous
-les écrans Agents actuels.
+NovaChat est distribué sous [licence MIT](LICENSE).

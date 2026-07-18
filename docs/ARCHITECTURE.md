@@ -121,7 +121,11 @@ runTurn
 Fichiers clés :
 
 - `ai.orchestrator.ts` : boucle, limite et traitement du Planner ;
-- `ai.orchestrator.cycle.ts` : un appel assistant et une délégation ;
+- `ai.orchestrator.cycle.ts` : routage d’une réponse assistant ;
+- `ai.orchestrator.assistant-request.ts` : appel provider et abort controller ;
+- `ai.orchestrator.handoff.ts` : résolution d’une délégation explicite ;
+- `ai.orchestrator.planner-handoff.ts` : handoff Planner heuristique ;
+- `ai.orchestrator.agent-cycle.ts` : exécution d’un agent et fusion des traces ;
 - `ai.planner.ts` : parsing du format textuel du Planner ;
 - `ai.turn-registry.ts` : tours, tâches, abort controllers, commandes et
   permissions en cours ;
@@ -156,7 +160,7 @@ Deux agents sont définis.
 `agent-orchestrator.service.ts` coordonne le cycle de vie commun. Les phases
 sont séparées entre `agent-task.planner.ts`, `agent-task.device.ts`,
 `agent-task.device-command.ts`, `agent-task.device-permission.ts`,
-`agent-task.messages.ts` et `agent-direct-conversation.service.ts`.
+`agent-task.messages.ts` et les modules `ai.orchestrator.*`.
 `agent-storage.service.ts` reste la façade publique du stockage agent. Les
 responsabilités sont séparées entre `agent-storage.paths.ts`,
 `agent-storage.recovery.ts`, `agent-storage.workspace.ts`,
@@ -260,7 +264,7 @@ mais elles sont persistées sur disque.
 - `activeProvider` n’est pas encore un vrai routage multi-provider.
 - `device.policy.ts` décide d’une demande de permission ; ce n’est pas un
   sandbox.
-- Les conversations internes stockées ne sont pas actuellement navigables
-  depuis les pages agent.
+- Les conversations internes sont produites uniquement par les tâches
+  orchestrées ; aucune API de conversation directe n’est exposée.
 - Les messages `system` sont des états UI transitoires, pas un historique
   durable.
