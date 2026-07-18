@@ -218,11 +218,11 @@ Décider pour chaque surface : terminer, tester et exposer, ou supprimer.
 L’écran de boot contient plusieurs délais simulés et impose plus de quatre
 secondes avant l’accès au workspace.
 
-### Configuration Webpack partagée par mutation
+### Configuration Webpack partagée par mutation — corrigée
 
-`webpack.renderer.config.ts` pousse des règles dans le tableau importé depuis
-`webpack.rules.ts`. Comme `mainConfig` et `rendererConfig` partagent cette
-référence, l’ordre d’import influence les deux configurations.
+`mainConfig` et `rendererConfig` construisent désormais chacun leur propre
+tableau à partir des règles communes. Les règles spécifiques au renderer sont
+ajoutées localement, sans mutation de la configuration main.
 
 ### Documentation visuelle obsolète
 

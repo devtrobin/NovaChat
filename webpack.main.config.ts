@@ -1,6 +1,6 @@
 import type { Configuration } from 'webpack';
 
-import { rules } from './webpack.rules';
+import { rules as sharedRules } from './webpack.rules';
 import { plugins } from './webpack.plugins';
 
 export const mainConfig: Configuration = {
@@ -11,7 +11,7 @@ export const mainConfig: Configuration = {
   entry: './src/index.ts',
   // Put your normal webpack config below here
   module: {
-    rules,
+    rules: [...sharedRules],
   },
   plugins,
   resolve: {

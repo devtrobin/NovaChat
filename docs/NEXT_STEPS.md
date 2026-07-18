@@ -81,7 +81,12 @@ Découper sans refonte globale :
    `shared/chat.types.ts` est désormais la source unique des contrats de
    message, conversation et commande.
 
-Corriger aussi la mutation du tableau de règles Webpack.
+~~Corriger aussi la mutation du tableau de règles Webpack.~~ Terminé : les
+configurations main et renderer construisent désormais des tableaux de règles
+indépendants.
+
+Le prochain découpage ciblé concerne `ai.orchestrator.cycle.ts`, en conservant
+la boucle et les effets de bord dans le process main.
 
 ## Phase 6 — Nouvelles capacités
 
