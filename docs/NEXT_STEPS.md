@@ -69,7 +69,8 @@ Découper sans refonte globale :
 
 1. `agent-orchestrator.service.ts` par agent et par phase ;
 2. `agent-storage.service.ts` entre chemins, migrations et écritures ;
-3. `device.policy.ts` entre parsing et règles ;
+3. ~~`device.policy.ts` entre parsing et règles ;~~ terminé avec des modules
+   dédiés aux règles, segments, chemins, tokens et types ;
 4. `DeviceAgentPage.tsx` en vues d’onglets ;
 5. déplacer les types de chat transversaux vers `src/shared`.
 

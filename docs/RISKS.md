@@ -175,12 +175,15 @@ Plusieurs fichiers dépassent largement l’objectif de 100 lignes :
 
 - `agent-orchestrator.service.ts` ;
 - `agent-storage.service.ts` ;
-- `device.policy.ts` ;
 - `DeviceAgentPage.tsx` ;
 - `ai.orchestrator.cycle.ts`.
 
 Le seuil de `CODING_GUIDELINES.md` doit être compris comme une cible, pas comme
 l’état actuel. Découper uniquement avec des frontières métier claires.
+
+`device.policy.ts`, auparavant à plus de 600 lignes, a été découpé en une
+façade publique et cinq modules cohérents : règles spécialisées, évaluation de
+segment, chemins, tokens et contrat de décision.
 
 ### Types partagés couplés au renderer
 
