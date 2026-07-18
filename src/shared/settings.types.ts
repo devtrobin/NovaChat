@@ -1,5 +1,5 @@
 export type AIProviderId = "anthropic" | "google" | "lmstudio" | "mistral" | "ollama" | "openai";
-export type AgentId = "device-agent" | "diagnostic-agent";
+export type AgentId = "agent-planner" | "device-agent";
 
 export type AgentSettingsMap = Record<AgentId, { enabled: boolean }>;
 

@@ -33,15 +33,16 @@ function parseProviderResponseObject(value: string): ProviderResponse | null {
       continue;
     }
 
+    const normalizedAgentId = normalizeAgentId((maybeResponse as { agentId?: unknown }).agentId);
     if (
       maybeResponse.to === "agent"
-      && (maybeResponse.agentId === "device-agent" || maybeResponse.agentId === "diagnostic-agent")
+      && normalizedAgentId
       && typeof maybeResponse.content === "string"
       && maybeResponse.content.trim()
     ) {
       return {
-        agentId: maybeResponse.agentId,
-        content: maybeResponse.agentId === "device-agent"
+        agentId: normalizedAgentId,
+        content: normalizedAgentId === "device-agent"
           ? normalizeDeviceCommand(maybeResponse.content)
           : maybeResponse.content.trim(),
         from: "assistant",
@@ -64,6 +65,12 @@ function parseProviderResponseObject(value: string): ProviderResponse | null {
     }
   }
 
+  return null;
+}
+
+function normalizeAgentId(value: unknown): "agent-planner" | "device-agent" | null {
+  if (value === "agent-planner" || value === "device-agent") return value;
+  if (value === "diagnostic-agent") return "agent-planner";
   return null;
 }
 

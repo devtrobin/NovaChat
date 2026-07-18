@@ -4,28 +4,28 @@ import { AgentRuntimeContext } from "../agents/agent-prompt.service";
 
 export function buildInput(messages: ChatMessage[], enabledAgents: AgentId[]) {
   const enabledDeviceAgent = enabledAgents.includes("device-agent");
-  const enabledDiagnosticAgent = enabledAgents.includes("diagnostic-agent");
+  const enabledPlannerAgent = enabledAgents.includes("agent-planner");
   const agentInstructions = [
+    enabledPlannerAgent
+      ? 'For any non-trivial request, first ask agent-planner for the next atomic step by replying exactly like: {"from":"assistant","to":"agent","agentId":"agent-planner","content":"<planning request>"}'
+      : "The agent-planner is currently disabled. Plan internally and answer directly unless another enabled agent is required.",
     enabledDeviceAgent
       ? 'If you need the device-agent with an exact shell command, reply exactly like: {"from":"assistant","to":"agent","agentId":"device-agent","content":"<single shell command body>"}'
       : "The device-agent is currently disabled. Do not delegate work to it.",
     enabledDeviceAgent
       ? 'If local execution is needed but you want the device-agent to design the command, reply exactly like: {"from":"assistant","to":"agent","agentId":"device-agent","content":"GOAL: <short execution objective>"}'
       : "Do not emit GOAL requests for device-agent while it is disabled.",
-    enabledDiagnosticAgent
-      ? 'If you need the diagnostic-agent for analysis, reply exactly like: {"from":"assistant","to":"agent","agentId":"diagnostic-agent","content":"<short diagnostic request>"}'
-      : "The diagnostic-agent is currently disabled. Do not delegate work to it.",
     enabledDeviceAgent
       ? "Use the device-agent only when the request truly needs local execution or machine inspection."
       : "Do not use the device-agent.",
-    enabledDiagnosticAgent
-      ? "Use the diagnostic-agent only when you need internal analysis, triage, interpretation of a result, failure analysis, or a second reasoning pass without machine execution."
-      : "Do not use the diagnostic-agent.",
-    enabledDiagnosticAgent
-      ? "Prefer the diagnostic-agent for requests about diagnosis, debugging strategy, failure analysis, handoff problems, workflow analysis, suspicious behavior, investigation plans, or interpretation of prior results."
-      : "If the user asks for diagnosis or investigation, answer directly without diagnostic-agent.",
-    enabledDiagnosticAgent
-      ? 'Example diagnostic handoff: {"from":"assistant","to":"agent","agentId":"diagnostic-agent","content":"Analyse un echec de handoff entre agents et propose une piste de diagnostic."}'
+    enabledPlannerAgent
+      ? "Use agent-planner as a planning advisor only. It recommends the next atomic step and an agent, but you remain responsible for orchestration."
+      : "Do not use agent-planner.",
+    enabledPlannerAgent
+      ? "After receiving a planner result, decide whether to call device-agent, ask the user for missing information, ask planner for a revised next step, or answer the user."
+      : "",
+    enabledPlannerAgent
+      ? 'Example planner handoff: {"from":"assistant","to":"agent","agentId":"agent-planner","content":"Planifie la prochaine etape atomique pour diagnostiquer cette demande."}'
       : "",
   ].filter(Boolean).join(" ");
 
@@ -35,7 +35,7 @@ export function buildInput(messages: ChatMessage[], enabledAgents: AgentId[]) {
         {
           text: [
             "You are Nova.",
-            "You are the main assistant. A specialized internal agent named device-agent is responsible for device command execution.",
+            "You are the main assistant. Specialized internal agents exist: agent-planner plans next atomic steps, and device-agent executes device commands.",
             "You receive the full conversation as Nova JSON messages.",
             "Each message uses this schema: { id, from, to, agentId?, content, createdAt, status?, result?, commandId?, actionType?, actionLabel?, isExpandable? }.",
             "Reply only with one minified JSON object compatible with the Nova format subset.",
@@ -43,6 +43,8 @@ export function buildInput(messages: ChatMessage[], enabledAgents: AgentId[]) {
             agentInstructions,
             "Prefer GOAL when the user request is high-level, when you need the device-agent to choose the best command, or when you are not fully confident in the exact shell command yet.",
             'When you reply to "agent", Nova delegates the request to the targeted internal agent, waits for the result, and then gives you the result back in the conversation.',
+            "If agent-planner has already answered in this turn and Nova already executed the recommended nextStep successfully, do not call agent-planner again. Answer the user directly or ask one precise follow-up question.",
+            "Only call agent-planner again after a real blocker, a failed execution, a partial result, or newly discovered missing information.",
             "Never answer as user, device or system.",
             "When you ask an agent to do work, the result will come back later in the conversation as a Nova message from agent or device to assistant.",
             "Use device commands only when they are genuinely needed.",
@@ -154,6 +156,7 @@ export function buildDeviceAgentInput(
 }
 
 export function buildGenericAgentInput(
+  agentId: AgentId,
   context: AgentContextFile,
   runtimeContext: AgentRuntimeContext,
   request: string,
@@ -174,8 +177,48 @@ export function buildGenericAgentInput(
             `Request source: ${source}.`,
             "Adapt all recommendations to the runtime platform.",
             "If the platform is darwin, do not suggest Linux-only commands such as lscpu, free, or journalctl unless you explicitly say they are Linux-specific alternatives.",
-            "Reply in plain text only.",
-            "Do not wrap the answer in JSON or markdown fences.",
+            agentId === "agent-planner"
+              ? "Return plain text only using labeled sections, not JSON."
+              : "Reply in plain text only.",
+            agentId === "agent-planner"
+              ? [
+                "Use exactly these top-level labels, each on its own line:",
+                "STATUS: ready|needs-info|blocked",
+                "SUMMARY: <one short sentence>",
+                "AGENT: device-agent|none",
+                "MODE: goal|command|analysis|none",
+                "GOAL: <short goal>",
+                "REQUEST: <one short executable request or one short goal>",
+                "SUCCESS: <success criteria>",
+                "MISSING:",
+                "- <missing item 1>",
+                "- <missing item 2>",
+                "COMPLETED:",
+                "- <completed item 1>",
+                "DEBUG: <short debug summary>",
+              ].join(" ")
+              : "Do not wrap the answer in JSON or markdown fences.",
+            agentId === "agent-planner"
+              ? "Recommend only one next atomic action. If more work is needed, Nova will call you again after the result."
+              : "",
+            agentId === "agent-planner"
+              ? "Do not call other agents yourself, do not write the final user answer, and do not execute commands."
+              : "",
+            agentId === "agent-planner"
+              ? "Never return JSON, markdown, code fences, comments, numbering trees, or multiple alternative plans."
+              : "",
+            agentId === "agent-planner"
+              ? "If STATUS is ready, AGENT, MODE, GOAL, REQUEST and SUCCESS are mandatory."
+              : "",
+            agentId === "agent-planner"
+              ? "If STATUS is needs-info or blocked, set AGENT:none and MODE:none."
+              : "",
+            agentId === "agent-planner"
+              ? "Keep REQUEST short and atomic. Prefer one command or one short goal, never a multi-step workflow."
+              : "",
+            agentId === "agent-planner"
+              ? "Put optional context only in DEBUG. Keep SUMMARY and REQUEST concise."
+              : "",
             source === "assistant"
               ? "Be concise, actionable, and useful for the main assistant."
               : "Answer directly to the user in a concise and useful way.",

@@ -3,7 +3,7 @@ import { ApiRequestRecord } from "../../renderer/types/chat.types";
 export type ProviderResponse =
   | { content: string; from: "assistant"; to: "user" }
   | { content: string; from: "assistant"; to: "device" }
-  | { agentId: "device-agent" | "diagnostic-agent"; content: string; from: "assistant"; to: "agent" };
+  | { agentId: "agent-planner" | "device-agent"; content: string; from: "assistant"; to: "agent" };
 
 export type GenerateOpenAIReplyResult = {
   apiRecords: ApiRequestRecord[];

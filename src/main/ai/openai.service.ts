@@ -86,6 +86,7 @@ export async function generateDeviceAgentCommand(
 
 export async function generateAgentTextReply(
   settings: OpenAISettings,
+  agentId: AgentId,
   context: AgentContextFile,
   runtimeContext: AgentRuntimeContext,
   request: string,
@@ -94,7 +95,7 @@ export async function generateAgentTextReply(
   signal?: AbortSignal,
 ): Promise<{ apiRecords: ChatMessage["apiRequests"]; text: string }> {
   const requestBody = {
-    input: buildGenericAgentInput(context, runtimeContext, request, userPrompt, source),
+    input: buildGenericAgentInput(agentId, context, runtimeContext, request, userPrompt, source),
     model: settings.model,
     store: false,
   };

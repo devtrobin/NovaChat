@@ -45,8 +45,8 @@ export function createDefaultSettings(): AppSettings {
 
 function createDefaultAgentSettings(): AgentSettingsMap {
   return {
+    "agent-planner": { enabled: true },
     "device-agent": { enabled: true },
-    "diagnostic-agent": { enabled: true },
   };
 }
 
@@ -60,13 +60,14 @@ function mergeSettings(partial: unknown): AppSettings {
     agents: {
       ...defaults.agents,
       ...parsed.agents,
+      "agent-planner": {
+        ...defaults.agents["agent-planner"],
+        ...parsed.agents?.["agent-planner"],
+        ...((parsed.agents as Partial<Record<"diagnostic-agent", { enabled: boolean }>> | undefined)?.["diagnostic-agent"] ?? {}),
+      },
       "device-agent": {
         ...defaults.agents["device-agent"],
         ...parsed.agents?.["device-agent"],
-      },
-      "diagnostic-agent": {
-        ...defaults.agents["diagnostic-agent"],
-        ...parsed.agents?.["diagnostic-agent"],
       },
     },
     localFiles: {

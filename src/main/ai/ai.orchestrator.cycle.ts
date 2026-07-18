@@ -64,8 +64,8 @@ export async function runAssistantCycle({
   });
 
   if (providerResponse.to === "user") {
-    if (shouldForceDiagnosticAgentHandoff(settings, step, turnMessages, userMessage.content, providerResponse.content)) {
-      const handoff = createForcedDiagnosticHandoff(apiRecords, userMessage.content);
+    if (shouldForcePlannerAgentHandoff(settings, step, turnMessages, userMessage.content, providerResponse.content)) {
+      const handoff = createForcedPlannerHandoff(apiRecords, userMessage.content);
       const delegationMessage = createAgentRequestMessage(handoff.agentId, handoff.request, handoff.apiRecords);
       onPipelineStageChange?.("requesting-agent", handoff.agentId);
       emit({ conversationId, messages: [delegationMessage], type: "append-messages" });
@@ -180,7 +180,7 @@ export function appendApiErrorTrace(
 }
 
 type ResolvedAgentHandoff = {
-  agentId: "device-agent" | "diagnostic-agent";
+  agentId: AgentId;
   apiRecords: ApiRequestRecord[];
   mode: AgentTaskRequest["mode"];
   previewContent: string;
@@ -234,7 +234,7 @@ function isLikelyShellCommand(value: string): boolean {
   return false;
 }
 
-function shouldForceDiagnosticAgentHandoff(
+function shouldForcePlannerAgentHandoff(
   settings: AppSettings,
   step: number,
   turnMessages: ChatMessage[],
@@ -244,38 +244,41 @@ function shouldForceDiagnosticAgentHandoff(
   if (step > 0) {
     return false;
   }
-  if (!isAgentEnabled(settings, "diagnostic-agent")) {
+  if (!isAgentEnabled(settings, "agent-planner")) {
     return false;
   }
   const normalizedPrompt = userPrompt.trim().toLowerCase();
   const normalizedReply = assistantReply.trim().toLowerCase();
-  const diagnosticSignals = [
-    "diagnostic",
-    "debug",
-    "debugging",
-    "h a n d o f f".replace(/\s/g, ""),
-    "handoff",
-    "workflow",
-    "piste",
+  const planningSignals = [
     "analyse",
     "analyser",
+    "corrige",
+    "debug",
+    "debugging",
+    "diagnostic",
     "echec",
+    "enquete",
     "erreur",
-    "bug",
     "investigation",
+    "plan",
+    "piste",
+    "probleme",
+    "refactor",
+    "workflow",
   ];
 
-  const promptLooksDiagnostic = diagnosticSignals.some((signal) => normalizedPrompt.includes(signal));
-  if (!promptLooksDiagnostic) return false;
+  const promptLooksNonTrivial = normalizedPrompt.length > 140
+    || planningSignals.some((signal) => normalizedPrompt.includes(signal));
+  if (!promptLooksNonTrivial) return false;
   if (turnMessages.some((message) => message.from === "device" || message.agentId === "device-agent")) {
     return false;
   }
-  if (turnMessages.some((message) => message.from === "agent" && message.agentId === "diagnostic-agent")) {
+  if (turnMessages.some((message) => message.from === "agent" && message.agentId === "agent-planner")) {
     return false;
   }
 
-  const replyAlreadyMentionsDiagnosticAgent = normalizedReply.includes("diagnostic-agent") || normalizedReply.includes("agent diagnostic");
-  return !replyAlreadyMentionsDiagnosticAgent;
+  const replyAlreadyMentionsPlanner = normalizedReply.includes("agent-planner") || normalizedReply.includes("planner");
+  return !replyAlreadyMentionsPlanner;
 }
 
 function isAgentEnabled(settings: AppSettings, agentId: AgentId): boolean {
@@ -289,15 +292,15 @@ function getEnabledAgents(settings: AppSettings): AgentId[] {
 }
 
 function formatAgentLabel(agentId: AgentId): string {
-  return agentId === "device-agent" ? "Device" : "Diagnostic";
+  return agentId === "device-agent" ? "Device" : "Planner";
 }
 
-function createForcedDiagnosticHandoff(apiRecords: ApiRequestRecord[], userPrompt: string): ResolvedAgentHandoff {
+function createForcedPlannerHandoff(apiRecords: ApiRequestRecord[], userPrompt: string): ResolvedAgentHandoff {
   return {
-    agentId: "diagnostic-agent",
+    agentId: "agent-planner",
     apiRecords,
     mode: "analysis",
     previewContent: userPrompt,
-    request: userPrompt,
+    request: `Propose la prochaine etape atomique pour traiter cette demande utilisateur: ${userPrompt}`,
   };
 }

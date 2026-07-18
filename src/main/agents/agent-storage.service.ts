@@ -348,7 +348,7 @@ function createAssistantToAgentMessage(agentId: AgentId, assistantRequest: strin
     return {
       agentId,
       apiRequests: [],
-      content: `Demande d'analyse envoyee a ${agentId}:\n${assistantRequest}`,
+      content: `Demande envoyee a ${agentId}:\n${assistantRequest}`,
       createdAt,
       from: "assistant",
       id: crypto.randomUUID(),

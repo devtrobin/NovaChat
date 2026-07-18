@@ -53,16 +53,16 @@ function resolveAuthor(message: MessageItemChatProps["message"]): string {
   }
 
   if (message.from === "agent") {
-    return message.agentId === "diagnostic-agent"
-      ? "Diagnostic"
+    return message.agentId === "agent-planner"
+      ? "Planner"
       : message.agentId === "device-agent"
         ? "Device"
         : "Agent";
   }
 
   if (message.from === "assistant" && message.to === "agent") {
-    return message.agentId === "diagnostic-agent"
-      ? "Nova -> Diagnostic"
+    return message.agentId === "agent-planner"
+      ? "Nova -> Planner"
       : message.agentId === "device-agent"
         ? "Nova -> Device"
         : "Nova -> Agent";

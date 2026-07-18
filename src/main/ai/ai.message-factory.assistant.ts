@@ -17,7 +17,7 @@ export function createAssistantMessage(content: string): ChatMessage {
 export function createAssistantDelegationMessage(
   content: string,
   to: "agent" | "device",
-  agentId?: "device-agent" | "diagnostic-agent",
+  agentId?: "agent-planner" | "device-agent",
 ): ChatMessage {
   const message = createAssistantMessage(content);
   message.to = to;

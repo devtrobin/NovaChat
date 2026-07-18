@@ -89,6 +89,7 @@ export async function runAgentTask({
       onPipelineStageChange?.("agent-generating", task.agentId);
       const agentReply = await generateAgentTextReply(
         settings.openai,
+        task.agentId,
         workspace.context,
         runtimeContext,
         task.request,
@@ -393,6 +394,7 @@ export async function runDirectAgentConversationTurn(
     registerAbortController(turnId, controller);
     const agentReply = await generateAgentTextReply(
       settings.openai,
+      agentId,
       workspace.context,
       runtimeContext,
       prompt,

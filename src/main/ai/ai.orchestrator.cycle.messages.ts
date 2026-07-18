@@ -41,7 +41,7 @@ export function createDeviceRequestMessage(command: string, apiRecords: ApiReque
 }
 
 export function createAgentRequestMessage(
-  agentId: "device-agent" | "diagnostic-agent",
+  agentId: AgentId,
   request: string,
   apiRecords: ApiRequestRecord[],
 ): ChatMessage {
@@ -90,8 +90,8 @@ function formatPipelineStage(stage: PipelineStage, agentId?: AgentId): string {
 }
 
 function formatAgentName(agentId?: AgentId): string {
+  if (agentId === "agent-planner") return "agent-planner";
   if (agentId === "device-agent") return "device-agent";
-  if (agentId === "diagnostic-agent") return "diagnostic-agent";
   return "agent";
 }
 

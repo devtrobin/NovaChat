@@ -8,8 +8,8 @@ import { AgentSettingsMap } from "../../../shared/settings.types";
 export function useWorkspaceLayoutState() {
   const initialState = React.useMemo(() => loadChatPageState(), []);
   const defaultAgentSettings = React.useMemo<AgentSettingsMap>(() => ({
+    "agent-planner": { enabled: true },
     "device-agent": { enabled: true },
-    "diagnostic-agent": { enabled: true },
   }), []);
   const [conversations, setConversations] = React.useState<Conversation[]>(initialState.conversations);
   const [activeConversationId, setActiveConversationId] = React.useState<string | null>(

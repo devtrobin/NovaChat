@@ -5,15 +5,15 @@ import { ActiveAgentTask, AgentContextFile, AgentWorkspaceData } from "../../../
 import "../../ChatPage/ChatPage.css";
 import "../DeviceAgentPage/DeviceAgentPage.css";
 
-type DiagnosticAgentPageProps = {
+type PlannerAgentPageProps = {
   agent: AgentDefinition;
   onSavedSettings: (settings: AppSettings) => void;
 };
 
-type DiagnosticAgentTab = "context" | "general";
+type PlannerAgentTab = "context" | "general";
 
-export default function DiagnosticAgentPage({ agent, onSavedSettings }: DiagnosticAgentPageProps) {
-  const [activeTab, setActiveTab] = React.useState<DiagnosticAgentTab>("general");
+export default function PlannerAgentPage({ agent, onSavedSettings }: PlannerAgentPageProps) {
+  const [activeTab, setActiveTab] = React.useState<PlannerAgentTab>("general");
   const [activeTasks, setActiveTasks] = React.useState<ActiveAgentTask[]>([]);
   const [contextDraft, setContextDraft] = React.useState<AgentContextFile | null>(null);
   const [isEnabled, setIsEnabled] = React.useState(agent.enabled);

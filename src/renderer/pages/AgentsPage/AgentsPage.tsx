@@ -1,5 +1,5 @@
-import DiagnosticAgentPage from "./DiagnosticAgentPage/DiagnosticAgentPage";
 import DeviceAgentPage from "./DeviceAgentPage/DeviceAgentPage";
+import PlannerAgentPage from "./PlannerAgentPage/PlannerAgentPage";
 import AgentsPageEmpty from "./AgentsPageEmpty";
 import { AgentsPageProps } from "./AgentsPage.types";
 
@@ -12,8 +12,8 @@ export default function AgentsPage({ activeAgent, onSavedSettings }: AgentsPageP
     return <DeviceAgentPage agent={activeAgent} onSavedSettings={onSavedSettings} />;
   }
 
-  if (activeAgent.id === "diagnostic-agent") {
-    return <DiagnosticAgentPage agent={activeAgent} onSavedSettings={onSavedSettings} />;
+  if (activeAgent.id === "agent-planner") {
+    return <PlannerAgentPage agent={activeAgent} onSavedSettings={onSavedSettings} />;
   }
 
   return <AgentsPageEmpty />;
