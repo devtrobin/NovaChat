@@ -79,6 +79,7 @@ export function bindCommandLifecycle(commandId: string, runningCommand: RunningC
     };
 
     runningCommand.child.on("close", (code, signal) => {
+      runningCommand.output.finish();
       const output = runningCommand.output.toString().trim()
         || (runningCommand.wasKilled ? "Commande interrompue." : "Commande terminee sans sortie.");
       const durationMs = Date.now() - runningCommand.startedAt;
@@ -108,6 +109,7 @@ export function bindCommandLifecycle(commandId: string, runningCommand: RunningC
 
     runningCommand.child.on("error", (error: Error) => {
       runningCommand.output.append(error.message);
+      runningCommand.output.finish();
       finish({
         code: runningCommand.wasKilled ? 130 : 1,
         commandId,

@@ -11,6 +11,7 @@ import {
 } from "./agent-storage.service";
 import { clearAgentStorageQueues } from "./agent-storage.queue";
 import { clearStorageRecoveryRegistry } from "../storage/storage-recovery.registry";
+import { AGENT_CONTEXT_SCHEMA_VERSION } from "../../shared/agent.types";
 
 const temporaryDirectories: string[] = [];
 
@@ -27,6 +28,7 @@ describe("agent storage", () => {
     const workspace = await loadAgentWorkspace(rootDirectory, "device-agent");
 
     expect(workspace).toMatchObject({
+      context: { schemaVersion: AGENT_CONTEXT_SCHEMA_VERSION },
       conversations: { activeConversationId: null, conversations: [] },
       history: [],
       id: "device-agent",

@@ -14,7 +14,7 @@ import {
   registerStorageRecovery,
   StorageRecoveryRequiredError,
 } from "../storage/storage-recovery.registry";
-import { createDefaultAgentContext } from "./agent-prompt.service";
+import { migrateAgentContext } from "./agent-context.migration";
 import {
   getAgentContextPath,
   getAgentConversationsDirectory,
@@ -35,7 +35,7 @@ export async function ensureAgentWorkspaceUnlocked(
   rootDirectory: string,
   agentId: AgentId,
 ): Promise<AgentWorkspaceData> {
-  const contextResult = await readJsonFileDetailed<AgentContextFile>(
+  const contextResult = await readJsonFileDetailed<unknown>(
     getAgentContextPath(rootDirectory, agentId),
   );
   const permissionsResult = await readJsonFileDetailed<AgentPermissionsFile>(
@@ -53,7 +53,7 @@ export async function ensureAgentWorkspaceUnlocked(
     ...conversationsResult.issues,
     ...historyResult.issues,
   ];
-  const context = contextResult.value ?? createDefaultAgentContext(agentId);
+  const context = migrateAgentContext(agentId, contextResult.value);
   const permissions = permissionsResult.value ?? createDefaultPermissions();
   const conversations = conversationsResult.state ?? createDefaultConversations();
   const storedHistory = historyResult.value ?? createDefaultHistory();
@@ -115,8 +115,9 @@ export async function saveAgentContext(
   return runAgentStorageOperation(rootDirectory, agentId, async () => {
     await ensureAgentWorkspace(rootDirectory, agentId);
     assertStorageWritable(getAgentDirectory(rootDirectory, agentId));
-    await writeJsonFile(getAgentContextPath(rootDirectory, agentId), context);
-    return context;
+    const migratedContext = migrateAgentContext(agentId, context);
+    await writeJsonFile(getAgentContextPath(rootDirectory, agentId), migratedContext);
+    return migratedContext;
   });
 }
 

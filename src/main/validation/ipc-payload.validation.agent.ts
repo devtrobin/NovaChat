@@ -1,4 +1,5 @@
 import {
+  AGENT_CONTEXT_SCHEMA_VERSION,
   AgentContextFile,
   AgentId,
   AgentPermissionDecision,
@@ -51,6 +52,7 @@ export function parseAgentContextPayload(value: unknown): {
       description: readString(context.description, "agentContext.context.description", 0, 4_000),
       instructions: readString(context.instructions, "agentContext.context.instructions", 0, 100_000),
       name: readString(context.name, "agentContext.context.name", 1, 200),
+      schemaVersion: AGENT_CONTEXT_SCHEMA_VERSION,
     },
   };
 }

@@ -1,5 +1,7 @@
 import { PersistedChatState, StorageRecoveryNotice } from "./chat.types";
 
+export const AGENT_CONTEXT_SCHEMA_VERSION = 3;
+
 export type AgentId = "agent-planner" | "device-agent";
 export type AgentConversationOrigin = "assistant" | "user";
 export type AgentPermissionDecision = "allow" | "deny";
@@ -36,6 +38,7 @@ export type AgentContextFile = {
   description: string;
   instructions: string;
   name: string;
+  schemaVersion: number;
 };
 
 export type AgentPermissionRule = {

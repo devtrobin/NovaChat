@@ -39,6 +39,11 @@ export async function resolveDevicePermission(
     resolvedCommand,
     getDeviceAgentAllowedWriteRoots(settings),
   );
+
+  if (policyDecision.kind === "allow") {
+    return null;
+  }
+
   const permissionLookup = policyDecision.kind === "ask"
     ? await getAgentPermission(
       settings.localFiles.agentsDirectory,
@@ -57,7 +62,7 @@ export async function resolveDevicePermission(
     );
   }
 
-  if (policyDecision.kind !== "ask-always" && permissionLookup.decision !== null) {
+  if (permissionLookup.decision === "allow") {
     return null;
   }
 

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { AGENT_CONTEXT_SCHEMA_VERSION } from "../../shared/agent.types";
 import {
   buildDeviceAgentInput,
   buildGenericAgentInput,
@@ -8,12 +9,14 @@ import {
 const runtime = {
   activeProvider: "openai" as const,
   platform: "win32" as const,
-  shell: "powershell",
+  shell: "cmd.exe",
+  shellFamily: "cmd" as const,
 };
 const context = {
   description: "Description",
   instructions: "Instructions",
   name: "Agent",
+  schemaVersion: AGENT_CONTEXT_SCHEMA_VERSION,
 };
 
 describe("OpenAI payload builders", () => {
@@ -26,7 +29,7 @@ describe("OpenAI payload builders", () => {
       result: "x".repeat(4500),
       to: "assistant",
       visibility: "internal",
-    }], ["agent-planner"]);
+    }], ["agent-planner"], { runtimeContext: runtime });
     const conversation = JSON.parse(payload[1].content[0].text) as {
       conversation: Array<{ result: string }>;
     };
@@ -46,7 +49,21 @@ describe("OpenAI payload builders", () => {
     );
 
     expect(device[0].content[0].text).toContain("Return only the shell command");
+    expect(device[0].content[0].text).toContain("Use cmd.exe syntax only");
+    expect(device[0].content[0].text).toContain("Never use diskpart");
+    expect(device[0].content[0].text).toContain("at most three terminal segments");
     expect(planner[0].content[0].text).toContain("STATUS: ready|needs-info|blocked");
+    expect(planner[0].content[0].text).toContain("Never write shell syntax");
     expect(planner[1].content[0].text).toContain('"source":"assistant"');
+  });
+
+  it("forces the reserved synthesis cycle to answer without agents", () => {
+    const payload = buildInput([], [], {
+      finalResponseOnly: true,
+      runtimeContext: runtime,
+    });
+
+    expect(payload[0].content[0].text).toContain("reserved final synthesis cycle");
+    expect(payload[0].content[0].text).toContain("Do not delegate to any agent");
   });
 });

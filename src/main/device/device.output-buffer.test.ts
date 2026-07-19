@@ -26,4 +26,15 @@ describe("BoundedOutputBuffer", () => {
     expect(output.toString()).toHaveLength(100);
     expect(output.toString()).toContain("Sortie tronquee");
   });
+
+  it("preserves a UTF-8 character split across process chunks", () => {
+    const output = new BoundedOutputBuffer(100);
+    const bytes = Buffer.from("r\u00e9sultat");
+    output.append(bytes.subarray(0, 2));
+    output.append(bytes.subarray(2, 3));
+    output.append(bytes.subarray(3));
+    output.finish();
+
+    expect(output.toString()).toBe("r\u00e9sultat");
+  });
 });

@@ -10,7 +10,7 @@ calendaire.
 
 Les contournements connus par pipes, opérateurs, substitutions, wrappers,
 redirections, sous-commandes Git et options mutantes ont été fermés. La
-matrice Device comporte 88 tests normaux. Une construction inconnue ou trop
+matrice Device comporte 119 tests normaux. Une construction inconnue ou trop
 complexe devient `ask-always`, ce qui interdit de la contourner avec une règle
 permanente mémorisée.
 
@@ -19,10 +19,37 @@ Chaque décision porte désormais une catégorie explicite : lecture locale,
 action non classifiable. Cette catégorie est affichée dans la demande de
 permission.
 
+Le flux de résolution distingue maintenant explicitement les trois décisions :
+
+- `allow` s’exécute sans ouvrir de demande de permission ;
+- `ask` réutilise une éventuelle règle exacte, sinon interroge l’utilisateur ;
+- `ask-always` reste non mémorisable.
+
+Les lectures Windows reconnues (`systeminfo` local, branches matérielles de
+`reg query`, énumérations `pnputil`, `fsutil fsinfo` et commandes simples)
+sont analysées avec leurs sous-commandes et options. Une lecture distante,
+mutante ou non comprise n’est pas automatiquement autorisée.
+
+Les commandes proposées par Device passent en plus par un profil agent avant
+la permission. Il limite chaque inspection à trois segments et rejette les
+commandes non classifiées, les wrappers de shell, les interfaces graphiques,
+les consoles secondaires et les utilitaires interactifs connus (`diskpart`,
+`wmic`, `msinfo32`, `dxdiag`, pagers, etc.). Un rejet ne peut donc ni ouvrir une
+permission inutile ni démarrer le programme. Sous Windows, le séparateur
+séquentiel `&` est analysé comme tel ; il n’est plus confondu avec l’exécution
+en arrière-plan des shells POSIX.
+
+Une lecture n’est pas toujours sans risque : fichiers de clés, `.env`,
+backups de settings et environnement complet peuvent exposer un secret au
+provider. Ces formes restent dans `ask`, même si elles n’écrivent rien.
+
 La policy reste cependant un mécanisme UX de demande de permission :
 
 - une commande acceptée ponctuellement s’exécute dans le shell complet ;
 - l’analyse ne remplace pas une isolation OS ;
+- le profil agent repose sur une liste de programmes interactifs connus et sur
+  la classification de la policy ; il ne prouve pas qu’un outil CLI classifié
+  ne deviendra jamais interactif selon ses arguments ;
 - les contrôles de chemins sont lexicaux et ne constituent pas un confinement
   contre toutes les jonctions ou tous les liens symboliques ;
 - `/cmd` reste une exécution explicite utilisateur qui contourne les
@@ -37,6 +64,26 @@ Actions restantes :
 3. durcir les chemins si la policy doit devenir une vraie frontière ;
 4. ne jamais étendre l’allowlist sans tests sûrs et adversariaux.
 
+### Orchestration bornée avec synthèse finale
+
+La limite historique de quatre cycles pouvait consommer tout le budget en
+planification et tentatives Device, puis remplacer des résultats utiles par un
+message générique de « limite de sécurité ».
+
+Le runtime possède désormais deux plafonds : huit cycles assistant et six
+exécutions Device. Une commande répétée interrompt les délégations. Dans tous
+les cas, un appel final avec les agents désactivés doit synthétiser les
+résultats complets ou partiels déjà obtenus. Ces plafonds restent une
+protection anti-boucle et de coût, pas une frontière de sécurité.
+
+### Contextes Planner et Device versionnés
+
+Le shell exact et les règles obligatoires sont injectés par le code. Les
+préférences éditables ne peuvent donc plus laisser survivre seules d’anciennes
+contraintes incompatibles. `contexte.json` porte une version de schéma ; les
+anciennes valeurs par défaut sont remplacées et les personnalisations sont
+préservées.
+
 ## P1 — Risques de données, sécurité et cohérence produit
 
 ### Couverture automatisée renforcée, E2E réel restant
@@ -44,7 +91,7 @@ Actions restantes :
 Le socle Vitest couvre désormais la policy, les parsers OpenAI/Planner, le
 stockage chat, les migrations, les commandes slash, les messages de tâche
 agent, la concurrence agent, la politique de traces et le coffre de secrets.
-Les 211 tests réussissent, dont 88 cas de policy Device. Ils couvrent aussi les
+Les 277 tests réussissent, dont 119 cas de policy Device. Ils couvrent aussi les
 permissions asynchrones, la résolution concurrente, le registre d’arrêt, le
 timeout OpenAI, la reprise d’une queue après erreur, la sécurité de la fenêtre,
 la visibilité des messages et des composants React critiques rendus côté

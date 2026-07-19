@@ -11,6 +11,7 @@ export async function requestAssistantReply(
   settings: RuntimeAppSettings,
   turnId: string,
   turnMessages: ChatMessage[],
+  finalResponseOnly = false,
 ) {
   const controller = new AbortController();
   registerAbortController(turnId, controller);
@@ -18,8 +19,9 @@ export async function requestAssistantReply(
     return await generateOpenAIReply(
       settings.openai,
       turnMessages,
-      getEnabledAgents(settings),
+      finalResponseOnly ? [] : getEnabledAgents(settings),
       controller.signal,
+      finalResponseOnly,
     );
   } finally {
     unregisterAbortController(turnId, controller);

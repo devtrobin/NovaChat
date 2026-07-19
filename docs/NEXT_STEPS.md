@@ -27,7 +27,7 @@ validation.
 - Policy Device testée avec cas sûrs et cas adversariaux.
 - Parsers OpenAI et Planner testés.
 - Sérialisation, round-trip du stockage et reducers d’événements testés.
-- La suite actuelle compte 211 tests réussis, dont 88 cas de policy Device.
+- La suite actuelle compte 277 tests réussis, dont 119 cas de policy Device.
 
 La phase 2 est terminée. Les anciens
 `it.fails` sont désormais des tests de régression normaux.
@@ -115,7 +115,7 @@ Travaux terminés :
    `internal`, avec compatibilité déterministe pour les anciens messages.
    Permissions, saisies, progression compacte et `/cmd` utilisateur restent
    visibles ; les détails d’orchestration agent restent internes.
-5. Couverture portée à 211 tests dans 33 fichiers : permissions asynchrones,
+5. Couverture portée à 277 tests dans 40 fichiers : permissions asynchrones,
    résolution unique, annulation de tour, queue après échec, timeout OpenAI,
    sécurité de fenêtre, visibilité, payloads et composants React critiques.
 6. TypeScript renforcé : `allowJs` retiré, `strict` activé, casse des fichiers
@@ -148,7 +148,7 @@ Critère de sortie atteint :
 - la visibilité des messages est déterministe et testée ;
 - la fenêtre principale est durcie sans accès générique du renderer ;
 - permission, abort, courses et récupération ont des tests automatisés ;
-- TypeScript strict, ESLint, 211 tests, audits npm et packaging passent ;
+- TypeScript strict, ESLint, 277 tests, audits npm et packaging passent ;
 - aucun bug reproductible connu n’est laissé sans entrée dans `RISKS.md` ;
 - les données locales et artefacts ne polluent plus `git status --short`.
 
@@ -179,6 +179,42 @@ indépendants.
 Les surfaces sans consommateur, les délais simulés et l’hygiène de distribution
 recensés en P2 sont également traités. Les phases 2 à 5 forment désormais le
 socle stabilisé du projet.
+
+## Maintenance corrective post-phase 5 — terminée
+
+L’analyse d’un parcours réel d’inventaire Windows a révélé plusieurs défauts
+du socle existant, corrigés sans ajouter de nouvelle capacité produit :
+
+1. une décision Device `allow` ne déclenche plus de demande de permission ;
+2. les lectures Windows automatiques sont classées par commande et options,
+   avec confirmations conservées pour le réseau, les mutations et les données
+   potentiellement sensibles ;
+3. Planner transmet des objectifs et Device reste propriétaire de la syntaxe
+   shell ;
+4. le shell runtime exposé aux prompts correspond au shell réellement exécuté
+   (`cmd.exe` sous Windows) ;
+5. les quatre cycles uniques sont remplacés par huit cycles assistant, six
+   exécutions Device, une détection des répétitions et une synthèse finale
+   réservée ;
+6. les contextes agents sont versionnés, les anciens defaults sont migrés et
+   les personnalisations sont préservées ;
+7. les sorties Windows passent en UTF-8 et le buffer conserve les caractères
+   multioctets coupés entre deux chunks ;
+8. la règle Git `/agents/` est ancrée à la racine et ne masque plus les
+   nouveaux modules sous `src/main/agents/`.
+9. les commandes générées par Device passent par un profil terminal
+   déterministe avant toute permission : trois segments au plus, aucune
+   interface graphique, console secondaire, commande inconnue ou utilitaire
+   interactif tel que DiskPart ;
+10. le séparateur Windows `&` est reconnu comme séquentiel au lieu d’être
+    classé à tort comme exécution en arrière-plan ;
+11. les lectures ciblées de version Windows dans
+    `HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion` rejoignent les lectures
+    sûres, avec une liste fermée de valeurs autorisées.
+
+Le critère de sortie est la disparition des confirmations pour les lectures
+explicitement sûres, sans autorisation globale des lectures sensibles, ainsi
+qu’une réponse finale même lorsque le budget d’orchestration est atteint.
 
 ## Phase 6 — Nouvelles capacités
 

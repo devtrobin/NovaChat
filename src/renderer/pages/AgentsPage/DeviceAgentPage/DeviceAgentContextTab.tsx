@@ -9,6 +9,8 @@ type DeviceAgentContextTabProps = {
   status: AgentPageStatus;
 };
 
+type EditableContextField = "description" | "instructions" | "name";
+
 export default function DeviceAgentContextTab({
   contextDraft,
   isBusy,
@@ -16,7 +18,7 @@ export default function DeviceAgentContextTab({
   onSave,
   status,
 }: DeviceAgentContextTabProps) {
-  function updateField(field: keyof AgentContextFile, value: string) {
+  function updateField(field: EditableContextField, value: string) {
     if (!contextDraft) return;
     onChange({ ...contextDraft, [field]: value });
   }

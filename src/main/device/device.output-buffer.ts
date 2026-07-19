@@ -1,4 +1,7 @@
+import { StringDecoder } from "node:string_decoder";
+
 export class BoundedOutputBuffer {
+  private readonly decoder = new StringDecoder("utf8");
   private omittedCharacters = 0;
   private tail = "";
 
@@ -9,7 +12,17 @@ export class BoundedOutputBuffer {
   }
 
   append(chunk: Buffer | string): void {
-    const value = chunk.toString();
+    const value = typeof chunk === "string"
+      ? `${this.decoder.end()}${chunk}`
+      : this.decoder.write(chunk);
+    this.appendDecoded(value);
+  }
+
+  finish(): void {
+    this.appendDecoded(this.decoder.end());
+  }
+
+  private appendDecoded(value: string): void {
     if (!value) return;
 
     if (value.length >= this.maxCharacters) {

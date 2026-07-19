@@ -146,7 +146,7 @@ runTurn
 ├── /cmd <commande> ? -> runDirectCommandTurn
 ├── validation OpenAI
 ├── création du tour annulable
-└── jusqu’à 4 cycles
+└── jusqu’à 8 cycles assistant et 6 exécutions Device
     ├── generateOpenAIReply
     ├── réponse utilisateur -> fin
     └── handoff agent
@@ -154,11 +154,17 @@ runTurn
         │   └── parse du plan puis éventuel device-agent
         └── device-agent
             └── génération/exécution de commande
+    └── plafond atteint ou répétition
+        └── cycle final sans agent pour synthétiser les résultats disponibles
 ```
 
 Fichiers clés :
 
 - `ai.orchestrator.ts` : boucle, limite et traitement du Planner ;
+- `ai.orchestrator.budget.ts` : budgets séparés et détection des commandes
+  répétées ;
+- `ai.orchestrator.finalization.ts` : synthèse finale réservée sans nouvelle
+  délégation ;
 - `ai.orchestrator.cycle.ts` : routage d’une réponse assistant ;
 - `ai.orchestrator.assistant-request.ts` : appel provider et abort controller ;
 - `ai.orchestrator.handoff.ts` : résolution d’une délégation explicite ;
@@ -184,21 +190,31 @@ Deux agents sont définis.
 - appelle OpenAI avec son contexte propre ;
 - renvoie un texte structuré `STATUS`, `SUMMARY`, `AGENT`, `MODE`, etc. ;
 - n’exécute aucune action ;
+- formule les demandes Device comme objectifs en langage naturel, jamais comme
+  commandes shell ;
 - ne peut recommander actuellement que `device-agent` ou `none`.
 
 `device-agent` :
 
 - accepte une commande exacte ou un objectif ;
 - pour un objectif, appelle OpenAI afin de produire une commande ;
+- valide la commande générée avec un profil terminal non interactif ;
 - évalue la policy de permission ;
 - consulte les règles exactes mémorisées ;
 - demande éventuellement une décision à l’utilisateur ;
 - exécute la commande et résume le résultat.
 
+Les règles techniques obligatoires ne résident plus uniquement dans le
+`contexte.json` éditable. Le prompt interne impose le rôle, le shell exact et
+le format de sortie ; le fichier utilisateur ne contient que les préférences
+complémentaires. Son schéma est versionné et les anciennes valeurs par défaut
+sont migrées sans remplacer les personnalisations.
+
 `agent-orchestrator.service.ts` coordonne le cycle de vie commun. Les phases
 sont séparées entre `agent-task.planner.ts`, `agent-task.device.ts`,
 `agent-task.device-command.ts`, `agent-task.device-permission.ts`,
-`agent-task.messages.ts` et les modules `ai.orchestrator.*`.
+`agent-task.messages.ts`, `agent-context.migration.ts` et les modules
+`ai.orchestrator.*`.
 `agent-storage.service.ts` reste la façade publique du stockage agent. Les
 responsabilités sont séparées entre `agent-storage.paths.ts`,
 `agent-storage.recovery.ts`, `agent-storage.workspace.ts`,
@@ -210,6 +226,7 @@ responsabilités sont séparées entre `agent-storage.paths.ts`,
 command string
   -> normalizeCommand
   -> assertCommandAllowed
+  -> validateDeviceAgentCommand (commandes générées uniquement)
   -> resolveShell
   -> spawn
   -> registry
@@ -218,7 +235,9 @@ command string
   -> DeviceCommandResult
 ```
 
-Sur Windows : `cmd.exe /d /s /c`.
+Sur Windows : `cmd.exe /d /s /c`, après passage interne de la page de code à
+UTF-8. Le shell communiqué à Nova, Planner et Device provient de la même
+résolution que l’exécuteur.
 
 Sur macOS/Linux : `$SHELL -lc`, avec `/bin/zsh` en fallback.
 
@@ -230,12 +249,27 @@ de processus (`taskkill /t /f` sous Windows, groupe détaché sous Unix).
 La classification de permission de `device.policy.ts` intervient dans le flux
 agent, avant `startDeviceCommand`. Cette façade s’appuie sur les modules
 `device.policy.segment.ts`, `device.policy.command-rules.ts`,
-`device.policy.paths.ts`, `device.policy.tokens.ts` et
+`device.policy.paths.ts`, `device.policy.read.ts`, `device.policy.windows.ts`,
+`device.policy.tokens.ts` et
 `device.policy.types.ts`. Le parseur sépare les segments et redirections ;
 toute syntaxe inconnue, dynamique ou complexe devient `ask-always` et ne peut
 donc pas recevoir d’autorisation permanente. La policy ne s’applique pas à
 `/cmd`, qui est une exécution explicitement demandée par l’utilisateur. Voir
 [RISKS.md](RISKS.md) pour ses limites.
+
+Avant cette classification, `device.agent-command-profile.ts` applique aux
+seules commandes issues de l’agent un profil plus étroit : au plus trois
+segments, uniquement des commandes déjà classifiées par la policy, sans
+wrapper de shell, interface graphique, console secondaire ou utilitaire
+interactif. Une commande rejetée est renvoyée à Nova sans permission et sans
+exécution. Ce profil ne s’applique pas à `/cmd`, qui exprime directement
+l’intention de l’utilisateur.
+
+Une décision `allow` s’exécute sans demande UI. Les lectures Windows
+automatiques sont bornées par commande, sous-commande et options ; les formes
+mutantes, distantes ou inconnues restent confirmées. Les lectures de fichiers
+ou variables susceptibles de contenir des secrets restent également
+permissionnées, même si elles ne modifient pas la machine.
 
 ### Domaine `chat`
 

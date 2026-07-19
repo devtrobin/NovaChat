@@ -1,7 +1,10 @@
 import { ChatMessage } from "../../shared/chat.types";
 import { AgentContextFile, AgentId } from "../../shared/agent.types";
 import { OpenAIRuntimeSettings } from "../../shared/settings.types";
-import { AgentRuntimeContext } from "../agents/agent-prompt.service";
+import {
+  AgentRuntimeContext,
+  createAgentRuntimeContext,
+} from "../agents/agent-prompt.service";
 import { buildDeviceAgentInput, buildGenericAgentInput, buildInput } from "./openai.payload";
 import { createResponseRecord, postOpenAIResponse } from "./openai.client";
 import { throwNovaParseError, throwOpenAIRequestError } from "./openai.errors";
@@ -18,9 +21,14 @@ export async function generateOpenAIReply(
   messages: ChatMessage[],
   enabledAgents: AgentId[],
   signal?: AbortSignal,
+  finalResponseOnly = false,
 ): Promise<GenerateOpenAIReplyResult> {
+  const runtimeContext = createAgentRuntimeContext(settings.provider);
   const requestBody = {
-    input: buildInput(messages, enabledAgents),
+    input: buildInput(messages, enabledAgents, {
+      finalResponseOnly,
+      runtimeContext,
+    }),
     model: settings.model,
     store: false,
   };

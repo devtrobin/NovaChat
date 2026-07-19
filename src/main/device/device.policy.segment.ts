@@ -31,7 +31,10 @@ import {
   ask,
   askAlways,
   DeviceCommandPermissionPolicy,
+  mergePolicyDecisions,
 } from "./device.policy.types";
+import { evaluateWindowsCommand } from "./device.policy.windows";
+import { evaluateSensitiveRead } from "./device.policy.read";
 
 export function evaluateSegment(
   segment: ParsedCommandSegment,
@@ -79,11 +82,25 @@ export function evaluateSegment(
     return askAlways("unclassified", "Les interpreteurs et commandes d'evaluation ne sont pas analyses recursivement.");
   }
 
+  const sensitiveReadDecision = evaluateSensitiveRead(commandName, commandTokens);
   if (commandName === "git") return evaluateGitCommand(commandTokens, allowedWriteRoots);
   if (commandName === "find") return evaluateFindCommand(commandTokens, allowedWriteRoots);
   if (commandName === "sed") return evaluateSedCommand(commandTokens, allowedWriteRoots);
   if (commandName === "sort" || commandName === "diff") {
-    return evaluateOutputOptionCommand(commandName, commandTokens, allowedWriteRoots);
+    const outputDecision = evaluateOutputOptionCommand(
+      commandName,
+      commandTokens,
+      allowedWriteRoots,
+    );
+    return sensitiveReadDecision
+      ? mergePolicyDecisions(sensitiveReadDecision, outputDecision)
+      : outputDecision;
+  }
+  const windowsDecision = evaluateWindowsCommand(commandName, commandTokens);
+  if (windowsDecision) {
+    return sensitiveReadDecision
+      ? mergePolicyDecisions(sensitiveReadDecision, windowsDecision)
+      : windowsDecision;
   }
   const systemMutationDecision = evaluateSystemMutation(commandName, commandTokens);
   if (systemMutationDecision) return systemMutationDecision;
@@ -102,8 +119,10 @@ export function evaluateSegment(
     return askAlways("unclassified", "Cette commande peut executer ou construire une autre commande.");
   }
   if (commandName === "env" || commandName === "command") {
-    return evaluateCommandWrapper(commandName, commandTokens);
+    return sensitiveReadDecision
+      ?? evaluateCommandWrapper(commandName, commandTokens);
   }
+  if (sensitiveReadDecision) return sensitiveReadDecision;
 
   if (READ_ONLY_COMMANDS.has(commandName)) {
     return allow(

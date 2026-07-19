@@ -28,6 +28,9 @@ describe("device permission policy", () => {
     ["git -C . status --short", "allow"],
     ["git branch --show-current", "allow"],
     ["cat package.json | rg name", "allow"],
+    ...(process.platform === "win32"
+      ? [["ver & systeminfo", "allow"] as const]
+      : []),
     ['printf "a|b"', "allow"],
     ["echo hello", "allow"],
     ["FOO=bar", "allow"],
@@ -78,6 +81,25 @@ describe("device permission policy", () => {
   });
 
   it.each([
+    "cat .env",
+    "cat ~/.ssh/id_rsa",
+    "printenv",
+    "rg api_key settings.json.bak",
+  ])("asks before a potentially sensitive local read: %s", (command) => {
+    expect(evaluate(command)).toMatchObject({
+      category: "read-local",
+      kind: "ask",
+    });
+  });
+
+  it("allows a constrained non-sensitive environment read", () => {
+    expect(evaluate("printenv PROCESSOR_ARCHITECTURE")).toMatchObject({
+      category: "read-local",
+      kind: "allow",
+    });
+  });
+
+  it.each([
     "echo hello > tmp/allowed/output.txt",
     "echo hello>tmp/allowed/output.txt",
     "cat package.json > tmp/allowed/copy.json",
@@ -97,6 +119,7 @@ describe("device permission policy", () => {
     "cp package.json ../outside.json",
     "cp -t ../outside package.json",
     "diff package.json package-lock.json --output=../outside.diff",
+    "diff .env package.json --output=../outside.diff",
     "git diff --output=../outside.diff",
     "sort package.json -o ../outside.txt",
     "rm -rf tmp/allowed > tmp/allowed/removal.log",
@@ -165,6 +188,65 @@ describe("device permission policy", () => {
     "git restore package.json",
     "git rm package.json",
   ])("always asks before a destructive Git command: %s", (command) => {
+    expect(evaluate(command).kind).toBe("ask-always");
+  });
+});
+
+describe.runIf(process.platform === "win32")("Windows read-only policy", () => {
+  it.each([
+    "dir /b",
+    "driverquery /fo csv /nh",
+    "findstr /i processor package.json",
+    "fsutil fsinfo drives",
+    "ipconfig /all",
+    "pnputil /enum-devices /connected",
+    "reg query HKLM\\HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0",
+    "reg query \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\" /v DisplayVersion",
+    "reg query \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\" /v ProductName",
+    "systeminfo /fo list",
+    "type package.json",
+    "ver",
+    "where node",
+  ])("allows a constrained local inspection without prompting: %s", (command) => {
+    expect(evaluate(command)).toMatchObject({
+      category: "read-local",
+      kind: "allow",
+    });
+  });
+
+  it("asks before reading a potentially sensitive registry branch", () => {
+    expect(evaluate("reg query HKCU\\Software")).toMatchObject({
+      category: "read-local",
+      kind: "ask",
+    });
+  });
+
+  it("does not broadly allow every value from the Windows version registry branch", () => {
+    expect(evaluate(
+      "reg query \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\" /v ProductId",
+    )).toMatchObject({
+      category: "read-local",
+      kind: "ask",
+    });
+  });
+
+  it("asks before a Windows read targeting a network share", () => {
+    expect(evaluate("dir \\\\remote-host\\share")).toMatchObject({
+      category: "network",
+      kind: "ask",
+    });
+  });
+
+  it.each([
+    "driverquery /s remote-host",
+    "fsutil file createnew payload.bin 10",
+    "ipconfig /release",
+    "pnputil /delete-driver oem1.inf",
+    "reg add HKCU\\Software\\Nova /v test /d value",
+    "reg delete HKCU\\Software\\Nova /f",
+    "reg query \\\\remote-host\\HKLM\\HARDWARE",
+    "systeminfo /s remote-host",
+  ])("keeps mutating, remote or unsupported Windows forms behind confirmation: %s", (command) => {
     expect(evaluate(command).kind).toBe("ask-always");
   });
 });

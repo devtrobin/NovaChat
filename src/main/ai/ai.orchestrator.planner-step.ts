@@ -1,4 +1,4 @@
-import { AgentId, AgentTaskRequest } from "../../shared/agent.types";
+import { AgentId } from "../../shared/agent.types";
 import { ChatMessage } from "../../shared/chat.types";
 import { RuntimeAppSettings } from "../../shared/settings.types";
 import { runAgentTask } from "../agents/agent-orchestrator.service";
@@ -40,6 +40,7 @@ export async function resolvePlannerStep({
 }: ResolvePlannerStepArgs): Promise<
   | { kind: "assistant"; message: ChatMessage }
   | { kind: "agent"; message: ChatMessage }
+  | { kind: "finalize" }
 > {
   const parsed = parsePlannerMessageContent(message.content);
   const plan = parsed.plan;
@@ -63,9 +64,7 @@ export async function resolvePlannerStep({
 
   const stepSignature = createStepSignature(plan.nextStep);
   if (executedPlannerSteps.has(stepSignature)) {
-    return assistant(
-      "Le planner a repropose exactement la meme etape. J'arrete ici pour eviter une boucle interne.",
-    );
+    return { kind: "finalize" };
   }
   executedPlannerSteps.add(stepSignature);
   updatePipelineStage("requesting-agent", "device-agent");
@@ -83,7 +82,7 @@ export async function resolvePlannerStep({
     settings,
     task: {
       agentId: "device-agent",
-      mode: plan.nextStep.mode as AgentTaskRequest["mode"],
+      mode: "goal",
       request: plan.nextStep.request,
       triggerMessageId: userMessage.id,
       turnId,
@@ -114,9 +113,11 @@ function createStepSignature(
 ): string {
   return JSON.stringify({
     agentId: nextStep.recommendedAgent,
-    goal: nextStep.goal,
-    mode: nextStep.mode,
-    request: nextStep.request,
-    successCriteria: nextStep.successCriteria,
+    goal: normalizeSignaturePart(nextStep.goal),
+    request: normalizeSignaturePart(nextStep.request),
   });
+}
+
+function normalizeSignaturePart(value: string): string {
+  return value.trim().toLowerCase().replace(/\s+/g, " ");
 }

@@ -16,6 +16,7 @@ import {
   throwIfTurnStopped,
   updateActiveAgentTaskStatus,
 } from "../ai/ai.turn-registry";
+import { evaluateDeviceAgentCommandProfile } from "../device/device.agent-command-profile";
 
 export async function runDeviceAgentTask(
   args: RunAgentTaskArgs,
@@ -36,6 +37,24 @@ export async function runDeviceAgentTask(
   } = await resolveDeviceAgentCommand(settings, task);
   throwIfTurnStopped(turnId);
 
+  const profileDecision = evaluateDeviceAgentCommandProfile(resolvedCommand);
+  if (profileDecision.kind === "reject") {
+    const rejectedMessage = createDeviceAgentSummaryMessage(
+      task.request,
+      resolvedCommand,
+      profileDecision.reason,
+      "error",
+    );
+    rejectedMessage.apiRequests = [...commandApiRecords];
+    return persistDeviceAgentResult(
+      args,
+      currentAgentConversationId,
+      resolvedCommand,
+      commandApiRecords,
+      rejectedMessage,
+    );
+  }
+
   const permissionResult = await resolveDevicePermission(
     args,
     activeTaskId,
@@ -51,6 +70,27 @@ export async function runDeviceAgentTask(
     resolvedCommand,
     commandApiRecords,
   );
+  return persistDeviceAgentResult(
+    args,
+    currentAgentConversationId,
+    resolvedCommand,
+    commandApiRecords,
+    deviceMessage,
+  );
+}
+
+async function persistDeviceAgentResult(
+  args: RunAgentTaskArgs,
+  currentAgentConversationId: string | null,
+  resolvedCommand: string,
+  commandApiRecords: NonNullable<ChatMessage["apiRequests"]>,
+  deviceMessage: ChatMessage,
+): Promise<AgentTaskExecutionResult> {
+  const {
+    settings,
+    task,
+    turnId,
+  } = args;
   const record = await recordAgentCommandExchange({
     agentId: task.agentId,
     agentConversationId: currentAgentConversationId,

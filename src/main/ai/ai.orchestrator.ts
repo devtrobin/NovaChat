@@ -20,13 +20,18 @@ import {
   restartAssistantThinking,
 } from "./ai.orchestrator.cycle.state";
 import {
-  createAssistantResponseMessage,
   createPipelineSystemMessage,
   PipelineStage,
 } from "./ai.orchestrator.cycle.messages";
 import { handleMissingOpenAIConfig, handleTurnError } from "./ai.orchestrator.errors";
 import { finishTurn, startTurn, TurnStoppedError } from "./ai.turn-registry";
 import { resolvePlannerStep } from "./ai.orchestrator.planner-step";
+import {
+  createOrchestrationBudget,
+  MAX_ASSISTANT_CYCLES,
+  registerDeviceResult,
+} from "./ai.orchestrator.budget";
+import { requestFinalSynthesis } from "./ai.orchestrator.finalization";
 
 export async function runTurn(
   request: RunTurnRequest,
@@ -63,6 +68,8 @@ export async function runTurn(
   const turnMessages: ChatMessage[] = [...request.messages, userMessage];
   const turnId = startTurn(request.conversationId);
   const executedPlannerSteps = new Set<string>();
+  const orchestrationBudget = createOrchestrationBudget();
+  let assistantCycles = 0;
   const updatePipelineStage = (stage: PipelineStage, agentId?: AgentId) => {
     emit({ conversationId: request.conversationId, messageId: systemMessage.id, type: "remove-message" });
     systemMessage = createPipelineSystemMessage(stage, agentId);
@@ -70,7 +77,7 @@ export async function runTurn(
   };
 
   try {
-    for (let step = 0; step < 4; step += 1) {
+    for (let step = 0; step < MAX_ASSISTANT_CYCLES; step += 1) {
       const cycleResult = await runAssistantCycle({
         conversationId: request.conversationId,
         emit,
@@ -81,6 +88,7 @@ export async function runTurn(
         turnMessages,
         userMessage,
       });
+      assistantCycles = step + 1;
 
       if (cycleResult.kind === "assistant") {
         emit({ conversationId: request.conversationId, messages: [cycleResult.message], type: "append-messages" });
@@ -106,8 +114,15 @@ export async function runTurn(
           emit({ conversationId: request.conversationId, messageId: systemMessage.id, type: "remove-message" });
           return { ok: true };
         }
+        if (plannerResolution.kind === "finalize") {
+          break;
+        }
 
         turnMessages.push(plannerResolution.message);
+        const budgetDecision = registerDeviceResult(
+          orchestrationBudget,
+          plannerResolution.message,
+        );
         systemMessage = restartAssistantThinking(
           request.conversationId,
           emit,
@@ -118,9 +133,11 @@ export async function runTurn(
         if (plannerResolution.message.lifecycleLog?.some((entry) => entry.event === "device-killed")) {
           appendInterruptedCommandContext(turnMessages);
         }
+        if (budgetDecision.duplicateCommand || budgetDecision.deviceLimitReached) break;
         continue;
       }
 
+      const budgetDecision = registerDeviceResult(orchestrationBudget, cycleResult.message);
       systemMessage = restartAssistantThinking(
         request.conversationId,
         emit,
@@ -131,7 +148,30 @@ export async function runTurn(
       if (cycleResult.message.lifecycleLog?.some((entry) => entry.event === "device-killed")) {
         appendInterruptedCommandContext(turnMessages);
       }
+      if (budgetDecision.duplicateCommand || budgetDecision.deviceLimitReached) break;
     }
+
+    updatePipelineStage("final-response");
+    const finalSynthesis = await requestFinalSynthesis({
+      conversationId: request.conversationId,
+      emit,
+      settings,
+      step: assistantCycles,
+      turnId,
+      turnMessages,
+      userMessage,
+    });
+    emit({
+      conversationId: request.conversationId,
+      messages: [finalSynthesis.message],
+      type: "append-messages",
+    });
+    emit({
+      conversationId: request.conversationId,
+      messageId: systemMessage.id,
+      type: "remove-message",
+    });
+    return { ok: finalSynthesis.ok };
   } catch (error) {
     if (error instanceof TurnStoppedError || (error instanceof DOMException && error.name === "AbortError")) {
       emit({ conversationId: request.conversationId, messageId: systemMessage.id, type: "remove-message" });
@@ -143,15 +183,4 @@ export async function runTurn(
   } finally {
     finishTurn(turnId);
   }
-
-  emit({ conversationId: request.conversationId, messageId: systemMessage.id, type: "remove-message" });
-  emit({
-    conversationId: request.conversationId,
-    messages: [createAssistantResponseMessage(
-      "Je me suis arrete avant de pouvoir finaliser une reponse exploitable. Le workflow interne a atteint sa limite de securite. Reformule la demande ou reduis-la a une etape plus precise.",
-      [],
-    )],
-    type: "append-messages",
-  });
-  return { ok: false };
 }

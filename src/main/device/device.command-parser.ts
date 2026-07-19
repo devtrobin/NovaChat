@@ -89,7 +89,7 @@ function splitCommand(command: string): SplitResult {
     const operatorLength = getSegmentOperatorLength(char, next);
     if (operatorLength > 0) {
       const operator = command.slice(index, index + operatorLength);
-      if (operator === "&") {
+      if (operator === "&" && process.platform !== "win32") {
         return unsafe("L'execution en arriere-plan exige une confirmation.");
       }
       if (!current.trim() && operator !== ";" && operator !== "\n") {

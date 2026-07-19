@@ -1,8 +1,19 @@
 import { AgentId } from "../../shared/agent.types";
 import { ChatMessage } from "../../shared/chat.types";
+import { AgentRuntimeContext } from "../agents/agent-prompt.service";
 import { createProviderTextInput } from "./openai.payload.shared";
 
-export function buildInput(messages: ChatMessage[], enabledAgents: AgentId[]) {
+type AssistantInputOptions = {
+  finalResponseOnly?: boolean;
+  runtimeContext: AgentRuntimeContext;
+};
+
+export function buildInput(
+  messages: ChatMessage[],
+  enabledAgents: AgentId[],
+  options: AssistantInputOptions,
+) {
+  const { finalResponseOnly = false, runtimeContext } = options;
   const enabledDeviceAgent = enabledAgents.includes("device-agent");
   const enabledPlannerAgent = enabledAgents.includes("agent-planner");
   const agentInstructions = [
@@ -34,9 +45,15 @@ export function buildInput(messages: ChatMessage[], enabledAgents: AgentId[]) {
       "You are Nova.",
       "You are the main assistant. Specialized internal agents exist: agent-planner plans next atomic steps, and device-agent executes device commands.",
       "You receive the full conversation as Nova JSON messages.",
+      `Runtime platform: ${runtimeContext.platform}.`,
+      `Runtime shell: ${runtimeContext.shell}.`,
+      `Runtime shell family: ${runtimeContext.shellFamily}.`,
       "Each message uses this schema: { id, from, to, agentId?, content, createdAt, status?, result?, commandId?, actionType?, actionLabel?, isExpandable? }.",
       "Reply only with one minified JSON object compatible with the Nova format subset.",
       'If you answer the user directly, reply exactly like: {"from":"assistant","to":"user","content":"..."}',
+      finalResponseOnly
+        ? "This is the reserved final synthesis cycle. You must answer the user now using the available complete or partial results. Do not delegate to any agent and do not request another tool."
+        : "",
       agentInstructions,
       "Prefer GOAL when the user request is high-level, when you need the device-agent to choose the best command, or when you are not fully confident in the exact shell command yet.",
       'When you reply to "agent", Nova delegates the request to the targeted internal agent, waits for the result, and then gives you the result back in the conversation.',
@@ -52,6 +69,10 @@ export function buildInput(messages: ChatMessage[], enabledAgents: AgentId[]) {
       "Do not wrap the command in bash -lc, zsh -lc, sh -c, cmd /c, or powershell -Command because Nova already executes the command in a shell.",
       "Avoid heredoc blocks, multi-layer escaping, nested quoting, and giant one-liners when a simpler command is possible.",
       "Prefer short sequential shell commands joined with && when needed.",
+      runtimeContext.shellFamily === "cmd"
+        ? "On this runtime, exact commands must use cmd.exe syntax only. Never emit raw PowerShell or Unix shell syntax. Never use diskpart, wmic, GUI launchers, or interactive utilities."
+        : "On this runtime, exact commands must use POSIX syntax compatible with the declared shell.",
+      "Device commands must stay in the existing terminal, be non-interactive, and contain at most three shell segments. Never start another application or console.",
       "When you can inspect with one command and answer after the result returns, do that instead of generating a huge diagnostic script.",
       "Never wrap JSON in markdown fences.",
     ],
