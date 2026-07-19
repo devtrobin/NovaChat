@@ -113,6 +113,17 @@ uniquement un ping IPC avec timeout de trois secondes. En cas de succès, le
 workspace est affiché immédiatement ; en cas d’échec, l’écran conserve le
 détail et une action de nouvelle tentative.
 
+En développement, la CSP est envoyée par le `main` avec `unsafe-eval` et
+`ws:` limités au runtime Webpack/HMR. La version packagée conserve
+`script-src 'self'` et `connect-src 'self'`. Ne pas remettre la CSP dans une
+balise `<meta>` : plusieurs politiques se cumulent et la plus stricte
+bloquerait de nouveau le client Webpack.
+
+Les messages DevTools `Autofill.enable wasn't found` et
+`Autofill.setAddresses wasn't found` proviennent du frontend Chromium des
+DevTools. Ils n’indiquent pas un échec du renderer ou d’un IPC NovaChat et
+disparaissent lorsque les DevTools sont fermés.
+
 ## Configuration locale
 
 En développement comme en application packagée, les valeurs par défaut

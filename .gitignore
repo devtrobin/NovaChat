@@ -93,6 +93,8 @@ out/
 
 # Local app data
 settings.json
+settings.json.*
 conversations.json
+conversations.json.*
 conversations/
 agents/

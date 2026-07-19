@@ -56,6 +56,8 @@
 - modernisation du `tsconfig` pour TypeScript recent
 
 ### Fixed
+- CSP fournie comme en-tête avec politiques distinctes développement/package,
+  afin de laisser fonctionner Webpack HMR sans relâcher la production
 - fermeture des contournements Device connus par pipes, opérateurs shell,
   substitutions, wrappers, sous-commandes Git, redirections et options
   mutantes

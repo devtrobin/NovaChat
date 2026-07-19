@@ -1,8 +1,10 @@
 import {
+  app,
   BrowserWindow,
   dialog,
 } from "electron";
 import {
+  configureMainWindowContentSecurityPolicy,
   configureMainWindowNavigation,
   createMainWindowOptions,
 } from "./main-window.security";
@@ -17,6 +19,10 @@ export function createMainWindow(): BrowserWindow {
   configureMainWindowNavigation(
     mainWindow.webContents,
     MAIN_WINDOW_WEBPACK_ENTRY,
+  );
+  configureMainWindowContentSecurityPolicy(
+    mainWindow.webContents,
+    !app.isPackaged,
   );
   void mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY).catch((error: unknown) => {
     dialog.showErrorBox(

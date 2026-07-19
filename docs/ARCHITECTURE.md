@@ -37,6 +37,11 @@ La fenêtre principale fixe explicitement `contextIsolation`, `sandbox`,
 les ressources au document applicatif, `window.open` est refusé et les
 navigations/redirections hors de l’URL d’entrée sont bloquées.
 
+La CSP est posée comme en-tête de la réponse du document principal par le
+process `main`, et non par une balise `<meta>`. La variante de développement
+autorise uniquement `unsafe-eval` et les WebSockets nécessaires au runtime
+Webpack ; la variante packagée les refuse.
+
 Ce durcissement ne doit pas interdire une future capacité d’automatisation. Il
 empêche seulement le renderer de naviguer ou d’ouvrir une fenêtre de façon non
 sollicitée.
@@ -167,7 +172,7 @@ Fichiers clés :
 - `openai.*` : payload, transport, parsing et erreurs provider.
 
 Le transport utilise `fetch` et accepte un `AbortSignal` pour les tours. Le
-test de connexion Settings n’a pas de timeout explicite.
+test de connexion Settings possède un timeout explicite de dix secondes.
 
 ### Domaine `agents`
 
