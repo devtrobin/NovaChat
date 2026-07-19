@@ -39,17 +39,21 @@ Actions restantes :
 
 ## P1 — Risques de données, sécurité et cohérence produit
 
-### Couverture de tests encore limitée
+### Couverture automatisée renforcée, E2E réel restant
 
 Le socle Vitest couvre désormais la policy, les parsers OpenAI/Planner, le
 stockage chat, les migrations, les commandes slash, les messages de tâche
 agent, la concurrence agent, la politique de traces et le coffre de secrets.
-Les 191 tests réussissent, dont 88 cas de policy Device.
+Les 211 tests réussissent, dont 88 cas de policy Device. Ils couvrent aussi les
+permissions asynchrones, la résolution concurrente, le registre d’arrêt, le
+timeout OpenAI, la reprise d’une queue après erreur, la sécurité de la fenêtre,
+la visibilité des messages et des composants React critiques rendus côté
+serveur.
 
-Il manque encore les composants React, l’orchestrateur complet, les
-permissions asynchrones, le registre d’arrêt et les parcours end-to-end.
-
-Action recommandée : couvrir maintenant les workflows asynchrones critiques.
+Risque restant : aucun test automatisé ne remplace un parcours Electron réel
+avec une vraie clé OpenAI, ni la validation native macOS/Linux. Ces contrôles
+restent dans la phase finale de distribution et dans la checklist manuelle de
+`DEVELOPMENT.md`.
 
 ### Écritures non atomiques et erreurs silencieuses — corrigé
 
@@ -96,14 +100,16 @@ l’exécution objets, énumérations, identifiants, tailles, URLs et chemins. L
 chemins dérivés des conversations, messages et agents sont résolus avec un
 contrôle d’appartenance à leur racine avant lecture, écriture ou suppression.
 
-### Durcissement Electron incomplet
+### Durcissement Electron — corrigé avec frontière future explicite
 
-`index.html` ne définit pas de Content Security Policy. La fenêtre ne rend pas
-explicites les choix `contextIsolation`, `sandbox` et `nodeIntegration`, et
-aucune règle de navigation/nouvelle fenêtre n’est installée.
+La fenêtre principale active explicitement `contextIsolation`, `sandbox` et
+`webSecurity`, désactive Node et les webviews, applique une CSP et refuse les
+nouvelles fenêtres ainsi que les navigations hors du document applicatif.
 
-Action recommandée : configuration explicite, CSP stricte et blocage des
-navigations externes non approuvées.
+Limite volontaire : une future capacité de contrôle de fenêtres n’est pas
+implémentée. Elle devra être exposée séparément par le main, avec permissions
+et politique de navigation propres ; le renderer Nova ne doit pas recevoir un
+accès générique à `BrowserWindow`.
 
 ### Sémantique de refus trompeuse — corrigée
 
@@ -111,27 +117,34 @@ Le bouton `Non` est maintenant ponctuel. Seule l’action distincte
 `Toujours refuser` enregistre une règle `deny`, et les messages de résolution
 indiquent explicitement la portée de la décision.
 
-### Providers preview incohérents
+### Catalogue provider et runtime — corrigés
 
-L’UI permet de sauvegarder Anthropic, Google, Mistral, Ollama ou LM Studio
-comme provider actif sans configuration complète. `runTurn` utilise malgré
-tout OpenAI.
+Les providers futurs restent visibles comme « à venir », mais leurs options
+sont désactivées. `ActiveAIProviderId` ne contient qu’OpenAI ; le catalogue
+planifié possède son propre type et la validation IPC refuse une activation
+non implémentée. Leur implémentation reste une tâche de phase 6.
 
-Action recommandée : empêcher l’activation d’un provider non implémenté ou
-introduire une vraie abstraction de provider.
+### Sauvegarde des settings et test réseau — corrigés
 
-### Sauvegarde des settings couplée au réseau
+La sauvegarde valide les champs locaux puis persiste sans appeler OpenAI.
+`agentsDirectory`, conversations et fichier settings sont obligatoires. Le
+test de connexion reste une action distincte et utilise un `AbortSignal` avec
+un délai maximal de dix secondes.
 
-Quand OpenAI est le provider actif, toute validation du panneau Settings teste
-d’abord la connexion OpenAI, même si seul un chemin local a changé. Une panne
-réseau ou une clé absente empêche donc d’enregistrer les chemins. Le test de
-connexion n’a pas de timeout explicite.
+### TypeScript strict et erreurs asynchrones — corrigés
 
-Le validateur exige le fichier settings et le dossier conversations, mais pas
-`agentsDirectory`.
+`strict` est actif, `allowJs` a été retiré et le code source ne contient pas de
+`any` ajouté pour contourner le typage. Les contrôleurs renderer critiques
+gèrent explicitement chargement, sauvegarde, arrêt et erreurs IPC. Les options
+plus intrusives `noUncheckedIndexedAccess` et `exactOptionalPropertyTypes`
+restent à évaluer lors d’un chantier typage dédié.
 
-Action recommandée : validation par section, sauvegarde locale indépendante du
-test provider, timeout/abort et validation de tous les chemins.
+### Frontières des modules denses — corrigées
+
+La validation IPC, les migrations, la résolution Planner, les pages agents et
+les payloads OpenAI sont séparés par responsabilités métier avec des façades
+stables. La cible de 100 lignes reste un signal de revue, pas une contrainte
+qui justifierait des micro-modules artificiels.
 
 ### Migration `diagnostic-agent` — corrigée
 
@@ -140,13 +153,14 @@ La migration versionnée remplace l’ancien flag, déplace le dossier source da
 Permissions, historique et conversations sont dédupliqués. Une nouvelle
 exécution ne rejoue pas les étapes déjà marquées.
 
-### Masquage des messages internes trop large
+### Visibilité des messages internes — corrigée avec compatibilité
 
-`hideInternalConversations` filtre tous les messages `device`, y compris le
-résultat visible d’un `/cmd` lancé directement par l’utilisateur.
-
-Action recommandée : distinguer messages internes d’agent et résultat
-explicitement demandé par l’utilisateur.
+`ChatMessage.visibility` exprime désormais `public` ou `internal`. Les
+factories marquent explicitement les nouveaux messages et le renderer applique
+une règle déterministe aux anciennes données sans champ : les permissions,
+saisies, états compacts et `/cmd` utilisateur restent visibles ; les échanges
+intermédiaires des agents restent internes. Le filtrage produit une vue sans
+muter la conversation persistée.
 
 ### Saisie interactive encore heuristique
 

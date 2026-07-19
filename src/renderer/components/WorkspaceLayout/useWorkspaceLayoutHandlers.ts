@@ -1,7 +1,10 @@
 import React from "react";
 import { SubmitPermissionDecisionRequest } from "../../../shared/ai.types";
 import { AgentSettingsMap, AppSettings } from "../../../shared/settings.types";
-import { WorkspaceLayoutController } from "./WorkspaceLayout.types";
+import {
+  WorkspaceError,
+  WorkspaceLayoutController,
+} from "./WorkspaceLayout.types";
 
 type UseWorkspaceLayoutHandlersArgs = {
   setAgentSettings: React.Dispatch<React.SetStateAction<AgentSettingsMap>>;
@@ -10,6 +13,7 @@ type UseWorkspaceLayoutHandlersArgs = {
   setActiveSettingsCategory: React.Dispatch<React.SetStateAction<WorkspaceLayoutController["activeSettingsCategory"]>>;
   setHideInternalConversations: React.Dispatch<React.SetStateAction<boolean>>;
   setIsPreviewMode: React.Dispatch<React.SetStateAction<boolean>>;
+  setWorkspaceError: React.Dispatch<React.SetStateAction<WorkspaceError | null>>;
 };
 
 export function useWorkspaceLayoutHandlers({
@@ -19,6 +23,7 @@ export function useWorkspaceLayoutHandlers({
   setActiveSettingsCategory,
   setHideInternalConversations,
   setIsPreviewMode,
+  setWorkspaceError,
 }: UseWorkspaceLayoutHandlersArgs) {
   const handleSavedSettings = React.useCallback((settings: AppSettings) => {
     setAgentSettings(settings.agents);
@@ -32,16 +37,41 @@ export function useWorkspaceLayoutHandlers({
   }, [setActiveAgentId, setActiveSection]);
 
   const handleKillCommand = React.useCallback(async (commandId: string) => {
-    await window.nova.ai.killCommand(commandId);
-  }, []);
+    await runInteraction(
+      () => window.nova.ai.killCommand(commandId),
+      "L'arret de la commande a echoue.",
+    );
+  }, [setWorkspaceError]);
 
   const handleSubmitCommandInput = React.useCallback(async (commandId: string, value: string) => {
-    await window.nova.ai.submitCommandInput({ commandId, value });
-  }, []);
+    await runInteraction(
+      () => window.nova.ai.submitCommandInput({ commandId, value }),
+      "L'envoi de la saisie a la commande a echoue.",
+    );
+  }, [setWorkspaceError]);
 
   const handleSubmitPermissionDecision = React.useCallback(async (payload: SubmitPermissionDecisionRequest) => {
-    await window.nova.ai.submitPermissionDecision(payload);
-  }, []);
+    await runInteraction(
+      () => window.nova.ai.submitPermissionDecision(payload),
+      "L'envoi de la decision de permission a echoue.",
+    );
+  }, [setWorkspaceError]);
+
+  async function runInteraction(
+    interaction: () => Promise<unknown>,
+    fallback: string,
+  ): Promise<void> {
+    try {
+      await interaction();
+    } catch (error) {
+      setWorkspaceError({
+        context: "interaction",
+        message: error instanceof Error && error.message.trim()
+          ? error.message
+          : fallback,
+      });
+    }
+  }
 
   return {
     handleKillCommand,

@@ -6,6 +6,7 @@ export function useSettingsLoader() {
   const [draft, setDraft] = React.useState<AppSettings | null>(null);
   const [initialSettings, setInitialSettings] = React.useState<AppSettings | null>(null);
   const [isBusy, setIsBusy] = React.useState(false);
+  const [initialStatus, setInitialStatus] = React.useState(createEmptyStatus());
 
   React.useEffect(() => {
     let active = true;
@@ -17,6 +18,14 @@ export function useSettingsLoader() {
         if (!active) return;
         setDraft(nextSettings);
         setInitialSettings(nextSettings);
+      } catch (error) {
+        if (!active) return;
+        setInitialStatus({
+          kind: "error",
+          message: error instanceof Error && error.message.trim()
+            ? error.message
+            : "Le chargement des paramètres a échoué.",
+        });
       } finally {
         if (active) setIsBusy(false);
       }
@@ -35,6 +44,6 @@ export function useSettingsLoader() {
     setDraft,
     setInitialSettings,
     setIsBusy,
-    initialStatus: createEmptyStatus(),
+    initialStatus,
   };
 }

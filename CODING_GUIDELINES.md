@@ -8,15 +8,21 @@ Ce document sert de reference rapide pour garder un code lisible, maintenable et
 - Ecrire pour le prochain lecteur: noms explicites, logique previsible.
 - Eviter les effets de bord caches: rendre les flux de donnees evidents.
 - Corriger le probleme a la source, pas uniquement le symptome.
-- Limiter la taille:
-  - pas de fichier de plus de 100 lignes,
-  - pas de fonction de plus de 100 lignes,
-  - exceptions autorisees: fichiers `*.fonctions.ts`, `*.types.ts` et `*.css`.
+- Limiter la taille :
+  - viser environ 100 lignes par fichier ou fonction ;
+  - au-delà, vérifier d’abord si plusieurs responsabilités métier sont
+    mélangées et extraire une frontière testable ;
+  - un module cohérent peut dépasser cette cible si le découper créerait des
+    micro-fichiers artificiels ou disperserait un même invariant ;
+  - documenter les exceptions durables les plus importantes dans
+    `docs/RISKS.md`.
 
 ## 2) TypeScript
 
 - Toujours typer les entrees/sorties publiques (props, types partages, API preload).
-- Eviter `any` (le projet utilise deja `noImplicitAny`).
+- Eviter `any` (le projet utilise le mode `strict`).
+- Préserver le mode `strict` et ne pas compenser une erreur de type par un cast
+  large ou une désactivation globale.
 - Preferer des unions de types explicites pour les etats (ex: `pending | loading | success | error`).
 - Centraliser les types dans des fichiers `*.types.ts` quand ils sont partages.
 - Compartimenter le code metier en petites fonctions testables (une tache claire par fonction).

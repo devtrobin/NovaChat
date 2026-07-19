@@ -19,6 +19,7 @@ import {
   acknowledgeStorageRecovery,
   registerStorageRecovery,
 } from "../storage/storage-recovery.registry";
+import { enqueueSerialTask } from "../storage/serial-task.queue";
 
 export function registerChatHandlers(ipcMain: IpcMain): void {
   let chatSaveQueue = Promise.resolve();
@@ -31,8 +32,12 @@ export function registerChatHandlers(ipcMain: IpcMain): void {
 
   ipcMain.handle("nova:chat:save", async (_event, payload: unknown) => {
     const state = parsePersistedChatState(payload);
-    chatSaveQueue = chatSaveQueue.then(() => saveChatStateToDisk(state));
-    await chatSaveQueue;
+    const queuedSave = enqueueSerialTask(
+      chatSaveQueue,
+      () => saveChatStateToDisk(state),
+    );
+    chatSaveQueue = queuedSave.tail;
+    await queuedSave.result;
   });
 }
 

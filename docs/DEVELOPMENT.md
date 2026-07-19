@@ -35,21 +35,29 @@ Sous macOS ou Linux, la forme habituelle est `npm ci`.
 `npm start` fonctionne dans `cmd.exe`. Sur la machine auditée, PowerShell
 interdit `npm.ps1`; `npm.cmd` est donc nécessaire.
 
-## État de validation au 18 juillet 2026
+## État de validation au 19 juillet 2026
 
+- `npm.cmd ci` : installation exacte depuis `package-lock.json` réussie.
 - `npm.cmd exec tsc -- --noEmit` : réussi.
-- `npm.cmd test` : 191 réussites.
+- `npm.cmd test` : 211 réussites.
 - `npm.cmd run lint` : réussi.
 - `npm.cmd run package` : réussi pour `win32-x64`.
-- `npm.cmd run ci` : réussi.
-- `npm.cmd run make` : non exécuté.
+- `npm.cmd run check` : réussi.
+- `npm.cmd audit` et `npm.cmd audit --omit=dev` : 0 vulnérabilité.
+- `npm.cmd run make` : non exécuté et volontairement reporté à la toute
+  dernière phase de validation de distribution.
 
 Le packaging produit actuellement `out/nova-chat-win32-x64/`. `out/` est
 ignoré par Git.
 
+La création d’installateurs, leur lancement réel et la validation native
+Windows/macOS/Linux constituent la dernière tâche absolue de la roadmap. Ne
+pas les confondre avec le packaging courant utilisé comme contrôle technique
+pendant le développement.
+
 ## Tests
 
-Vitest 4 exécute 23 fichiers sous `src/` :
+Vitest 4 exécute 33 fichiers sous `src/` :
 
 - policy de permissions Device ;
 - parser des réponses OpenAI ;
@@ -71,14 +79,21 @@ Vitest 4 exécute 23 fichiers sous `src/` :
 - migrations `userData` et `diagnostic-agent` ;
 - rétention et redaction des traces API ;
 - chiffrement, remplacement, suppression et migration de la clé OpenAI.
+- sécurité et politique de navigation de la fenêtre principale ;
+- visibilité publique/interne des messages et compatibilité des anciens
+  messages ;
+- permissions asynchrones, résolution unique et annulation complète d’un tour ;
+- timeout du test OpenAI et construction des payloads assistant/agents ;
+- reprise des queues de sauvegarde après une opération rejetée ;
+- rendu statique de composants React critiques des settings et du Planner.
 
 La matrice Device comporte 88 cas normaux. Elle couvre commandes de lecture,
 écritures bornées, séparateurs shell, substitutions, wrappers, redirections,
 sous-commandes Git et options mutantes. Toute nouvelle règle de policy doit
 ajouter ses cas sûrs et adversariaux dans cette matrice.
 
-Les composants React ne sont pas encore testés. Vérifier manuellement au
-minimum :
+Les composants React critiques possèdent un premier filet de rendu statique.
+Cela ne remplace pas les parcours Electron. Vérifier manuellement au minimum :
 
 1. démarrage et passage de l’écran de chargement ;
 2. création, renommage, recherche et suppression d’une conversation ;
@@ -146,9 +161,15 @@ journaliser ou committer les anciens settings/backups.
 
 - Ne pas modifier les données ignorées locales pour “nettoyer” le dépôt.
 - Vérifier `git status --short` avant et après le chantier.
+- Vérifier périodiquement l’installation depuis le lockfile avec `npm.cmd ci`
+  dans un environnement propre ; aucun test ne doit dépendre des données
+  locales `settings.json`, `conversations/` ou `agents/`.
 - Un changement du schéma de message nécessite une mise à jour coordonnée de
   `shared/chat.types.ts`, `preload`, `main`, `renderer` et du stockage.
 - Un changement d’IPC nécessite une mise à jour simultanée du handler, du
   preload et de `renderer/global.d.ts`.
 - Un changement du canal `device` doit inclure des tests de policy avant toute
   extension fonctionnelle.
+- Une mise à jour d’Electron Forge doit tenter de retirer un par un les
+  overrides `tar`, `tmp`, `uuid` et `webpack-dev-server`, puis rejouer audits,
+  tests, démarrage et packaging.

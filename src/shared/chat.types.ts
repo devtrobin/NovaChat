@@ -1,6 +1,7 @@
 export type MessageSender = 'user' | 'assistant' | 'agent' | 'device' | 'system';
 export type MessageRecipient = 'user' | 'assistant' | 'agent' | 'device';
 export type ConversationOrigin = 'assistant' | 'user';
+export type MessageVisibility = "internal" | "public";
 export type SystemActionId =
   | "open-settings"
   | "permission-allow"
@@ -55,6 +56,7 @@ export type ChatMessage = {
   inputRequested?: boolean;
   lifecycleLog?: MessageLifecycleEntry[];
   apiRequests?: ApiRequestRecord[];
+  visibility?: MessageVisibility;
 };
 
 export type Conversation = {

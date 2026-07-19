@@ -1,8 +1,8 @@
-import { AIProviderId } from "../../shared/settings.types";
+import { ActiveAIProviderId } from "../../shared/settings.types";
 import { AgentContextFile, AgentId } from "../../shared/agent.types";
 
 export type AgentRuntimeContext = {
-  activeProvider: AIProviderId;
+  activeProvider: ActiveAIProviderId;
   platform: NodeJS.Platform;
   shell: string;
 };
@@ -25,7 +25,7 @@ export function createDefaultAgentContext(agentId: AgentId): AgentContextFile {
   };
 }
 
-export function createAgentRuntimeContext(activeProvider: AIProviderId): AgentRuntimeContext {
+export function createAgentRuntimeContext(activeProvider: ActiveAIProviderId): AgentRuntimeContext {
   return {
     activeProvider,
     platform: process.platform,

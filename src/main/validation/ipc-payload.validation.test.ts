@@ -116,6 +116,13 @@ describe("IPC payload validation", () => {
       .toBe(path.normalize(path.resolve("conversations")));
   });
 
+  it("rejects providers that are only planned", () => {
+    expect(() => parseAppSettings({
+      ...createSettings(),
+      activeProvider: "ollama",
+    })).toThrow("settings.activeProvider");
+  });
+
   it("never returns a plaintext API key supplied as an unknown renderer field", () => {
     const settings = createSettings();
     const parsed = parseAppSettings({

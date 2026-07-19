@@ -8,6 +8,11 @@ import {
   WorkspaceSection,
 } from "../../services/workspace/workspace.types";
 
+export type WorkspaceError = {
+  context: "interaction" | "persistence";
+  message: string;
+};
+
 export type WorkspaceLayoutController = {
   activeAgentId: string | null;
   activeConversation: Conversation | null;
@@ -18,6 +23,7 @@ export type WorkspaceLayoutController = {
   conversationIndicators: Record<string, ConversationIndicator>;
   conversations: Conversation[];
   hideInternalConversations: boolean;
+  hydrationError: string | null;
   isHydrated: boolean;
   isPreviewMode: boolean;
   isSending: boolean;
@@ -25,7 +31,9 @@ export type WorkspaceLayoutController = {
   onCreateConversation: () => void;
   onDeleteConversation: (conversationId: string) => void;
   onKillCommand: (commandId: string) => Promise<void>;
+  onDismissWorkspaceError: () => void;
   onRenameConversation: (conversationId: string, title: string) => void;
+  onRetryHydration: () => void;
   onSavedSettings: (settings: AppSettings) => void;
   onSelectAgent: (agentId: string) => void;
   onSelectConversation: (conversationId: string) => void;
@@ -38,4 +46,5 @@ export type WorkspaceLayoutController = {
   onMarkConversationAsRead: (conversationId: string) => void;
   onUpdateConversationDraft: (conversationId: string, draft: string) => void;
   storageRecovery: StorageRecoveryNotice | null;
+  workspaceError: WorkspaceError | null;
 };

@@ -2,6 +2,7 @@ import "./AgentsPage.css";
 import React from "react";
 import { ActiveAgentTask, AgentHistoryEntry } from "../../../shared/agent.types";
 import { AgentDefinition } from "../../services/workspace/workspace.types";
+import { AgentPageStatus } from "./AgentPage.types";
 
 type AgentsActivityViewProps = {
   agents: AgentDefinition[];
@@ -14,6 +15,11 @@ type ActivityHistoryEntry = AgentHistoryEntry & {
   agentId: AgentDefinition["id"];
 };
 
+type ActivitySnapshot = {
+  activeTasks: ActiveAgentTask[];
+  historyEntries: ActivityHistoryEntry[];
+};
+
 export default function AgentsActivityView({
   activeAgentId = null,
   agents,
@@ -23,36 +29,50 @@ export default function AgentsActivityView({
   const [activeTasks, setActiveTasks] = React.useState<ActiveAgentTask[]>([]);
   const [busyTaskId, setBusyTaskId] = React.useState<string | null>(null);
   const [historyEntries, setHistoryEntries] = React.useState<ActivityHistoryEntry[]>([]);
+  const [status, setStatus] = React.useState<AgentPageStatus>(null);
 
-  const loadActivity = React.useCallback(async () => {
+  const loadActivity = React.useCallback(async (): Promise<ActivitySnapshot> => {
     const [taskLists, workspaces] = await Promise.all([
       Promise.all(agents.map((agent) => window.nova.agents.getActiveTasks(agent.id))),
       Promise.all(agents.map((agent) => window.nova.agents.loadWorkspace(agent.id))),
     ]);
 
-    setActiveTasks(taskLists.flat().sort((left, right) => right.startedAt.localeCompare(left.startedAt)));
-    setHistoryEntries(
-      workspaces.flatMap((workspace) => workspace.history.map((entry) => ({
+    return {
+      activeTasks: taskLists.flat().sort((left, right) => right.startedAt.localeCompare(left.startedAt)),
+      historyEntries: workspaces.flatMap((workspace) => workspace.history.map((entry) => ({
         ...entry,
         agentId: workspace.id,
       }))).sort((left, right) => right.at.localeCompare(left.at)).slice(0, 24),
-    );
+    };
   }, [agents]);
 
   React.useEffect(() => {
     let active = true;
-    void loadActivity();
+    const refreshActivity = async (silent: boolean) => {
+      try {
+        const snapshot = await loadActivity();
+        if (!active) return;
+        setActiveTasks(snapshot.activeTasks);
+        setHistoryEntries(snapshot.historyEntries);
+        if (!silent) setStatus(null);
+      } catch (error) {
+        if (!active || silent) return;
+        setStatus(toErrorStatus(error, "Le chargement de l'activite a echoue."));
+      }
+    };
+
+    void refreshActivity(false);
 
     const unsubscribe = window.nova.ai.onEvent(() => {
       window.setTimeout(() => {
         if (!active) return;
-        void loadActivity();
+        void refreshActivity(true);
       }, 120);
     });
 
     const intervalId = window.setInterval(() => {
       if (!active) return;
-      void loadActivity();
+      void refreshActivity(true);
     }, 1000);
 
     return () => {
@@ -64,9 +84,14 @@ export default function AgentsActivityView({
 
   async function handleStopTask(taskId: string) {
     setBusyTaskId(taskId);
+    setStatus(null);
     try {
       await window.nova.agents.stopTask(taskId);
-      await loadActivity();
+      const snapshot = await loadActivity();
+      setActiveTasks(snapshot.activeTasks);
+      setHistoryEntries(snapshot.historyEntries);
+    } catch (error) {
+      setStatus(toErrorStatus(error, "L'arret de la tache a echoue."));
     } finally {
       setBusyTaskId(null);
     }
@@ -81,6 +106,11 @@ export default function AgentsActivityView({
         </div>
         <span className="agents-page__activity-count">{activeTasks.length} active{activeTasks.length > 1 ? "s" : ""}</span>
       </div>
+      {status ? (
+        <p className={`settings-panel__status settings-panel__status--${status.kind}`}>
+          {status.message}
+        </p>
+      ) : null}
       {activeTasks.length ? (
         <div className="agents-page__activity-list">
           {activeTasks.map((task) => {
@@ -190,4 +220,13 @@ function formatActiveStatus(status: ActiveAgentTask["status"]): string {
   if (status === "waiting-input") return "En attente";
   if (status === "waiting-permission") return "Permission";
   return "En cours";
+}
+
+function toErrorStatus(error: unknown, fallback: string): AgentPageStatus {
+  return {
+    kind: "error",
+    message: error instanceof Error && error.message.trim()
+      ? error.message
+      : fallback,
+  };
 }

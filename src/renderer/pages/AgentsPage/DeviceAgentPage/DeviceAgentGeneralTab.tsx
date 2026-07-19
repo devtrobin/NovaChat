@@ -4,6 +4,7 @@ import {
 } from "../../../../shared/agent.types";
 import { AgentDefinition } from "../../../services/workspace/workspace.types";
 import { formatRecordDate } from "./DeviceAgentPage.service";
+import { AgentPageStatus } from "./DeviceAgentPage.types";
 
 type DeviceAgentGeneralTabProps = {
   activeTasks: ActiveAgentTask[];
@@ -12,7 +13,7 @@ type DeviceAgentGeneralTabProps = {
   isEnabled: boolean;
   onSetEnabled: (enabled: boolean) => Promise<void>;
   onStopTask: (taskId: string) => Promise<void>;
-  status: string;
+  status: AgentPageStatus;
   workspace: AgentWorkspaceData | null;
 };
 
@@ -94,7 +95,11 @@ export default function DeviceAgentGeneralTab({
             </div>
           </>
         ) : null}
-        {status ? <p className="settings-panel__status settings-panel__status--success">{status}</p> : null}
+        {status ? (
+          <p className={`settings-panel__status settings-panel__status--${status.kind}`}>
+            {status.message}
+          </p>
+        ) : null}
       </div>
     </section>
   );

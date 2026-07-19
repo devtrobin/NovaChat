@@ -25,6 +25,7 @@ function createMessage(id: string, createdAt: string): ChatMessage {
       event: "created",
     }],
     to: "user",
+    visibility: "public",
   };
 }
 

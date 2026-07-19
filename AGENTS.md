@@ -10,8 +10,15 @@ Avant toute modification significative, lire dans cet ordre :
 4. `docs/RISKS.md`
 5. `docs/NEXT_STEPS.md`
 
-La documentation a été auditée contre le code le 18 juillet 2026 jusqu’au
-commit `d589ae1`.
+La documentation a été auditée contre le code le 19 juillet 2026. Le commit
+`d589ae1` est la base historique de l’audit, complétée par les phases 3 et 4.
+
+## État actif
+
+Le socle de nettoyage est terminé : la phase 4 et son critère de sortie sont
+clos dans `docs/NEXT_STEPS.md`. Avant une nouvelle modification fonctionnelle,
+choisir explicitement une seule capacité de phase 6 et préserver les contrats
+de sécurité, données, visibilité et validation obtenus.
 
 ## Invariants d’architecture
 
@@ -37,10 +44,11 @@ npm.cmd run lint
 npm.cmd run package
 ```
 
-La suite Vitest couvre la policy Device, les parsers OpenAI/Planner, le
-stockage des conversations et les événements du chat. La matrice Device couvre
-les séparateurs shell, expansions, wrappers, redirections, chemins et options
-mutantes avec des tests de régression normaux.
+La suite Vitest couvre notamment la policy Device, les parsers OpenAI/Planner,
+le stockage, les événements du chat, les permissions/annulations asynchrones,
+la fenêtre Electron, la visibilité et des composants React critiques. La
+matrice Device couvre les séparateurs shell, expansions, wrappers,
+redirections, chemins et options mutantes avec des tests de régression normaux.
 
 ## Données locales
 

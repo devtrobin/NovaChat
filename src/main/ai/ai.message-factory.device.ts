@@ -20,6 +20,7 @@ export function createRunningDeviceMessage(
     result: "",
     status: "running",
     to,
+    visibility: from === "user" ? "public" : "internal",
   };
 }
 
@@ -46,6 +47,7 @@ export function createDeviceResultMessage(
     result: result.output,
     status: classifyDeviceResultStatus(result),
     to,
+    visibility: to === "user" ? "public" : "internal",
   };
 }
 
@@ -115,5 +117,6 @@ export function createDeviceImmediateErrorMessage(
     result: displayMessage,
     status: "error",
     to,
+    visibility: to === "user" ? "public" : "internal",
   };
 }

@@ -73,6 +73,8 @@ Eviter :
 - si une refacto est necessaire, la borner a un domaine clair
 - privilegier les refactos qui reduisent une responsabilite melangee
 - eviter les micro-fichiers artificiels juste pour passer sous un nombre de lignes
+- traiter la cible de 100 lignes comme un signal de revue, pas comme une raison
+  suffisante de découper un module métier cohérent
 
 ## Validation Rules
 

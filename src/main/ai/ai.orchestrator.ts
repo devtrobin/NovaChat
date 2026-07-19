@@ -1,6 +1,6 @@
 import { ChatMessage } from "../../shared/chat.types";
 import { RunTurnRequest, RunTurnResult } from "../../shared/ai.types";
-import { AgentId, AgentTaskRequest } from "../../shared/agent.types";
+import { AgentId } from "../../shared/agent.types";
 import { RuntimeAppSettings } from "../../shared/settings.types";
 import {
   createInterruptedSystemMessage,
@@ -14,26 +14,19 @@ import {
 import { Emit } from "./ai.orchestrator.types";
 import { runDirectCommandTurn } from "./ai.orchestrator.commands";
 import { runSlashCommandTurn } from "./ai.orchestrator.slash-commands";
-import {
-  createPlannerBlockedResponse,
-  createPlannerInvalidResponse,
-  createPlannerNeedsInfoResponse,
-  parsePlannerMessageContent,
-} from "./ai.planner";
 import { runAssistantCycle } from "./ai.orchestrator.cycle";
 import {
   appendInterruptedCommandContext,
   restartAssistantThinking,
 } from "./ai.orchestrator.cycle.state";
 import {
-  createAgentRequestMessage,
   createAssistantResponseMessage,
   createPipelineSystemMessage,
   PipelineStage,
 } from "./ai.orchestrator.cycle.messages";
 import { handleMissingOpenAIConfig, handleTurnError } from "./ai.orchestrator.errors";
 import { finishTurn, startTurn, TurnStoppedError } from "./ai.turn-registry";
-import { runAgentTask } from "../agents/agent-orchestrator.service";
+import { resolvePlannerStep } from "./ai.orchestrator.planner-step";
 
 export async function runTurn(
   request: RunTurnRequest,
@@ -161,104 +154,4 @@ export async function runTurn(
     type: "append-messages",
   });
   return { ok: false };
-}
-
-type ResolvePlannerStepArgs = {
-  conversationId: string;
-  emit: Emit;
-  executedPlannerSteps: Set<string>;
-  message: ChatMessage;
-  settings: RuntimeAppSettings;
-  turnId: string;
-  updatePipelineStage: (stage: PipelineStage, agentId?: AgentId) => void;
-  userAssistantConversationId: string;
-  userMessage: ChatMessage;
-};
-
-async function resolvePlannerStep({
-  conversationId,
-  emit,
-  executedPlannerSteps,
-  message,
-  settings,
-  turnId,
-  updatePipelineStage,
-  userAssistantConversationId,
-  userMessage,
-}: ResolvePlannerStepArgs): Promise<
-  | { kind: "assistant"; message: ChatMessage }
-  | { kind: "agent"; message: ChatMessage }
-> {
-  const parsed = parsePlannerMessageContent(message.content);
-  const plan = parsed.plan;
-
-  if (!plan) {
-    return { kind: "assistant", message: createAssistantResponseMessage(createPlannerInvalidResponse(message), []) };
-  }
-
-  if (plan.status === "needs-info") {
-    return { kind: "assistant", message: createAssistantResponseMessage(createPlannerNeedsInfoResponse(parsed), []) };
-  }
-
-  if (plan.status === "blocked") {
-    return { kind: "assistant", message: createAssistantResponseMessage(createPlannerBlockedResponse(parsed), []) };
-  }
-
-  if (plan.nextStep.recommendedAgent === "none" || plan.nextStep.mode === "none") {
-    return { kind: "assistant", message: createAssistantResponseMessage(plan.summary, []) };
-  }
-
-  if (plan.nextStep.recommendedAgent !== "device-agent") {
-    return {
-      kind: "assistant",
-      message: createAssistantResponseMessage(
-        `Le planner a recommande un agent non pris en charge: ${plan.nextStep.recommendedAgent}.`,
-        [],
-      ),
-    };
-  }
-
-  const stepSignature = JSON.stringify({
-    agentId: plan.nextStep.recommendedAgent,
-    goal: plan.nextStep.goal,
-    mode: plan.nextStep.mode,
-    request: plan.nextStep.request,
-    successCriteria: plan.nextStep.successCriteria,
-  });
-
-  if (executedPlannerSteps.has(stepSignature)) {
-    return {
-      kind: "assistant",
-      message: createAssistantResponseMessage(
-        "Le planner a repropose exactement la meme etape. J'arrete ici pour eviter une boucle interne.",
-        [],
-      ),
-    };
-  }
-
-  executedPlannerSteps.add(stepSignature);
-  updatePipelineStage("requesting-agent", "device-agent");
-  const delegationMessage = createAgentRequestMessage("device-agent", plan.nextStep.request, []);
-  emit({ conversationId, messages: [delegationMessage], type: "append-messages" });
-
-  const { deviceMessage } = await runAgentTask({
-    conversationId,
-    emit,
-    messageId: delegationMessage.id,
-    onPipelineStageChange: updatePipelineStage,
-    settings,
-    task: {
-      agentId: "device-agent",
-      mode: plan.nextStep.mode as AgentTaskRequest["mode"],
-      request: plan.nextStep.request,
-      triggerMessageId: userMessage.id,
-      turnId,
-      userAssistantConversationId,
-      userPrompt: userMessage.content,
-    },
-    turnId,
-  });
-
-  emit({ conversationId, messages: [deviceMessage], type: "append-messages" });
-  return { kind: "agent", message: deviceMessage };
 }

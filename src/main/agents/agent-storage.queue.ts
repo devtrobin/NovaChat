@@ -1,5 +1,6 @@
 import path from "node:path";
 import { AgentId } from "../../shared/agent.types";
+import { enqueueSerialTask } from "../storage/serial-task.queue";
 
 const queues = new Map<string, Promise<void>>();
 
@@ -10,11 +11,7 @@ export async function runAgentStorageOperation<T>(
 ): Promise<T> {
   const key = `${path.resolve(rootDirectory)}:${agentId}`;
   const previous = queues.get(key) ?? Promise.resolve();
-  const result = previous.catch((): undefined => undefined).then(operation);
-  const tail = result.then(
-    (): undefined => undefined,
-    (): undefined => undefined,
-  );
+  const { result, tail } = enqueueSerialTask(previous, operation);
   queues.set(key, tail);
 
   try {

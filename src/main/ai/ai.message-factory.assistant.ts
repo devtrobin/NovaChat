@@ -11,6 +11,7 @@ export function createAssistantMessage(content: string): ChatMessage {
     lifecycleLog: [createLifecycleEntry("created", "Message assistant cree.")],
     status: "idle",
     to: "user",
+    visibility: "public",
   };
 }
 
@@ -21,6 +22,7 @@ export function createAssistantDelegationMessage(
 ): ChatMessage {
   const message = createAssistantMessage(content);
   message.to = to;
+  message.visibility = "internal";
   if (agentId) {
     message.agentId = agentId;
   }

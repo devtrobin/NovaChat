@@ -1,11 +1,12 @@
 import { AgentContextFile } from "../../../../shared/agent.types";
+import { AgentPageStatus } from "./DeviceAgentPage.types";
 
 type DeviceAgentContextTabProps = {
   contextDraft: AgentContextFile | null;
   isBusy: boolean;
   onChange: (context: AgentContextFile) => void;
   onSave: () => Promise<void>;
-  status: string;
+  status: AgentPageStatus;
 };
 
 export default function DeviceAgentContextTab({
@@ -67,7 +68,11 @@ export default function DeviceAgentContextTab({
             value={contextDraft?.instructions ?? ""}
           />
         </label>
-        {status ? <p className="settings-panel__status settings-panel__status--success">{status}</p> : null}
+        {status ? (
+          <p className={`settings-panel__status settings-panel__status--${status.kind}`}>
+            {status.message}
+          </p>
+        ) : null}
       </div>
     </section>
   );

@@ -10,6 +10,7 @@ import {
   replaceConversation,
   updateConversationDraft,
 } from "../../services/chat/chat.service";
+import { WorkspaceError } from "./WorkspaceLayout.types";
 
 type UseWorkspaceConversationActionsArgs = {
   activeConversation: Conversation | null;
@@ -17,6 +18,7 @@ type UseWorkspaceConversationActionsArgs = {
   setActiveSection: React.Dispatch<React.SetStateAction<"agents" | "conversations" | "settings">>;
   setConversations: React.Dispatch<React.SetStateAction<Conversation[]>>;
   setSendingConversationIds: React.Dispatch<React.SetStateAction<string[]>>;
+  setWorkspaceError: React.Dispatch<React.SetStateAction<WorkspaceError | null>>;
 };
 
 export function useWorkspaceConversationActions({
@@ -25,6 +27,7 @@ export function useWorkspaceConversationActions({
   setActiveSection,
   setConversations,
   setSendingConversationIds,
+  setWorkspaceError,
 }: UseWorkspaceConversationActionsArgs) {
   const handleCreateConversation = React.useCallback(() => {
     const nextConversation = createConversation();
@@ -79,15 +82,27 @@ export function useWorkspaceConversationActions({
         title: nextConversation.title,
         userInput: content,
       });
+    } catch (error) {
+      setWorkspaceError({
+        context: "interaction",
+        message: getErrorMessage(error, "L'envoi du message a echoue."),
+      });
     } finally {
       setSendingConversationIds((current) => current.filter((conversationId) => conversationId !== nextConversationId));
     }
-  }, [activeConversation, setActiveConversationId, setConversations, setSendingConversationIds]);
+  }, [activeConversation, setActiveConversationId, setConversations, setSendingConversationIds, setWorkspaceError]);
 
   const handleStopTurn = React.useCallback(async (conversationId: string) => {
     setSendingConversationIds((current) => current.filter((id) => id !== conversationId));
-    await window.nova.ai.stopTurn({ conversationId });
-  }, [setSendingConversationIds]);
+    try {
+      await window.nova.ai.stopTurn({ conversationId });
+    } catch (error) {
+      setWorkspaceError({
+        context: "interaction",
+        message: getErrorMessage(error, "L'arret de la tache a echoue."),
+      });
+    }
+  }, [setSendingConversationIds, setWorkspaceError]);
 
   const handleUpdateConversationDraft = React.useCallback((conversationId: string, draft: string) => {
     setConversations((current) => updateConversationDraft(current, conversationId, draft));
@@ -107,4 +122,10 @@ export function useWorkspaceConversationActions({
     handleStopTurn,
     handleUpdateConversationDraft,
   };
+}
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message.trim()
+    ? error.message
+    : fallback;
 }

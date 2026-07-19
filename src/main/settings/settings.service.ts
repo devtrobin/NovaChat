@@ -86,6 +86,9 @@ function mergeSettings(partial: unknown): AppSettings {
   return parseAppSettings({
     ...defaults,
     ...parsed,
+    activeProvider: parsed.activeProvider === "openai"
+      ? parsed.activeProvider
+      : defaults.activeProvider,
     agents: {
       ...defaults.agents,
       ...parsed.agents,

@@ -23,11 +23,16 @@ Champs structurants optionnels :
 - `result` : résultat détaillé, souvent repliable ;
 - `commandId` et champs `input*` : commande locale interactive ;
 - `actions` / `actionType` : actions système, notamment permissions ;
+- `visibility` : `public` ou `internal`, contrat d’affichage indépendant de
+  l’expéditeur et du destinataire ;
 - `lifecycleLog` : journal métier ;
 - `apiRequests` : requêtes et réponses provider brutes.
 
 Les messages `system` sont transitoires : le renderer les filtre avant
-persistance et au chargement.
+persistance et au chargement. Pour les anciens messages sans `visibility`, le
+renderer applique une règle déterministe : messages agent et échanges vers
+assistant internes, messages utilisateur, réponses finales, permissions,
+saisies et Device vers utilisateur publics.
 
 ## Conversations
 
@@ -138,9 +143,11 @@ openai.model
 previewMode
 ```
 
-Seul OpenAI est implémenté. `activeProvider` peut néanmoins contenir les
-valeurs de providers affichés en preview ; le tour IA continue actuellement
-d’utiliser `settings.openai`.
+Seul OpenAI est implémenté et `activeProvider` est typé par
+`ActiveAIProviderId`, actuellement limité à `openai`. Les valeurs Anthropic,
+Google, Mistral, Ollama et LM Studio appartiennent à
+`PlannedAIProviderId` : elles sont affichées comme « à venir », mais ne peuvent
+pas traverser la validation IPC comme provider actif.
 
 Le fichier de référence est toujours lu en premier. S’il indique un
 `localFiles.settingsPath` différent, ce second fichier devient la

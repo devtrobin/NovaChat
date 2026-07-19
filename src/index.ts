@@ -35,6 +35,11 @@ void app.whenReady().then(async () => {
     );
   }
   createMainWindow();
+}).catch((error: unknown) => {
+  dialog.showErrorBox(
+    "Demarrage de Nova impossible",
+    error instanceof Error ? error.message : "Une erreur inconnue a interrompu le demarrage.",
+  );
 });
 
 app.on("window-all-closed", () => {

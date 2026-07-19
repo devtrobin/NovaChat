@@ -141,7 +141,13 @@ export function resumeCommandTimeout(runningCommand: RunningCommand): void {
   pauseCommandTimeout(runningCommand);
   if (runningCommand.awaitingInput || runningCommand.settled) return;
   runningCommand.timeoutHandle = globalThis.setTimeout(() => {
-    void terminateRunningCommand(runningCommand, true);
+    void terminateRunningCommand(runningCommand, true).catch(() => {
+      try {
+        runningCommand.child.kill();
+      } catch {
+        runningCommand.output.append("Impossible d'interrompre le processus apres le delai.");
+      }
+    });
   }, runningCommand.timeoutMs);
 }
 

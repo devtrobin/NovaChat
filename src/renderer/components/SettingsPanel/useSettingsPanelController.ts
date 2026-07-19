@@ -25,6 +25,12 @@ export function useSettingsPanelController({
   } = useSettingsLoader();
   const [status, setStatus] = React.useState<SettingsPanelStatus>(initialStatus);
 
+  React.useEffect(() => {
+    if (initialStatus.message) {
+      setStatus(initialStatus);
+    }
+  }, [initialStatus]);
+
   const resetStatus = React.useCallback(() => {
     setStatus(createEmptyStatus());
   }, []);
@@ -43,6 +49,12 @@ export function useSettingsPanelController({
       const result = await window.nova.settings.test(draft);
       setStatus({ kind: result.ok ? "success" : "error", message: result.message });
       return result.ok;
+    } catch (error) {
+      setStatus({
+        kind: "error",
+        message: getErrorMessage(error, "Le test de connexion a échoué."),
+      });
+      return false;
     } finally {
       setIsBusy(false);
     }
@@ -57,21 +69,23 @@ export function useSettingsPanelController({
       return;
     }
 
-    if (draft.activeProvider === "openai") {
-      const isValid = await handleTestConnection();
-      if (!isValid) return;
-    }
-
     setIsBusy(true);
+    setStatus(createEmptyStatus());
     try {
       const savedSettings = await window.nova.settings.save(draft);
       setInitialSettings(savedSettings);
       setDraft(savedSettings);
       onSaved(savedSettings);
+      setStatus({ kind: "success", message: "Paramètres enregistrés." });
+    } catch (error) {
+      setStatus({
+        kind: "error",
+        message: getErrorMessage(error, "L'enregistrement des paramètres a échoué."),
+      });
     } finally {
       setIsBusy(false);
     }
-  }, [draft, handleTestConnection, onSaved]);
+  }, [draft, onSaved]);
 
   const handleClearApiKey = React.useCallback(async () => {
     setIsBusy(true);
@@ -85,7 +99,7 @@ export function useSettingsPanelController({
     } catch (error) {
       setStatus({
         kind: "error",
-        message: error instanceof Error ? error.message : "La suppression de la cle API a echoue.",
+        message: getErrorMessage(error, "La suppression de la clé API a échoué."),
       });
     } finally {
       setIsBusy(false);
@@ -109,4 +123,10 @@ export function useSettingsPanelController({
     setDraft,
     status,
   };
+}
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message.trim()
+    ? error.message
+    : fallback;
 }

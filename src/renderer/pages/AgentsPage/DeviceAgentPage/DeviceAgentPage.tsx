@@ -4,14 +4,14 @@ import DeviceAgentHistoryTab from "./DeviceAgentHistoryTab";
 import DeviceAgentPermissionsTab from "./DeviceAgentPermissionsTab";
 import DeviceAgentTabs from "./DeviceAgentTabs";
 import { DeviceAgentPageProps } from "./DeviceAgentPage.types";
-import { useDeviceAgentPageController } from "./useDeviceAgentPageController";
+import { useAgentPageController } from "../useAgentPageController";
 import StorageRecoveryBanner from "../../../components/WorkspaceLayout/StorageRecoveryBanner";
 import "../../ChatPage/ChatPage.css";
 import "./DeviceAgentPage.css";
 
 export default function DeviceAgentPage(props: DeviceAgentPageProps) {
   const { agent } = props;
-  const controller = useDeviceAgentPageController(props);
+  const controller = useAgentPageController(props);
 
   return (
     <section className="chat-page chat-page--static">

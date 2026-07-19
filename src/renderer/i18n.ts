@@ -16,6 +16,6 @@ void i18n.use(initReactI18next).init({
   lng: initialLanguage,
   fallbackLng: "en",
   interpolation: { escapeValue: false },
-});
+}).catch((): undefined => undefined);
 
 export default i18n;

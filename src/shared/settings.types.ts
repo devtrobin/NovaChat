@@ -1,4 +1,6 @@
-export type AIProviderId = "anthropic" | "google" | "lmstudio" | "mistral" | "ollama" | "openai";
+export type ActiveAIProviderId = "openai";
+export type PlannedAIProviderId = "anthropic" | "google" | "lmstudio" | "mistral" | "ollama";
+export type AIProviderId = ActiveAIProviderId | PlannedAIProviderId;
 export type AgentId = "agent-planner" | "device-agent";
 
 export type AgentSettingsMap = Record<AgentId, { enabled: boolean }>;
@@ -34,7 +36,7 @@ export type OpenAIRuntimeSettings = OpenAISettings & {
 };
 
 export type AppSettings = {
-  activeProvider: AIProviderId;
+  activeProvider: ActiveAIProviderId;
   agents: AgentSettingsMap;
   apiTrace: ApiTraceSettings;
   deviceExecution: DeviceExecutionSettings;

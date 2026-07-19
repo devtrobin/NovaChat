@@ -11,6 +11,23 @@ export default function StorageRecoveryBanner({
   onAcknowledge,
 }: StorageRecoveryBannerProps) {
   const [isBusy, setIsBusy] = React.useState(false);
+  const [errorMessage, setErrorMessage] = React.useState("");
+
+  async function handleAcknowledge() {
+    setIsBusy(true);
+    setErrorMessage("");
+    try {
+      await onAcknowledge();
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error && error.message.trim()
+          ? error.message
+          : "La reprise des sauvegardes a echoue.",
+      );
+    } finally {
+      setIsBusy(false);
+    }
+  }
 
   return (
     <aside className="workspace-layout__storage-warning" role="alert">
@@ -29,12 +46,10 @@ export default function StorageRecoveryBanner({
           </ul>
         </details>
       </div>
+      {errorMessage ? <p className="settings-panel__status settings-panel__status--error">{errorMessage}</p> : null}
       <button
         disabled={isBusy}
-        onClick={() => {
-          setIsBusy(true);
-          void onAcknowledge().finally(() => setIsBusy(false));
-        }}
+        onClick={() => void handleAcknowledge()}
         type="button"
       >
         {isBusy ? "Reprise..." : "Autoriser les sauvegardes"}

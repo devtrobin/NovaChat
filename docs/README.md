@@ -1,11 +1,19 @@
 # Base de connaissance NovaChat
 
 Cette base décrit l’état réellement observé du projet, et non uniquement
-l’intention historique. Elle a été vérifiée le **18 juillet 2026** sur la
-branche `main`, pour le code allant jusqu’au commit `d589ae1`.
+l’intention historique. Elle a été vérifiée le **19 juillet 2026** sur la
+branche `main`. Le commit `d589ae1` constitue la base historique de l’audit,
+complétée par les phases 3 et 4.
 
 Le fichier [../AGENTS.md](../AGENTS.md) fournit la version courte destinée aux
 outils et agents qui ouvrent le dépôt.
+
+## État actif
+
+L’assainissement du code est terminé : contrats explicites, TypeScript strict,
+gestion d’erreurs, tests critiques, sécurité Electron et refactors bornés sont
+validés. La suite éventuelle est la phase 6 de
+[NEXT_STEPS.md](NEXT_STEPS.md), après choix produit explicite.
 
 ## Parcours de lecture
 

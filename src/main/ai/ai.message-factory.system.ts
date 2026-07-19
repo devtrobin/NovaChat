@@ -13,6 +13,7 @@ export function createSystemMessage(content: string, actionLabel?: string): Chat
     lifecycleLog: [createLifecycleEntry("created", "Message systeme cree.")],
     status: "running",
     to: "user",
+    visibility: "public",
   };
 }
 
@@ -26,6 +27,7 @@ export function createInternalSystemMessage(content: string): ChatMessage {
     lifecycleLog: [createLifecycleEntry("created", "Message systeme interne cree.")],
     status: "idle",
     to: "assistant",
+    visibility: "internal",
   };
 }
 
@@ -71,6 +73,7 @@ export function createPermissionRequestSystemMessage(
     lifecycleLog: [createLifecycleEntry("created", "Demande de permission systeme creee.")],
     status: "pending",
     to: "user",
+    visibility: "public",
   };
 }
 
@@ -120,6 +123,7 @@ export function createPermissionResolutionSystemMessage(
     lifecycleLog: [createLifecycleEntry("created", "Resolution de permission systeme creee.")],
     status: "idle",
     to: "user",
+    visibility: "public",
   };
 }
 
@@ -133,6 +137,7 @@ export function createInterruptedSystemMessage(): ChatMessage {
     lifecycleLog: [createLifecycleEntry("created", "Interruption utilisateur enregistree.")],
     status: "idle",
     to: "user",
+    visibility: "public",
   };
 }
 

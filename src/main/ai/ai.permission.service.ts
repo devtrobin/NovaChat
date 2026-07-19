@@ -11,6 +11,7 @@ type PendingPermissionRequest = {
   messageId: string;
   requestId: string;
   resolve: (decision: InternalPermissionDecision) => void;
+  turnId: string;
 };
 
 const pendingPermissionRequests = new Map<string, PendingPermissionRequest>();
@@ -42,14 +43,12 @@ export async function requestDevicePermission(
       messageId: requestMessage.id,
       requestId,
       resolve,
+      turnId,
     });
     activeConversationRequests.set(conversationId, requestId);
     setPendingPermissionRequest(turnId, requestId);
   });
 
-  pendingPermissionRequests.delete(requestId);
-  activeConversationRequests.delete(conversationId);
-  clearPendingPermissionRequest(turnId, requestId);
   emit({
     conversationId,
     messageId: requestMessage.id,
@@ -80,15 +79,24 @@ export async function requestDevicePermission(
 }
 
 export function resolvePermissionRequest(requestId: string, decision: PermissionDecision): boolean {
-  const pendingRequest = pendingPermissionRequests.get(requestId);
-  if (!pendingRequest) return false;
-  pendingRequest.resolve(decision);
-  return true;
+  return settlePermissionRequest(requestId, decision);
 }
 
 export function cancelPermissionRequest(requestId: string): boolean {
+  return settlePermissionRequest(requestId, "cancel");
+}
+
+function settlePermissionRequest(
+  requestId: string,
+  decision: InternalPermissionDecision,
+): boolean {
   const pendingRequest = pendingPermissionRequests.get(requestId);
   if (!pendingRequest) return false;
-  pendingRequest.resolve("cancel");
+  pendingPermissionRequests.delete(requestId);
+  if (activeConversationRequests.get(pendingRequest.conversationId) === requestId) {
+    activeConversationRequests.delete(pendingRequest.conversationId);
+  }
+  clearPendingPermissionRequest(pendingRequest.turnId, requestId);
+  pendingRequest.resolve(decision);
   return true;
 }

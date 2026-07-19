@@ -10,6 +10,20 @@ import "./WorkspaceLayout.css";
 export default function WorkspaceLayout() {
   const workspace = useWorkspaceLayoutController();
 
+  if (workspace.hydrationError) {
+    return (
+      <main className="workspace-layout__storage-warning" role="alert">
+        <div>
+          <strong>Chargement impossible</strong>
+          <p>{workspace.hydrationError}</p>
+        </div>
+        <button onClick={workspace.onRetryHydration} type="button">
+          Reessayer
+        </button>
+      </main>
+    );
+  }
+
   if (!workspace.isHydrated) {
     return null;
   }
@@ -32,6 +46,21 @@ export default function WorkspaceLayout() {
         onSelectSettingsCategory={workspace.onSelectSettingsCategory}
       />
       <div className="workspace-layout__page">
+        {workspace.workspaceError ? (
+          <aside className="workspace-layout__storage-warning" role="alert">
+            <div>
+              <strong>
+                {workspace.workspaceError.context === "persistence"
+                  ? "Sauvegarde interrompue"
+                  : "Action interrompue"}
+              </strong>
+              <p>{workspace.workspaceError.message}</p>
+            </div>
+            <button onClick={workspace.onDismissWorkspaceError} type="button">
+              Fermer
+            </button>
+          </aside>
+        ) : null}
         {workspace.storageRecovery ? (
           <StorageRecoveryBanner
             notice={workspace.storageRecovery}

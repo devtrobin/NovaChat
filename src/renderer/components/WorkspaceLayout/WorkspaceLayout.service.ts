@@ -1,6 +1,6 @@
 import { buildAgentDefinitions } from "../../services/workspace/workspace.service";
-import { Conversation } from "../../../shared/chat.types";
 import { WorkspaceLayoutController } from "./WorkspaceLayout.types";
+import { filterConversationForUser } from "./message-visibility.service";
 import { useWorkspaceConversationActions } from "./useWorkspaceConversationActions";
 import { useWorkspaceEffects } from "./useWorkspaceEffects";
 import { useWorkspaceHydration } from "./useWorkspaceHydration";
@@ -18,6 +18,8 @@ export function useWorkspaceLayoutController(): WorkspaceLayoutController {
     conversationIndicators,
     conversations,
     hideInternalConversations,
+    hydrationAttempt,
+    hydrationError,
     isHydrated,
     isPreviewMode,
     isSending,
@@ -31,20 +33,27 @@ export function useWorkspaceLayoutController(): WorkspaceLayoutController {
     setAgentSettings,
     setConversations,
     setHideInternalConversations,
+    setHydrationAttempt,
+    setHydrationError,
     setIsHydrated,
     setIsPreviewMode,
+    setWorkspaceError,
+    workspaceError,
   } = useWorkspaceLayoutState();
   useWorkspaceHydration({
     activeConversationId,
     conversations,
+    hydrationAttempt,
     isHydrated,
     setAgentSettings,
     setActiveConversationId,
     setConversations,
     setHideInternalConversations,
+    setHydrationError,
     setIsHydrated,
     setIsPreviewMode,
     setStorageRecovery,
+    setWorkspaceError,
     storageRecovery,
   });
   useWorkspaceEffects({
@@ -70,6 +79,7 @@ export function useWorkspaceLayoutController(): WorkspaceLayoutController {
     setActiveSection,
     setConversations,
     setSendingConversationIds,
+    setWorkspaceError,
   });
   const {
     handleKillCommand,
@@ -86,10 +96,11 @@ export function useWorkspaceLayoutController(): WorkspaceLayoutController {
     setActiveSettingsCategory,
     setHideInternalConversations,
     setIsPreviewMode,
+    setWorkspaceError,
   });
 
   const visibleConversation = hideInternalConversations
-    ? filterInternalConversationMessages(activeConversation)
+    ? filterConversationForUser(activeConversation)
     : activeConversation;
 
   return {
@@ -102,6 +113,7 @@ export function useWorkspaceLayoutController(): WorkspaceLayoutController {
     conversationIndicators,
     conversations,
     hideInternalConversations,
+    hydrationError,
     isHydrated,
     isPreviewMode,
     isSending,
@@ -112,9 +124,14 @@ export function useWorkspaceLayoutController(): WorkspaceLayoutController {
     },
     onCreateConversation: handleCreateConversation,
     onDeleteConversation: handleDeleteConversation,
+    onDismissWorkspaceError: () => setWorkspaceError(null),
     onKillCommand: handleKillCommand,
     onMarkConversationAsRead: handleMarkConversationAsRead,
     onRenameConversation: handleRenameConversation,
+    onRetryHydration: () => {
+      setHydrationError(null);
+      setHydrationAttempt((current) => current + 1);
+    },
     onSavedSettings: handleSavedSettings,
     onSelectAgent: handleSelectAgent,
     onSelectConversation: handleSelectConversation,
@@ -126,30 +143,6 @@ export function useWorkspaceLayoutController(): WorkspaceLayoutController {
     onSubmitCommandInput: handleSubmitCommandInput,
     onUpdateConversationDraft: handleUpdateConversationDraft,
     storageRecovery,
-  };
-}
-
-function filterInternalConversationMessages(conversation: Conversation | null): Conversation | null {
-  if (!conversation) {
-    return null;
-  }
-
-  return {
-    ...conversation,
-    messages: conversation.messages.filter((message) => {
-      if (message.from === "assistant" && (message.to === "agent" || message.to === "device")) {
-        return false;
-      }
-
-      if (message.from === "agent") {
-        return false;
-      }
-
-      if (message.from === "device") {
-        return false;
-      }
-
-      return true;
-    }),
+    workspaceError,
   };
 }

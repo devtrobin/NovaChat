@@ -11,12 +11,16 @@ NovaChat est un Electron + React fonctionnel avec :
 - `device-agent` pour générer/exécuter une commande locale ;
 - permissions, historique, activité et arrêt de tâches.
 
-Tests, TypeScript, lint et packaging Windows x64 passent au 18 juillet 2026.
-La suite compte 191 réussites dans 23 fichiers, dont 88 cas de policy Device.
+Tests, TypeScript strict, lint, audits et packaging Windows x64 passent au
+19 juillet 2026. La suite compte 211 réussites dans 33 fichiers, dont 88 cas
+de policy Device.
 La phase 2 de sécurisation Device et la priorité P2 de maintenabilité recensée
 dans `RISKS.md` sont terminées. La phase 3 de fiabilisation des données est
 également terminée : JSON atomiques et récupérables, queues agents, migrations
-`userData`/Planner, traces bornées et clé OpenAI chiffrée.
+`userData`/Planner, traces bornées et clé OpenAI chiffrée. La phase 4 de
+nettoyage est close : fenêtre durcie, providers planifiés désactivés, settings
+découplés du réseau, visibilité structurée, erreurs async contrôlées et modules
+denses séparés.
 
 ## Ce qu’il faut lire
 
@@ -28,12 +32,12 @@ dans `RISKS.md` sont terminées. La phase 3 de fiabilisation des données est
 Pour un flux précis, consulter [WORKFLOWS.md](WORKFLOWS.md). Pour les fichiers
 et contrats, consulter [DATA_MODEL.md](DATA_MODEL.md).
 
-## Première action recommandée
+## Prochaine décision
 
-Commencer la phase 4 par la clarification des providers non implémentés, puis
-corriger `hideInternalConversations` afin de conserver les résultats `/cmd`.
-Ne pas étendre les commandes autorisées sans cas sûr et adversarial
-correspondant.
+Choisir explicitement une capacité de phase 6 avant de modifier le runtime :
+streaming, provider local, autre provider, recherche globale, nouvel agent ou
+compaction. Les installateurs et essais du binaire distribué restent la toute
+dernière tâche absolue.
 
 ## Commandes de départ
 
@@ -53,6 +57,8 @@ Utiliser `npm` au lieu de `npm.cmd` hors PowerShell Windows si approprié.
 - orchestration IA et agents dans le main ;
 - shell uniquement dans `src/main/device` ;
 - renderer uniquement via `window.nova` ;
+- future automatisation de fenêtres uniquement via une capacité main dédiée et
+  permissionnée ;
 - stockage des conversations éclaté par message ;
 - Planner consultatif, Device atomique, Nova orchestrateur ;
 - ne pas traiter la policy actuelle comme un sandbox.
@@ -77,7 +83,10 @@ journaliser.
 ## Pièges immédiats
 
 - la policy Device est restrictive, mais reste un contrôle UX et non un sandbox ;
-- `activeProvider` n’effectue pas encore de routage multi-provider ;
+- OpenAI est le seul `ActiveAIProviderId` ; les autres providers sont un
+  catalogue planifié non activable ;
+- les providers futurs doivent rester au catalogue mais ne pas être activables
+  avant leur implémentation ;
 - la saisie interactive reste heuristique sans pseudo-terminal ;
 - acquitter une bannière de récupération réautorise les écritures mais ne
   restaure pas une donnée illisible ;
@@ -86,5 +95,6 @@ journaliser.
 
 ## Phrase de reprise
 
-> Reprendre NovaChat en phase 4 : aligner les surfaces visibles avec les
-> capacités réellement implémentées avant toute nouvelle capacité agent.
+> Reprendre NovaChat sur son socle stabilisé après la phase 4. Choisir une seule
+> capacité de phase 6, préserver les frontières main/preload/renderer et garder
+> la validation de distribution comme dernière tâche absolue.

@@ -306,8 +306,9 @@ Chargement :
 
 Sauvegarde UI :
 
-1. validation des chemins conversations/settings ;
-2. si provider actif OpenAI, test réseau obligatoire ;
+1. validation des chemins agents/conversations/settings et des limites locales ;
+2. sauvegarde indépendante du réseau ; le test OpenAI est une action séparée,
+   annulée automatiquement après dix secondes ;
 3. si une nouvelle clé a été saisie, chiffrement et relecture de vérification ;
 4. suppression de la valeur transitoire ;
 5. écriture atomique du fichier de référence et de l’éventuel fichier
@@ -319,8 +320,6 @@ jour, la migration recherche aussi l’ancienne clé dans les settings de
 référence et personnalisés, la sécurise, puis nettoie les primaires et backups
 en clair.
 
-Le chemin `agentsDirectory` n’est pas validé comme non vide aujourd’hui.
-
 ## 13. Navigation et messages non lus
 
 - `AppSidebar` pilote les sections et catégories.
@@ -328,5 +327,6 @@ Le chemin `agentsDirectory` n’est pas validé comme non vide aujourd’hui.
 - Atteindre le bas du scroll la marque aussi comme lue.
 - Une conversation affiche un loader si elle contient un message système
   `running`.
-- `hideInternalConversations` filtre les délégations, messages agent et tous
-  les messages device dans la vue active, sans modifier le stockage.
+- `hideInternalConversations` filtre les messages dont la visibilité résolue
+  vaut `internal`, sans modifier le stockage. Les permissions, saisies,
+  progressions publiques et résultats d’un `/cmd` utilisateur restent visibles.

@@ -140,14 +140,11 @@ function formatCommandHelp(definition: SlashCommandDefinition): string {
 
 function formatStatus(settings: AppSettings): string {
   const openAIReady = Boolean(settings.openai.apiKeyConfigured && settings.openai.model.trim());
-  const selectedProviderNote = settings.activeProvider === "openai"
-    ? ""
-    : " (aperçu uniquement : les conversations utilisent encore OpenAI)";
 
   return [
     "État de NovaChat :",
     "",
-    `- Provider sélectionné : ${settings.activeProvider}${selectedProviderNote}`,
+    `- Provider sélectionné : ${settings.activeProvider}`,
     `- OpenAI : ${openAIReady ? "prêt" : "configuration incomplète"}`,
     `- Modèle OpenAI : ${settings.openai.model.trim() || "non configuré"}`,
     `- Agent Planner : ${formatEnabled(settings.agents["agent-planner"].enabled)}`,

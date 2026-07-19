@@ -30,6 +30,32 @@ Le packaging active `asar` et plusieurs fuses Electron : désactivation de
 d’inspection, chiffrement des cookies, validation d’intégrité de l’ASAR et
 chargement limité à l’ASAR.
 
+### Fenêtres et navigations futures
+
+La fenêtre principale fixe explicitement `contextIsolation`, `sandbox`,
+`webSecurity`, `nodeIntegration: false` et `webviewTag: false`. Sa CSP limite
+les ressources au document applicatif, `window.open` est refusé et les
+navigations/redirections hors de l’URL d’entrée sont bloquées.
+
+Ce durcissement ne doit pas interdire une future capacité d’automatisation. Il
+empêche seulement le renderer de naviguer ou d’ouvrir une fenêtre de façon non
+sollicitée.
+
+Si un agent doit un jour contrôler un navigateur ou une autre fenêtre :
+
+- l’orchestration et les permissions restent dans le process `main` ;
+- une API preload dédiée et minimale décrit les actions autorisées ;
+- les fenêtres créées par cette capacité reçoivent leur propre politique de
+  navigation, distincte de celle de la fenêtre NovaChat ;
+- chaque ouverture ou navigation externe passe par une décision explicite,
+  une allowlist ou une permission utilisateur ;
+- le renderer principal ne récupère jamais un accès générique à
+  `BrowserWindow`, au système ou à une session de navigation.
+
+Bloquer aujourd’hui `window.open` et les navigations inattendues de la fenêtre
+principale ne ferme donc pas cette évolution : cela évite seulement qu’une
+future capacité sensible soit implicitement disponible dans tout le renderer.
+
 ## Points d’entrée
 
 | Couche | Fichier | Responsabilité |
@@ -71,8 +97,9 @@ App
 La logique est répartie entre `WorkspaceLayout.service.ts` et les hooks
 `useWorkspace*`.
 
-`DeviceAgentPage.tsx` compose quatre vues d’onglets dédiées. Le chargement, le
-polling et les mutations sont regroupés dans `useDeviceAgentPageController.ts`.
+`DeviceAgentPage.tsx` compose quatre vues d’onglets dédiées. Device et Planner
+partagent le chargement, le polling et les mutations via
+`useAgentPageController.ts`; chaque page conserve ses vues déclaratives.
 
 ### État de conversation
 
@@ -97,6 +124,10 @@ renvoie ensuite tout `PersistedChatState` au main.
 - `MessageItemDevice` : commande, progression, input et résultat ;
 - `MessageItemSystem` : état transitoire, erreur de configuration et
   permission.
+
+`ChatMessage.visibility` décide séparément si un message est `public` ou
+`internal`. Le filtre n’altère pas l’état canonique. Une règle de compatibilité
+fondée sur `from`/`to` couvre les anciennes données sans champ explicite.
 
 ## Main process
 
@@ -239,8 +270,11 @@ La clé OpenAI vit dans `userData/secrets/openai-api-key.json`, chiffrée par
 settings runtime déchiffrés, accessibles uniquement au main. La migration du
 secret vérifie la relecture avant de nettoyer les anciennes copies en clair.
 
-Seul le bloc OpenAI est opérationnel. Les autres IDs provider servent à l’UI
-preview et au contexte runtime des agents.
+Seul le bloc OpenAI est opérationnel. `ActiveAIProviderId` représente le
+runtime actif et ne contient qu’OpenAI. Les autres IDs appartiennent au
+catalogue planifié : ils restent visibles et documentés, mais sont désactivés
+dans l’UI et refusés par la validation main jusqu’à disposer d’un transport et
+d’une validation complets.
 
 ## Contrats transversaux
 
@@ -282,6 +316,8 @@ avant chaque écriture, y compris dans les conversations agents.
 
 - OpenAI et le shell restent dans le main.
 - `window.nova` reste la seule surface renderer vers les effets de bord.
+- Toute future automatisation de fenêtres reste une capacité explicite et
+  permissionnée du main, pas une exception globale accordée au renderer.
 - L’orchestration multi-agent reste centralisée par Nova, pas distribuée entre
   agents autonomes.
 - Le Planner recommande ; Nova décide et exécute.
@@ -290,7 +326,8 @@ avant chaque écriture, y compris dans les conversations agents.
 
 ## Zones à ne pas confondre
 
-- `activeProvider` n’est pas encore un vrai routage multi-provider.
+- `activeProvider` ne peut actuellement valoir que `openai`; le catalogue
+  planifié ne constitue pas un routage multi-provider.
 - `device.policy.ts` décide d’une demande de permission ; ce n’est pas un
   sandbox.
 - Les conversations internes sont produites uniquement par les tâches

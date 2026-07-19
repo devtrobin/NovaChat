@@ -23,18 +23,19 @@ export default function SettingsProviderSection({
       <label className="settings-panel__field">
         <span className="settings-panel__label">Provider par defaut</span>
         <select className="settings-panel__input" disabled={isBusy} onChange={(event) => {
-          setDraft((current) => current ? { ...current, activeProvider: event.target.value as AppSettings["activeProvider"] } : current);
+          if (event.target.value !== "openai") return;
+          setDraft((current) => current ? { ...current, activeProvider: "openai" } : current);
           setStatus();
         }} value={settings.activeProvider}>
           <option value="openai">OpenAI</option>
-          <option value="anthropic">Anthropic</option>
-          <option value="google">Google</option>
-          <option value="mistral">Mistral</option>
-          <option value="ollama">Ollama</option>
-          <option value="lmstudio">LM Studio</option>
+          <option disabled value="anthropic">Anthropic (à venir)</option>
+          <option disabled value="google">Google (à venir)</option>
+          <option disabled value="mistral">Mistral (à venir)</option>
+          <option disabled value="ollama">Ollama (à venir)</option>
+          <option disabled value="lmstudio">LM Studio (à venir)</option>
         </select>
       </label>
-      <p className="settings-panel__hint">OpenAI est actuellement le seul provider entierement configure. Les autres entrees sont preparees pour la suite.</p>
+      <p className="settings-panel__hint">OpenAI est le seul provider activable. Les autres entrées restent visibles pour la roadmap.</p>
     </div>
   );
 }

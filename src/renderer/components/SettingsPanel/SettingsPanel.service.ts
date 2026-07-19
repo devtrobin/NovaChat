@@ -20,6 +20,10 @@ export function validateSettingsDraft(settings: AppSettings, category: SettingsC
       return "Le dossier des conversations est requis.";
     }
 
+    if (!settings.localFiles.agentsDirectory.trim()) {
+      return "Le dossier des agents est requis.";
+    }
+
     if (
       !Number.isInteger(settings.deviceExecution.timeoutMs)
       || settings.deviceExecution.timeoutMs < 1_000

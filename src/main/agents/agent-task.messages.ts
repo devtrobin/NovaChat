@@ -24,6 +24,7 @@ export function createAgentResultMessage(
     ],
     status: "success",
     to: "assistant",
+    visibility: "internal",
   };
 }
 
@@ -55,6 +56,7 @@ export function createDeviceAgentSummaryMessage(
     result: formatDeviceAgentTechnicalDetails(taskRequest, command, output, status),
     status: status === "success" ? "success" : status === "partial-success" ? "partial-success" : "error",
     to: "assistant",
+    visibility: "internal",
   };
 }
 

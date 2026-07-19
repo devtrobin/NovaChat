@@ -53,6 +53,7 @@ export function createAssistantToAgentMessage(
         },
       ],
       to: "agent",
+      visibility: "internal",
     };
   }
 
@@ -75,6 +76,7 @@ export function createAssistantToAgentMessage(
       },
     ],
     to: "device",
+    visibility: "internal",
   };
 }
 
@@ -104,6 +106,7 @@ export function createAgentResultMessage(
       ],
       status: status === "success" ? "success" : status === "partial-success" ? "partial-success" : "error",
       to: "assistant",
+      visibility: "internal",
     };
   }
 
@@ -125,6 +128,7 @@ export function createAgentResultMessage(
     result: output,
     status: status === "success" ? "success" : status === "partial-success" ? "partial-success" : "error",
     to: "assistant",
+    visibility: "internal",
   };
 }
 

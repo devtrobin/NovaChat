@@ -3,13 +3,14 @@ import {
   AgentPermissionRule,
 } from "../../../../shared/agent.types";
 import { formatRecordDate } from "./DeviceAgentPage.service";
+import { AgentPageStatus } from "./DeviceAgentPage.types";
 
 type DeviceAgentPermissionsTabProps = {
   isBusy: boolean;
   onDelete: (command: string) => Promise<void>;
   onSetPermission: (command: string, decision: AgentPermissionDecision) => Promise<void>;
   rules: AgentPermissionRule[];
-  status: string;
+  status: AgentPageStatus;
 };
 
 export default function DeviceAgentPermissionsTab({
@@ -40,7 +41,11 @@ export default function DeviceAgentPermissionsTab({
         )) : (
           <p className="device-agent-page__empty-state">Aucune permission memorisee pour le moment.</p>
         )}
-        {status ? <p className="settings-panel__status settings-panel__status--success">{status}</p> : null}
+      {status ? (
+        <p className={`settings-panel__status settings-panel__status--${status.kind}`}>
+          {status.message}
+        </p>
+      ) : null}
       </div>
     </section>
   );

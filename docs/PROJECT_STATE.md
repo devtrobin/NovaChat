@@ -2,12 +2,12 @@
 
 ## Snapshot
 
-- Date d’audit : 18 juillet 2026.
+- Date d’audit : 19 juillet 2026.
 - Branche : `main`.
-- État du code audité jusqu’au commit :
-  `d589ae1` (`Security: store OpenAI key in OS vault`).
-- Des données locales non suivies existaient déjà sous `agents/`. Elles ne
-  font pas partie du code source.
+- Base historique de l’audit : `d589ae1`
+  (`Security: store OpenAI key in OS vault`), complétée par les phases 3 et 4.
+- Les données locales sous `agents/` sont désormais explicitement ignorées et
+  ne font pas partie du code source.
 
 ## Résumé
 
@@ -15,11 +15,12 @@ NovaChat est un prototype fonctionnel avancé d’assistant desktop local. Le
 chat, OpenAI, la persistance, les deux agents internes, les permissions et
 l’exécution locale sont branchés. Le projet compile et se package.
 
-Il n’est toutefois pas prêt à être considéré comme une frontière de sécurité
-pour l’exécution de commandes, ni comme une application de production. La
-phase 3 de fiabilisation des données est terminée, mais la policy Device reste
-un contrôle de permission et non un sandbox ; le durcissement Electron, les
-surfaces provider et les parcours end-to-end restent incomplets.
+Le socle de code est propre, strictement typé et packagé, mais l’application ne
+doit toujours pas être considérée comme une frontière de sécurité pour
+l’exécution de commandes ni comme une distribution de production. La policy
+Device reste un contrôle de permission, pas un sandbox. Les parcours réels
+avec clé OpenAI, le binaire installé et les plateformes non Windows restent à
+valider avant une diffusion.
 
 ## Matrice fonctionnelle
 
@@ -40,9 +41,9 @@ surfaces provider et les parcours end-to-end restent incomplets.
 | Activité agents | Fonctionnel | polling 1 s + rafraîchissement sur événement |
 | Contexte agent éditable | Fonctionnel | `contexte.json` |
 | Historique agent | Fonctionnel | stockage et vue |
-| Providers alternatifs | Placeholder | sélection possible mais non exécutée |
+| Providers alternatifs | Catalogue planifié | visibles comme « à venir », non sélectionnables et refusés par le main |
 | Internationalisation | Partielle | écran de boot seulement |
-| Tests automatisés | Socle fonctionnel | 191 réussites dans 23 fichiers, aucun échec attendu |
+| Tests automatisés | Renforcés | 211 réussites dans 33 fichiers, aucun échec attendu |
 | Packaging Windows x64 | Vérifié | `npm.cmd run package` réussi |
 
 ## Agents actuels
@@ -87,8 +88,10 @@ La clé est chiffrée avec `electron.safeStorage`, n’est ni persistée dans
 `settings.json` ni renvoyée au renderer. La requête cible
 `<baseUrl>/responses`, avec `store: false`.
 
-Les IDs Anthropic, Google, Mistral, Ollama et LM Studio sont visibles en mode
-preview, mais aucune implémentation provider correspondante n’existe.
+Les IDs Anthropic, Google, Mistral, Ollama et LM Studio restent visibles comme
+catalogue planifié, mais aucune implémentation provider correspondante
+n’existe. Ils sont désactivés dans l’UI et rejetés par la validation main.
+`ActiveAIProviderId` ne contient donc qu’OpenAI.
 
 ## Validation technique
 
@@ -109,15 +112,17 @@ Le package vérifié est `win32-x64`.
 Le démarrage de développement a également atteint le lancement de
 l’application et du serveur renderer sur `http://localhost:9000`.
 
-La suite comprend 191 cas répartis dans 23 fichiers. Elle couvre la policy
+La suite comprend 211 cas répartis dans 33 fichiers. Elle couvre la policy
 Device, les parsers OpenAI/Planner, les commandes slash, les handoffs
 assistant-agent, la conservation des traces, les messages de tâche agent, le
 formatage de la page Device, les stockages chat/agents, les frontières IPC,
 les chemins confinés, le cycle de vie Device, les reducers d’événements, les
 écritures atomiques, les reprises sur backup, les queues agents, les
-migrations `userData`/Planner et le coffre de secrets. La matrice Device
-comporte 88 cas et tous les anciens
-contournements connus sont des tests de régression normaux.
+migrations `userData`/Planner et le coffre de secrets. Elle couvre désormais
+aussi les permissions asynchrones, l’arrêt des tours, la reprise des queues,
+le timeout OpenAI, la sécurité de la fenêtre, la visibilité structurée et des
+composants React critiques. La matrice Device comporte 88 cas et tous les
+anciens contournements connus sont des tests de régression normaux.
 
 Non vérifié :
 
@@ -125,7 +130,7 @@ Non vérifié :
 - lancement du binaire packagé ;
 - macOS et Linux ;
 - comportement avec un vrai appel OpenAI pendant l’audit ;
-- composants React et parcours end-to-end.
+- parcours Electron end-to-end réels.
 
 L’audit initial signalait 57 vulnérabilités dans l’arbre complet, dont
 2 critiques, et aucune dans les dépendances de production. Après mises à jour
@@ -154,8 +159,7 @@ leurs frontières métier.
 
 ## État du dépôt
 
-Le code source audité ne présentait pas de modification suivie avant le
-chantier documentaire. Le dossier `agents/` était déjà non suivi. Les
+Le dossier `agents/`, les settings et conversations locales ainsi que les
 artefacts `.webpack/` et `out/` sont ignorés. La capture historique obsolète a
 été retirée de la documentation.
 
@@ -164,7 +168,11 @@ artefacts `.webpack/` et `out/` sont ignorés. La capture historique obsolète a
 Le projet est reprenable sans refonte globale. Les frontières de domaines sont
 lisibles et les flux principaux sont opérationnels.
 
-La phase 3 est close. La prochaine priorité est la phase 4 : clarifier les
-providers réellement utilisables, corriger le masquage des résultats `/cmd`
-et décider de l’objectif i18n, dans l’ordre décrit par
-[NEXT_STEPS.md](NEXT_STEPS.md).
+Les phases 3 et 4 sont closes : données récupérables, fenêtre durcie, provider
+actif borné, settings indépendants du réseau, visibilité structurée,
+TypeScript strict, erreurs asynchrones contrôlées et modules denses découpés.
+
+La prochaine évolution éventuelle est la phase 6 de
+[NEXT_STEPS.md](NEXT_STEPS.md). Elle doit rester une décision produit
+explicite ; la validation finale des installateurs demeure la toute dernière
+tâche absolue.

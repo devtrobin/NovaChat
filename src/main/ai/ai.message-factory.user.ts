@@ -10,5 +10,6 @@ export function createUserMessage(content: string): ChatMessage {
     id: crypto.randomUUID(),
     lifecycleLog: [createLifecycleEntry("created", "Message utilisateur cree.")],
     to: "assistant",
+    visibility: "public",
   };
 }
