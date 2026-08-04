@@ -3,6 +3,9 @@
 ## Unreleased
 
 ### Added
+- cahiers des charges de réorganisation des agents existants :
+  - `docs/agents_specification/PLANNER_SPECIFICATION.md`
+  - `docs/agents_specification/DEVICE_SPECIFICATION.md`
 - socle de tests Vitest
   - policy de permissions Device
   - parsers OpenAI et Planner
@@ -13,7 +16,7 @@
   - guide `docs/DEVELOPMENT.md`
   - modele de donnees et contrat IPC `docs/DATA_MODEL.md`
   - registre priorise `docs/RISKS.md`
-  - consignes automatiques `AGENTS.md`
+  - consignes automatiques `../AGENTS.md`
 - documentation de reprise dans `docs/`
   - `ARCHITECTURE.md`
   - `PROJECT_STATE.md`
@@ -36,6 +39,10 @@
 - traces `message.json`, `log.json`, `apis.json` par message
 
 ### Changed
+- phase 6 réordonnée : réorganisation des agents en 6.1, ARI en 6.2 et ACA en
+  6.3
+- documentation générale regroupée sous `docs/`, à l’exception de
+  `AGENTS.md` et `README.md` qui restent des points d’entrée à la racine
 - policy Device restrictive par défaut pour les syntaxes inconnues ou
   complexes, avec séparation du parsing shell et des listes de règles
 - mise à jour de sécurité de la chaîne npm :

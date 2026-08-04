@@ -169,7 +169,7 @@ indiquent explicitement la portée de la décision.
 Les providers futurs restent visibles comme « à venir », mais leurs options
 sont désactivées. `ActiveAIProviderId` ne contient qu’OpenAI ; le catalogue
 planifié possède son propre type et la validation IPC refuse une activation
-non implémentée. Leur implémentation reste une tâche de phase 6.
+non implémentée. Leur implémentation reste une tâche de phase 7.
 
 ### Sauvegarde des settings et test réseau — corrigés
 

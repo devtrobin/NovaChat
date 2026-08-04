@@ -15,7 +15,7 @@ Ce document sert de reference rapide pour garder un code lisible, maintenable et
   - un module cohérent peut dépasser cette cible si le découper créerait des
     micro-fichiers artificiels ou disperserait un même invariant ;
   - documenter les exceptions durables les plus importantes dans
-    `docs/RISKS.md`.
+    `RISKS.md`.
 
 ## 2) TypeScript
 

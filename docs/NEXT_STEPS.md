@@ -17,9 +17,10 @@ Mettre le projet au propre avant toute nouvelle fonctionnalité :
 - CI, audits et packaging verts.
 
 La phase 4 a été clôturée le 19 juillet 2026 sans ajout de provider, agent ou
-workflow utilisateur. Le socle peut maintenant recevoir les capacités de la
-phase 6, une par une, après décision explicite et avec le même niveau de
-validation.
+workflow utilisateur. Le socle peut maintenant entrer dans la phase 6,
+consacrée d’abord à la réorganisation des agents existants, puis à l’Agent de
+Recherche Internet et enfin à la création automatique d’agents, avant tout
+autre développement fonctionnel.
 
 ## Phase 1 — Filet de sécurité — terminée
 
@@ -216,7 +217,131 @@ Le critère de sortie est la disparition des confirmations pour les lectures
 explicitement sûres, sans autorisation globale des lectures sensibles, ainsi
 qu’une réponse finale même lorsque le budget d’orchestration est atteint.
 
-## Phase 6 — Nouvelles capacités
+## Phase 6 — Réorganisation et extension des agents système
+
+### Phase 6.1 — Réorganisation des agents existants
+
+Objectif retenu : harmoniser les noms, identifiants, dossiers et contrats des
+agents système existants avant d’ajouter ARI et ACA. Cette sous-phase ne doit
+ajouter aucune capacité fonctionnelle à Planner ou Device.
+
+Deux cahiers des charges initiaux sont créés :
+
+- [Spécification du renommage de Planner](agents_specification/PLANNER_SPECIFICATION.md) ;
+- [Spécification du renommage de Device](agents_specification/DEVICE_SPECIFICATION.md).
+
+Les noms recommandés sont :
+
+- **ACP — Agent de Cadrage et de Planification**, identifiant `agent-acp` ;
+- **AEL — Agent d’Exécution Locale**, identifiant `agent-ael`.
+
+La convention cible proposée est `agent-<acronyme>`, ce qui permettra ensuite
+`agent-ari` et `agent-aca`. Les noms, acronymes et identifiants devront être
+validés avant toute modification du code ou des données.
+
+La spécification puis le futur découpage devront couvrir :
+
+1. inventaire des identifiants, labels, types, prompts, routes, pages et tests ;
+2. migration idempotente de `diagnostic-agent`, `agent-planner` et
+   `device-agent` vers les identifiants canoniques retenus ;
+3. préservation des settings, contextes, permissions, tâches, historiques et
+   conversations ;
+4. compatibilité en lecture des anciens messages sans réécriture destructive ;
+5. centralisation du registre et des métadonnées des agents système afin de
+   préparer ARI et ACA ;
+6. validation complète sans changement de comportement Planner/Device ni
+   assouplissement de la policy terminal.
+
+Cette phase 6.1 doit être spécifiée, validée, implémentée et vérifiée avant de
+commencer ARI.
+
+### Phase 6.2 — ARI — Agent de Recherche Internet
+
+Objectif retenu : ajouter un agent système de recherche Internet capable de
+rechercher et lire des pages publiques ou des contenus accessibles depuis un
+compte configuré, de privilégier les sources officielles et de restituer un
+dossier de recherche sourcé à l’assistant ou à l’agent qui l’a sollicité.
+
+Cf. [Cahier des charges — ARI](agents_specification/ARI_SPECIFICATION.md).
+
+ARI est une capacité transversale utilisable par Nova, les autres agents
+système et les agents spécialisés autorisés. Il doit être étudié, découpé,
+implémenté et validé avant ACA ; ACA sera l’un de ses consommateurs pour la
+création de connecteurs, mais ARI ne lui est pas réservé.
+
+La sous-phase inclura un écran Credentials générique, un registre JSON expurgé
+des secrets et un stockage chiffré dans le coffre système. La décision retient
+un `CredentialsService` dédié dans le process `main`, sans passage par Device,
+ainsi que des sessions authentifiées strictement limitées à la lecture. ARI
+appliquera une stratégie « public d’abord » : poursuivre sur
+d’autres sources lorsqu’un site demande un compte, recenser les sites bloqués
+et arrêter le cycle après dix sites candidats par défaut si aucune réponse
+suffisante n’a été trouvée.
+
+### Phase 6.3 — ACA — Agent de Création Automatique
+
+Objectif retenu : permettre à Nova de rechercher un agent capable de répondre
+à une demande et, si cette capacité manque, de faire intervenir ACA pour
+préparer un agent spécialisé, son contexte et son connecteur configurable.
+
+Cf. [Cahier des charges — ACA](agents_specification/ACA_SPECIFICATION.md).
+
+### Arbitrages ARI confirmés pour la reprise
+
+La prochaine session repartira des décisions confirmées suivantes :
+
+1. découverte publique par un scraper Google local, sans outil de recherche
+   OpenAI, puis extraction des dix premiers sites organiques retenus ;
+2. scraping public ou authentifié par des composants contrôlés dans le `main`,
+   avec assainissement du HTML avant transmission au modèle ;
+3. dix sites distincts par cycle, avec budgets séparés pour requêtes, pages,
+   temps et documents ;
+4. PDF texte pris en charge, sans OCR automatique dans la première version ;
+5. citations visibles et résultat structuré commun à tous les agents ;
+6. conservation des résultats et métadonnées pendant 90 jours et au plus
+   1 000 tâches finales, sans archive persistante du contenu intégral des
+   pages ;
+7. registre Credentials global, chiffré et partagé uniquement par autorisation
+   explicite de chaque agent demandeur, même lorsqu’ARI exécute la recherche ;
+8. API Credentials dédiée dans le `main` ; Device ne manipule jamais le
+   registre ni les secrets ;
+9. navigation authentifiée en lecture seule, avec intervention manuelle pour
+   MFA, OAuth ou SSO et session chiffrée révocable ; tout captcha fait ignorer
+   le site sans tentative de résolution ;
+10. ACA et les agents spécialisés peuvent solliciter ARI, sans en faire un
+    connecteur privé d’ACA.
+
+Les règles du scraper Google sont confirmées : résultats organiques
+dédupliqués par domaine, arrêt si Google présente un captcha, abandon de tout
+site avec captcha, rendu JavaScript seulement dans une session Electron
+isolée, respect de `robots.txt` et des réponses `403`/`429`, et une seule
+requête Google par cycle.
+
+Les autres règles confirmées sont : URL directe examinée avant Google, lecture
+publique et création structurelle de credentials autorisées par défaut lorsque
+ARI est actif, session Google éphémère sans compte ni SafeSearch, et validation
+d’un fait par une donnée officielle ou trois sources réellement indépendantes.
+Les copies, propriétaires communs et sources politiquement ou éditorialement
+orientées ne comptent pas comme confirmations distinctes.
+
+ARI pourra suivre jusqu’à dix pages pertinentes sur un même site. La première
+version restera limitée aux contenus textuels exploitables et refusera les
+exécutables, archives, téléchargements forcés, destinations locales ou privées
+et pages malveillantes. Une source dont la neutralité ne peut pas être établie
+sera signalée `neutrality-unverified` et ne comptera pas automatiquement parmi
+les trois confirmations. Le plafond global est fixé à trente pages HTML par
+cycle.
+
+Le cadrage fonctionnel d’ARI est complet. La prochaine étape documentaire sera
+sa relecture et sa validation finale, puis la transformation de la phase 6.2 en
+tâches ordonnées et vérifiables. Le cahier ACA sera relu et validé séparément
+avant le découpage de la phase 6.3.
+
+Chaque sous-phase commence par la rédaction et la validation de son cahier des
+charges. Elle sera ensuite découpée ici en tâches d’implémentation ordonnées.
+Aucun développement de la phase 6 ne doit commencer avant ce découpage.
+
+## Phase 7 — Nouvelles capacités
 
 Seulement après les phases précédentes :
 

@@ -34,9 +34,16 @@ et contrats, consulter [DATA_MODEL.md](DATA_MODEL.md).
 
 ## Prochaine décision
 
-Choisir explicitement une capacité de phase 6 avant de modifier le runtime :
-streaming, provider local, autre provider, recherche globale, nouvel agent ou
-compaction. Les installateurs et essais du binaire distribué restent la toute
+Valider d’abord les noms et migrations proposés pour Planner et Device dans
+[PLANNER_SPECIFICATION.md](agents_specification/PLANNER_SPECIFICATION.md) et
+[DEVICE_SPECIFICATION.md](agents_specification/DEVICE_SPECIFICATION.md), puis
+découper la phase 6.1 dans [NEXT_STEPS.md](NEXT_STEPS.md). Relire ensuite le
+cadrage complet d’ARI en phase 6.2, puis les réponses du cahier
+[ACA_SPECIFICATION.md](agents_specification/ACA_SPECIFICATION.md) avant le
+découpage de la phase 6.3. ARI doit être implémenté et validé avant ACA, mais
+reste un service transversal utilisable par Nova et tous les agents autorisés,
+pas une dépendance privée d’ACA. Les autres nouvelles capacités restent en
+phase 7. Les installateurs et essais du binaire distribué restent la toute
 dernière tâche absolue.
 
 ## Commandes de départ
@@ -95,6 +102,8 @@ journaliser.
 
 ## Phrase de reprise
 
-> Reprendre NovaChat sur son socle stabilisé après la phase 4. Choisir une seule
-> capacité de phase 6, préserver les frontières main/preload/renderer et garder
-> la validation de distribution comme dernière tâche absolue.
+> Reprendre NovaChat sur son socle stabilisé après la phase 4. Valider puis
+> découper la réorganisation Planner/Device en phase 6.1, relire et découper ARI
+> en phase 6.2, puis relire ACA avant le découpage de la phase 6.3. Préserver les
+> frontières main/preload/renderer et garder la validation de distribution
+> comme dernière tâche absolue.

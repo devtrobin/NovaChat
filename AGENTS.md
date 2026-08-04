@@ -16,9 +16,17 @@ La documentation a été auditée contre le code le 19 juillet 2026. Le commit
 ## État actif
 
 Le socle de nettoyage est terminé : la phase 4 et son critère de sortie sont
-clos dans `docs/NEXT_STEPS.md`. Avant une nouvelle modification fonctionnelle,
-choisir explicitement une seule capacité de phase 6 et préserver les contrats
-de sécurité, données, visibilité et validation obtenus.
+clos dans `docs/NEXT_STEPS.md`. La phase 6 est divisée entre la réorganisation
+des agents existants en 6.1, ARI en 6.2 et ACA en 6.3. Ne pas commencer leur
+implémentation avant validation des cahiers des charges et découpage en tâches.
+La phase 6.1 doit précéder ARI, puis ARI doit être validé avant ACA, en
+préservant les contrats de sécurité, données, visibilité et validation obtenus.
+ARI est une capacité de recherche transversale accessible à Nova et à tout
+agent autorisé ; il ne doit pas être conçu comme un composant réservé à ACA.
+Les nouveaux noms de Planner et Device restent à confirmer dans leurs cahiers
+de phase 6.1. Le cadrage fonctionnel d’ARI ne contient plus de question ouverte
+et appartient désormais à la phase 6.2. Les réponses du cahier ACA restent à
+relire avec l’utilisateur avant le découpage de la phase 6.3.
 
 ## Invariants d’architecture
 

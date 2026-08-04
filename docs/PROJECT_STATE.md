@@ -188,7 +188,10 @@ Les phases 3 et 4 sont closes : données récupérables, fenêtre durcie, provid
 actif borné, settings indépendants du réseau, visibilité structurée,
 TypeScript strict, erreurs asynchrones contrôlées et modules denses découpés.
 
-La prochaine évolution éventuelle est la phase 6 de
-[NEXT_STEPS.md](NEXT_STEPS.md). Elle doit rester une décision produit
-explicite ; la validation finale des installateurs demeure la toute dernière
-tâche absolue.
+La prochaine évolution retenue est la phase 6 de
+[NEXT_STEPS.md](NEXT_STEPS.md) : réorganisation de Planner et Device en phase
+6.1, ARI en phase 6.2, puis ACA et la création automatique d’agents en phase
+6.3. Leur implémentation ne commencera qu’après validation et découpage des
+cahiers des charges. ARI sera un service de recherche transversal pour Nova et
+tous les agents autorisés, et non un composant réservé à ACA. La validation
+finale des installateurs demeure la toute dernière tâche absolue.

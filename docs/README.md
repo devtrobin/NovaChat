@@ -12,8 +12,10 @@ outils et agents qui ouvrent le dépôt.
 
 L’assainissement du code est terminé : contrats explicites, TypeScript strict,
 gestion d’erreurs, tests critiques, sécurité Electron et refactors bornés sont
-validés. La suite éventuelle est la phase 6 de
-[NEXT_STEPS.md](NEXT_STEPS.md), après choix produit explicite.
+validés. La prochaine étape retenue est la phase 6 de
+[NEXT_STEPS.md](NEXT_STEPS.md) : réorganisation de Planner et Device en 6.1,
+ARI en 6.2, puis création automatique d’agents avec ACA en 6.3. Les autres
+nouvelles capacités sont reportées en phase 7.
 
 ## Parcours de lecture
 
@@ -30,13 +32,19 @@ Pour reprendre rapidement le projet :
    critères de validation.
 6. [RISKS.md](RISKS.md) — dette et risques classés par priorité.
 7. [NEXT_STEPS.md](NEXT_STEPS.md) — ordre de travail recommandé.
-8. [HANDOFF.md](HANDOFF.md) — reprise express après une interruption.
+8. [agents_specification/PLANNER_SPECIFICATION.md](agents_specification/PLANNER_SPECIFICATION.md),
+   [agents_specification/DEVICE_SPECIFICATION.md](agents_specification/DEVICE_SPECIFICATION.md),
+   [agents_specification/ARI_SPECIFICATION.md](agents_specification/ARI_SPECIFICATION.md)
+   et [agents_specification/ACA_SPECIFICATION.md](agents_specification/ACA_SPECIFICATION.md)
+   — cahiers des charges des agents système de la phase 6.
+9. [HANDOFF.md](HANDOFF.md) — reprise express après une interruption.
 
 ## Documents normatifs
 
 - [DEV_RULES.md](DEV_RULES.md) et
-  [../CODING_GUIDELINES.md](../CODING_GUIDELINES.md) définissent les
+  [CODING_GUIDELINES.md](CODING_GUIDELINES.md) définissent les
   conventions de contribution.
+- [CHANGELOG.md](CHANGELOG.md) conserve le journal des évolutions du projet.
 - [decisions/](decisions/) contient les décisions d’architecture acceptées,
   dont l’orchestration centralisée des agents.
 - [AGENTS_PLAN.md](AGENTS_PLAN.md) décrit le rôle des agents internes.

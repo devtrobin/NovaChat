@@ -139,8 +139,10 @@ Lecture recommandée :
 - [workflows](docs/WORKFLOWS.md) ;
 - [données et IPC](docs/DATA_MODEL.md) ;
 - [développement](docs/DEVELOPMENT.md) ;
+- [règles de codage](docs/CODING_GUIDELINES.md) ;
 - [risques](docs/RISKS.md) ;
 - [prochaines étapes](docs/NEXT_STEPS.md) ;
+- [changelog](docs/CHANGELOG.md) ;
 - [handoff express](docs/HANDOFF.md).
 
 NovaChat est distribué sous [licence MIT](LICENSE).
