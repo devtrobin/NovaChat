@@ -1,11 +1,16 @@
 # Workflows
 
+> Nomenclature cible de la phase 6.1 : ACP/AEL, y compris chemins, types et
+> contrats techniques. Le code n’est pas encore renommé. Le changement complet
+> et la remise à zéro sans compatibilité seront implémentés après finalisation
+> de la documentation ; voir [ADR 005](decisions/005-acp-ael-breaking-reset.md).
+
 ## 1. Démarrage
 
 ```text
 Electron ready
-  -> migration des données vers userData
-  -> migration/chiffrement de la clé OpenAI
+  -> initialisation ou chargement des données courantes sous userData
+  -> accès au coffre OpenAI courant
   -> createMainWindow
   -> renderer React
   -> LoadingScreen
@@ -15,10 +20,11 @@ Electron ready
   -> abonnement nova:ai:event
 ```
 
-Avant de créer la fenêtre, le main exécute les migrations versionnées des
-données et du secret. Une erreur affiche une boîte de dialogue et reste
-journalisable/récupérable ; aucune copie en clair de la clé n’est supprimée
-tant que le coffre n’a pas été relu avec succès.
+Le premier démarrage cible intervient après le reset unique décrit dans
+[l’ADR 005](decisions/005-acp-ael-breaking-reset.md). Il initialise les settings
+et espaces ACP/AEL neufs. Les démarrages suivants chargent ces données sans
+les effacer. Les anciennes copies ne sont jamais importées. Une erreur
+initiale affiche un état contrôlé et reste journalisable sans secret.
 
 Le boot renderer exécute uniquement le ping IPC réel, avec un timeout de trois
 secondes et une action de reprise en cas d’erreur. Après hydratation, toute
@@ -53,35 +59,35 @@ ChatInput
 3. Nova crée le message user et un message système de progression ;
 4. la conversation complète est transformée en JSON pour OpenAI ;
 5. OpenAI doit renvoyer un objet Nova minifié ;
-6. le parser accepte une réponse user ou un handoff agent/device ;
+6. le parser accepte une réponse user ou un handoff agent/ael ;
 7. les traces API sont attachées au message user et au message final ;
 8. le renderer applique les événements puis auto-sauvegarde.
 
 Le titre devient les 36 premiers caractères du premier prompt visible.
 
-## 3. Handoff vers le Planner
+## 3. Handoff vers ACP
 
-Le Planner peut être demandé par la réponse OpenAI :
+ACP peut être demandé par la réponse OpenAI :
 
 ```json
-{"from":"assistant","to":"agent","agentId":"agent-planner","content":"..."}
+{"from":"assistant","to":"agent","agentId":"agent-acp","content":"..."}
 ```
 
 Un handoff peut aussi être forcé au premier cycle si :
 
-- Planner est activé ;
+- ACP est activé ;
 - le prompt dépasse 140 caractères ou contient un signal heuristique
   (`analyse`, `debug`, `plan`, `refactor`, etc.) ;
-- aucun résultat agent/device n’est déjà présent dans le tour ;
-- la réponse assistant ne mentionne pas déjà le Planner.
+- aucun résultat agent/ael n’est déjà présent dans le tour ;
+- la réponse assistant ne mentionne pas déjà ACP.
 
-Le Planner reçoit son contexte, la plateforme, le shell, la demande et le
+ACP reçoit son contexte, la plateforme, le shell, la demande et le
 prompt utilisateur. Il renvoie un format textuel :
 
 ```text
 STATUS: ready|needs-info|blocked
 SUMMARY: ...
-AGENT: device-agent|none
+AGENT: agent-ael|none
 MODE: goal|command|analysis|none
 GOAL: ...
 REQUEST: ...
@@ -99,19 +105,19 @@ Nova parse le plan :
 - `needs-info` : question/résumé à l’utilisateur ;
 - `blocked` : message de blocage ;
 - `none` : réponse avec le résumé ;
-- `device-agent` : délégation de `REQUEST`.
+- `agent-ael` : délégation de `REQUEST`.
 
 Une signature des étapes déjà exécutées empêche la répétition exacte dans un
 tour.
 
-## 4. Handoff vers le Device
+## 4. Handoff vers AEL
 
-Le Device reçoit l’un des deux formats :
+AEL reçoit l’un des deux formats :
 
 - commande exacte, mode `command` ;
 - objectif, généralement préfixé `GOAL:`, mode `goal`.
 
-Pour un objectif, `generateDeviceAgentCommand` effectue un appel OpenAI dédié
+Pour un objectif, `generateAelAgentCommand` effectue un appel OpenAI dédié
 et exige uniquement une commande shell en texte brut.
 
 La commande passe ensuite dans :
@@ -132,7 +138,7 @@ catégorie la plus risquée des segments shell est conservée et présentée dan
 la demande de permission. `destructive` et `unclassified` restent toujours
 non mémorisables.
 
-Après exécution, le Device crée :
+Après exécution, AEL crée :
 
 - un message de commande/progression visible ;
 - un message agent de synthèse vers l’assistant ;
@@ -162,7 +168,7 @@ règle existe.
 
 ## 6. Exécution locale
 
-`startDeviceCommand` :
+`startAelCommand` :
 
 1. normalise la commande ;
 2. rejette seulement vide/NUL ;
@@ -174,7 +180,7 @@ règle existe.
 8. applique le timeout actif configuré et le suspend pendant une attente de
    saisie ;
 9. arrête récursivement l’arbre de processus sur kill ou timeout ;
-10. produit `DeviceCommandResult`.
+10. produit `AelCommandResult`.
 
 Une sortie terminant par `password:`, `mot de passe:`, `passphrase:`, `?` ou
 `:` peut passer le message en `waiting-input`. Le renderer renvoie alors la
@@ -205,8 +211,8 @@ passe pas par les permissions de l’agent.
 ```text
 user /cmd
   -> runDirectCommandTurn
-  -> executeDeviceCommand
-  -> résultat device -> user
+  -> executeAelCommand
+  -> résultat ael -> user
 ```
 
 La commande reste soumise au contrôle minimal de `assertCommandAllowed`.
@@ -276,7 +282,7 @@ critique qui évite les écrasements entre tâches concurrentes.
 Une récupération partielle produit la même bannière que le chat principal et
 bloque les mutations du workspace concerné jusqu’à acknowledgement.
 
-Les pages Planner et Device interrogent les tâches actives chaque seconde et
+Les pages ACP et AEL interrogent les tâches actives chaque seconde et
 se rafraîchissent aussi après un événement IA.
 
 La vue globale `AgentsActivityView` agrège les deux workspaces, conserve les 24
@@ -284,7 +290,7 @@ entrées récentes et permet l’arrêt d’une tâche.
 
 ## 11. Conversations internes agent
 
-Les tâches Planner et Device créent automatiquement une conversation interne
+Les tâches ACP et AEL créent automatiquement une conversation interne
 d’origine `assistant`. Elle sert à :
 
 - conserver les demandes et résultats successifs d’un même tour ;
@@ -300,7 +306,7 @@ Chargement :
 
 1. defaults sous `app.getPath("userData")` ;
 2. fichier de référence ;
-3. merge et compatibilité de schéma ;
+3. validation du schéma courant, sans conversion de l’ancien état ;
 4. éventuel fichier configuré ;
 5. calcul de `apiKeyConfigured` depuis le coffre, sans exposer la clé.
 
@@ -315,10 +321,9 @@ Sauvegarde UI :
    secondaire ;
 6. retour au renderer des settings publics sans secret.
 
-Une action séparée supprime la clé du coffre. Au premier démarrage après mise à
-jour, la migration recherche aussi l’ancienne clé dans les settings de
-référence et personnalisés, la sécurise, puis nettoie les primaires et backups
-en clair.
+Une action séparée supprime la clé du coffre. Après le reset de phase 6.1,
+l’utilisateur saisit une nouvelle clé ; aucune recherche ni récupération de
+clé dans les anciens settings ou backups n’est conservée.
 
 ## 13. Navigation et messages non lus
 

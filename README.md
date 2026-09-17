@@ -1,5 +1,10 @@
 # NovaChat
 
+> La documentation utilise les noms cibles ACP/AEL. Le renommage du code et
+> la remise à zéro sans compatibilité sont prévus en phase 6.1, après
+> finalisation de la documentation. Voir
+> [la décision de transition](docs/decisions/005-acp-ael-breaking-reset.md).
+
 NovaChat est une application desktop Electron + React qui combine un chat
 persistant, l’API OpenAI Responses, un agent de planification et un agent
 d’exécution locale.
@@ -11,8 +16,8 @@ Fonctionnalités branchées :
 - conversations locales, drafts, non-lus, recherche et renommage ;
 - configuration OpenAI locale ;
 - assistant principal Nova ;
-- `agent-planner` pour proposer la prochaine étape atomique ;
-- `device-agent` pour concevoir ou exécuter une commande ;
+- `agent-acp` pour proposer la prochaine étape atomique ;
+- `agent-ael` pour concevoir ou exécuter une commande ;
 - workflow de permission `Oui`, `Oui permanent`, `Non` ;
 - commandes locales `/help`, `/status`, `/agents` et `/settings` sans appel
   provider ;
@@ -21,10 +26,10 @@ Fonctionnalités branchées :
 - contextes, permissions, conversations et historiques agents sur disque ;
 - vue d’activité globale des agents.
 
-Seul OpenAI est réellement implémenté. Les autres providers visibles en mode
-preview sont des placeholders.
+Seul OpenAI est réellement implémenté. Les autres providers du catalogue
+sont indiqués « à venir » et ne peuvent pas être activés.
 
-Important : le canal `device` est fonctionnel mais sa policy actuelle n’est
+Important : le canal `ael` est fonctionnel mais sa policy actuelle n’est
 pas une frontière de sécurité complète. Lire
 [docs/RISKS.md](docs/RISKS.md) avant de l’étendre.
 
@@ -57,9 +62,10 @@ npm.cmd run package
 npm.cmd run ci
 ```
 
-Au 18 juillet 2026, ces commandes passent sur Windows x64. La suite Vitest
-exécute 154 cas, tous réussis. Les anciens contournements connus de la policy
-Device sont maintenant couverts par des tests de régression normaux.
+Le bilan de `docs/PROJECT_STATE.md` rapporte 277 tests réussis et un packaging
+Windows x64 validé. Ces résultats historiques ne valident pas encore la phase
+6.1 et devront être rejoués lors de son implémentation. Les anciens contournements connus de la policy
+AEL sont maintenant couverts par des tests de régression normaux.
 
 ## Configuration OpenAI
 
@@ -77,12 +83,13 @@ Base URL standard :
 https://api.openai.com/v1
 ```
 
-La clé est actuellement stockée en clair dans `settings.json`, fichier ignoré
-par Git.
+La clé est chiffrée dans le coffre système via `electron.safeStorage`. Elle
+n’est ni persistée dans `settings.json` ni renvoyée au renderer.
 
 ## Stockage local
 
-En développement, les chemins par défaut sont à la racine du dépôt :
+En développement comme en application packagée, les chemins par défaut
+résident sous `app.getPath("userData")` :
 
 ```text
 settings.json
@@ -109,9 +116,11 @@ historique.json
 conversations/
 ```
 
-En application packagée, le code actuel utilise par défaut le dossier
-contenant l’exécutable, et non le répertoire standard `userData`. Ce point
-fait partie des chantiers prioritaires.
+La phase 6.1 prévoit une suppression de l’ancienne base NovaChat, y compris
+ses copies et backups, puis une configuration neuve sans migration. Le reset
+sera unique et ne concernera que les fichiers appartenant à NovaChat. Les
+nouvelles données garderont ces protections et leur persistance. Ce chantier
+attend la finalisation de la documentation.
 
 ## Architecture courte
 

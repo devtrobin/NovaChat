@@ -1,5 +1,16 @@
 # Cahier des charges — ACA — Agent de Création Automatique
 
+Compagnon : [ACA_SPECIFICATION_TECHNIQUE.md](ACA_SPECIFICATION_TECHNIQUE.md)
+— outils, bibliothèques, contrats, délégations et choix techniques. Les solutions
+marquées « proposées » dans ce fichier compagnon restent à valider ; elles ne
+modifient pas implicitement les décisions fonctionnelles ci-dessous.
+
+La base attendue est la phase 6.1 ACP/AEL : noms harmonisés dans toutes les
+surfaces et données neuves sans compatibilité historique. Voir
+[l’ADR 005](../decisions/005-acp-ael-breaking-reset.md). La finalisation de la
+documentation précède tout chantier de code ; le présent cahier garde sa
+validation propre.
+
 ## Statut
 
 Étude en cours d’alimentation. Les questions communes disposent d’une réponse
@@ -24,7 +35,7 @@ de vie et les limites d’autonomie de ces agents.
   structurés.
 - **Action connecteur** : objet structuré contenant au minimum une opération
   identifiée par un mot-clé et ses arguments. Elle joue pour un agent
-  spécialisé le rôle que joue une commande terminal pour Device, sans être
+  spécialisé le rôle que joue une commande terminal pour AEL, sans être
   envoyée au shell.
 
 ## Décisions fonctionnelles confirmées
@@ -33,8 +44,8 @@ de vie et les limites d’autonomie de ces agents.
 
 NovaChat comportera quatre agents système principaux :
 
-1. Planner ;
-2. Device ;
+1. ACP ;
+2. AEL ;
 3. ARI ;
 4. ACA.
 
@@ -193,7 +204,7 @@ partagé entre plusieurs agents.
 Après activation, l’agent spécialisé dialoguera avec son connecteur à l’aide
 d’actions structurées utilisant des mots-clés ou noms d’opérations. Le contrat
 minimal retenu est de la forme `{ action, arguments }`. Le flux cible est
-analogue au flux Device, avec une frontière d’exécution différente :
+analogue au flux AEL, avec une frontière d’exécution différente :
 
 ```text
 Assistant principal
@@ -347,7 +358,7 @@ entre-temps.
 ### Suppression d’un agent
 
 Seuls les agents spécialisés créés par ACA ou l’utilisateur pourront être
-supprimés. Planner, Device, ARI et ACA seront non supprimables.
+supprimés. ACP, AEL, ARI et ACA seront non supprimables.
 
 La suppression définitive exigera que l’agent soit d’abord placé dans l’état
 `disabled`, puis demandera une confirmation explicite. Une fois confirmée,
@@ -775,10 +786,10 @@ provisoirement résolus ainsi :
    pas d’instruction contraire : CRUD exposé autant que le fournisseur le
    permet, lectures automatiques et confirmation des créations, modifications,
    envois et suppressions.
-7. **Questions restantes.** Les seules réponses encore à valider concernent le
-   périmètre propre d’ARI et sont centralisées dans
-   [ARI_SPECIFICATION.md](ARI_SPECIFICATION.md). Aucun choix ACA ne bloque la
-   reprise de l’étude.
+7. **Validation restante.** Le cadrage fonctionnel d’ARI est complet dans
+   [ARI_SPECIFICATION.md](ARI_SPECIFICATION.md), mais sa relecture finale
+   reste à faire. Les réponses du présent cahier ACA doivent également être
+   relues et validées dans leur ensemble avant le découpage de la phase 6.3.
 
 ## Méthode de travail pour les prochaines sessions
 

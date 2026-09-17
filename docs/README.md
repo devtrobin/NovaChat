@@ -1,7 +1,6 @@
 # Base de connaissance NovaChat
 
-Cette base décrit l’état réellement observé du projet, et non uniquement
-l’intention historique. Elle a été vérifiée le **19 juillet 2026** sur la
+Cette base distingue le socle observé et la cible documentaire de la phase 6. Elle a été vérifiée le **19 juillet 2026** sur la
 branche `main`. Le commit `d589ae1` constitue la base historique de l’audit,
 complétée par les phases 3 et 4.
 
@@ -13,9 +12,19 @@ outils et agents qui ouvrent le dépôt.
 L’assainissement du code est terminé : contrats explicites, TypeScript strict,
 gestion d’erreurs, tests critiques, sécurité Electron et refactors bornés sont
 validés. La prochaine étape retenue est la phase 6 de
-[NEXT_STEPS.md](NEXT_STEPS.md) : réorganisation de Planner et Device en 6.1,
+[NEXT_STEPS.md](NEXT_STEPS.md) : réorganisation d’ACP et AEL en 6.1,
 ARI en 6.2, puis création automatique d’agents avec ACA en 6.3. Les autres
 nouvelles capacités sont reportées en phase 7.
+
+Le 16 septembre 2026, l’utilisateur a confirmé ACP et AEL dans toutes les
+surfaces, y compris les noms techniques, ainsi qu’un breaking change avec
+suppression de l’ancien état NovaChat. Les noms et chemins cibles sont déjà
+utilisés dans les docs ; le code ne sera renommé qu’après finalisation de la
+documentation. Le découpage de la phase 6.1 est rédigé. La prochaine étape
+est de terminer la documentation, dont les relectures et découpages ARI/ACA.
+Aucune suppression ni implémentation n’est engagée pendant cette préparation.
+La portée du reset est définie dans
+[l’ADR 005](decisions/005-acp-ael-breaking-reset.md).
 
 ## Parcours de lecture
 
@@ -32,11 +41,16 @@ Pour reprendre rapidement le projet :
    critères de validation.
 6. [RISKS.md](RISKS.md) — dette et risques classés par priorité.
 7. [NEXT_STEPS.md](NEXT_STEPS.md) — ordre de travail recommandé.
-8. [agents_specification/PLANNER_SPECIFICATION.md](agents_specification/PLANNER_SPECIFICATION.md),
-   [agents_specification/DEVICE_SPECIFICATION.md](agents_specification/DEVICE_SPECIFICATION.md),
+8. [agents_specification/ACP_SPECIFICATION.md](agents_specification/ACP_SPECIFICATION.md),
+   [agents_specification/AEL_SPECIFICATION.md](agents_specification/AEL_SPECIFICATION.md),
    [agents_specification/ARI_SPECIFICATION.md](agents_specification/ARI_SPECIFICATION.md)
    et [agents_specification/ACA_SPECIFICATION.md](agents_specification/ACA_SPECIFICATION.md)
-   — cahiers des charges des agents système de la phase 6.
+   — cahiers fonctionnels des agents système de la phase 6, chacun accompagné
+   de sa spécification technique :
+   [ACP](agents_specification/ACP_SPECIFICATION_TECHNIQUE.md),
+   [AEL](agents_specification/AEL_SPECIFICATION_TECHNIQUE.md),
+   [ARI](agents_specification/ARI_SPECIFICATION_TECHNIQUE.md) et
+   [ACA](agents_specification/ACA_SPECIFICATION_TECHNIQUE.md).
 9. [HANDOFF.md](HANDOFF.md) — reprise express après une interruption.
 
 ## Documents normatifs
@@ -56,7 +70,9 @@ Pour reprendre rapidement le projet :
 
 En cas de contradiction :
 
-1. le comportement du code et les types partagés priment ;
+1. pour le comportement exécuté, le code et les types partagés priment ;
+   pour la cible à implémenter, les décisions acceptées de phase 6 priment
+   sans prétendre que cette cible est déjà réalisée ;
 2. les ADR priment pour les décisions structurelles ;
 3. `PROJECT_STATE.md` et `RISKS.md` priment pour l’état opérationnel ;
 4. le README racine reste une introduction, pas une spécification.

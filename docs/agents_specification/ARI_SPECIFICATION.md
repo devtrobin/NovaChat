@@ -1,5 +1,16 @@
 # Cahier des charges — ARI — Agent de Recherche Internet
 
+Compagnon : [ARI_SPECIFICATION_TECHNIQUE.md](ARI_SPECIFICATION_TECHNIQUE.md)
+— outils, bibliothèques, contrats, délégations et choix techniques. Les solutions
+marquées « proposées » dans ce fichier compagnon restent à valider ; elles ne
+modifient pas implicitement les décisions fonctionnelles ci-dessous.
+
+La base attendue est la phase 6.1 ACP/AEL : noms harmonisés dans toutes les
+surfaces et données neuves sans compatibilité historique. Voir
+[l’ADR 005](../decisions/005-acp-ael-breaking-reset.md). La finalisation de la
+documentation précède tout chantier de code ; le présent cahier garde sa
+validation propre.
+
 ## Statut
 
 Cadrage fonctionnel complet. Les décisions recensées sont confirmées ; le
@@ -30,7 +41,7 @@ l’agent qui l’a sollicité.
 - Il est implémenté et validé avant ACA.
 - ARI et ACA appartiennent à la même phase et à la même version.
 - ARI est un service système partagé, indépendant d’ACA.
-- Nova, Planner, Device, ACA et les agents spécialisés pourront solliciter ARI
+- Nova, ACP, AEL, ACA et les agents spécialisés pourront solliciter ARI
   lorsqu’ils ont besoin d’informations publiques disponibles sur Internet.
 - Le résultat est retourné au demandeur initial afin qu’il puisse poursuivre
   sa propre tâche.
@@ -107,8 +118,8 @@ ARI n’est pas un sous-agent réservé à ACA. L’orchestrateur pourra lui dé
 une recherche pour le compte de tout assistant ou agent autorisé. Exemples :
 
 - Nova recherche une information récente pour répondre à l’utilisateur ;
-- Planner vérifie une documentation avant de proposer une prochaine étape ;
-- Device consulte une documentation officielle avant de préparer une commande ;
+- ACP vérifie une documentation avant de proposer une prochaine étape ;
+- AEL consulte une documentation officielle avant de préparer une commande ;
 - ACA étudie l’API d’un outil avant de créer son connecteur ;
 - un agent spécialisé complète une tâche avec une information publique absente
   de son propre connecteur.
@@ -180,7 +191,7 @@ Exemple de représentation visible après sauvegarde :
 
 Le mot de passe ne devra pas rester dans ce JSON après sa sauvegarde. Le
 processus `main` devra l’extraire immédiatement, le chiffrer avec le coffre du
-système et le remplacer par une référence opaque. Ni ARI, ni Device, ni le
+système et le remplacer par une référence opaque. Ni ARI, ni AEL, ni le
 renderer, ni les historiques ne devront recevoir sa valeur après cette
 extraction.
 
@@ -268,7 +279,7 @@ ARI lance une recherche publique
 ```
 
 Le besoin exprimé est qu’ARI puisse faire ajouter les sites nécessitant des
-credentials. La décision confirmée écarte Device pour cette opération :
+credentials. La décision confirmée écarte AEL pour cette opération :
 faire manipuler le registre par le shell exposerait les secrets à ses
 historiques et à une policy qui n’est pas une frontière de sécurité complète.
 ARI appellera plutôt une API dédiée dans le process `main` pour créer ou
@@ -439,13 +450,13 @@ contenus techniques inutiles.
 
 Utiliser une API `CredentialsService` dédiée dans le process `main`. ARI
 pourra lui demander de créer ou modifier la structure non sensible d’une
-entrée, mais Device ne manipulera ni le fichier, ni le coffre, ni les secrets.
+entrée, mais AEL ne manipulera ni le fichier, ni le coffre, ni les secrets.
 
 Le service assurera validation de schéma, écriture atomique, chiffrement,
 références opaques, contrôle des domaines et journalisation expurgée.
 L’utilisateur saisira ou remplacera toujours le secret depuis l’écran
 Credentials. Ce choix préserve le principe recherché sans exposer les comptes
-au shell et aux historiques de Device.
+au shell et aux historiques d’AEL.
 
 ### 8. Périmètre après authentification
 

@@ -1,5 +1,10 @@
 # ADR 001 - Electron Main Owns AI Orchestration
 
+Les noms ACP/AEL et les contrats correspondants sont la cible de la phase
+6.1, pas un renommage déjà réalisé dans le code. Voir
+[l’ADR 005](005-acp-ael-breaking-reset.md). La décision d’orchestration reste
+inchangée.
+
 ## Status
 
 Accepted
@@ -9,7 +14,7 @@ Accepted
 Le projet doit :
 - appeler un provider IA
 - gerer des credentials
-- executer des commandes locales via `device`
+- executer des commandes locales via `ael`
 - boucler entre assistant et machine
 
 Si cette logique reste dans le renderer, on expose trop de logique sensible et on rend l'application plus fragile.
@@ -26,7 +31,7 @@ Le renderer :
 Le `main` :
 - charge les settings
 - appelle le provider
-- orchestre la boucle `assistant -> device -> assistant`
+- orchestre la boucle `assistant -> ael -> assistant`
 - renvoie des events au renderer
 
 ## Consequences

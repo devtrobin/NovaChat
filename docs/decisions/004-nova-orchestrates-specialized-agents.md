@@ -1,5 +1,10 @@
 # ADR 004 - Nova orchestre des agents spécialisés
 
+Les noms ACP/AEL et les contrats correspondants sont la cible de la phase
+6.1, pas un renommage déjà réalisé dans le code. Voir
+[l’ADR 005](005-acp-ael-breaking-reset.md). La décision d’orchestration reste
+inchangée.
+
 ## Statut
 
 Acceptée et implémentée.
@@ -21,12 +26,13 @@ Donner à chaque agent une autonomie d’orchestration complète compliquerait :
 
 Nova, l’assistant principal, reste l’unique orchestrateur.
 
-- `agent-planner` recommande au plus une prochaine étape atomique.
-- `device-agent` prépare ou exécute une action locale atomique.
+- `agent-acp` recommande au plus une prochaine étape atomique.
+- `agent-ael` prépare ou exécute une action locale atomique.
 - Les agents ne s’appellent pas directement entre eux.
 - Tout handoff passe par le main et le registre de tour.
 - Le résultat d’un agent revient à Nova avant une éventuelle nouvelle étape.
-- Un tour principal est limité à quatre cycles.
+- Le budget courant est de huit cycles assistant et six exécutions AEL,
+  avec une synthèse finale réservée sans nouvelle délégation.
 
 ## Conséquences positives
 
@@ -41,12 +47,12 @@ Nova, l’assistant principal, reste l’unique orchestrateur.
 - l’orchestrateur principal concentre beaucoup de logique ;
 - chaque étape agent ajoute un appel provider et de la latence ;
 - la qualité du routage dépend encore de prompts et heuristiques ;
-- le format du Planner doit être parsé et peut être invalide.
+- le format d’ACP doit être parsé et peut être invalide.
 
 ## Garde-fous
 
 - Un nouvel agent doit être routé par Nova.
 - Il doit s’enregistrer dans le registre de tour.
-- Il ne doit pas contourner la policy et les permissions Device.
+- Il ne doit pas contourner la policy et les permissions AEL.
 - Son résultat doit être représentable comme message Nova.
 - Les tâches longues doivent être annulables.

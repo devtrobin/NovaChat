@@ -1,5 +1,10 @@
 # Développement et exploitation locale
 
+> Nomenclature cible de la phase 6.1 : ACP/AEL, y compris chemins, types et
+> contrats techniques. Le code n’est pas encore renommé. Le changement complet
+> et la remise à zéro sans compatibilité seront implémentés après finalisation
+> de la documentation ; voir [ADR 005](decisions/005-acp-ael-breaking-reset.md).
+
 ## Prérequis
 
 - Node.js 20, 22 ou 24+ conformément au moteur déclaré par Vitest 4.
@@ -59,35 +64,37 @@ pendant le développement.
 
 Vitest 4 exécute 33 fichiers sous `src/` :
 
-- policy de permissions Device ;
+- policy de permissions AEL ;
 - parser des réponses OpenAI ;
-- parser du format Planner ;
+- parser du format ACP ;
 - sérialisation du stockage chat ;
 - round-trip du stockage sur un dossier temporaire ;
 - application des événements de conversation.
 - parsing et réponses des commandes slash locales.
 - validation runtime des payloads IPC ;
 - confinement des chemins de stockage ;
-- limites de sortie, timeout interactif et stratégie de kill Device.
-- formatage des résultats agent et détection des commandes Device.
+- limites de sortie, timeout interactif et stratégie de kill AEL.
+- formatage des résultats agent et détection des commandes AEL.
 - initialisation, permissions, conversations et historique du stockage agent.
-- formatage des statuts et sorties de la page Device.
+- formatage des statuts et sorties de la page AEL.
 - résolution des handoffs explicites et heuristiques.
-- fusion des traces de délégation et de génération Device.
+- fusion des traces de délégation et de génération AEL.
 - écritures JSON atomiques, backups et détection de récupération partielle ;
 - sérialisation des opérations concurrentes d’un même agent ;
-- migrations `userData` et `diagnostic-agent` ;
+- migrations historiques du socle, à remplacer en phase 6.1 par les tests
+  de reset unique, refus des anciens contrats et initialisation neuve ;
 - rétention et redaction des traces API ;
-- chiffrement, remplacement, suppression et migration de la clé OpenAI.
+- chiffrement, remplacement et suppression de la clé OpenAI ; sa migration
+  historique sera retirée en phase 6.1.
 - sécurité et politique de navigation de la fenêtre principale ;
 - visibilité publique/interne des messages et compatibilité des anciens
   messages ;
 - permissions asynchrones, résolution unique et annulation complète d’un tour ;
 - timeout du test OpenAI et construction des payloads assistant/agents ;
 - reprise des queues de sauvegarde après une opération rejetée ;
-- rendu statique de composants React critiques des settings et du Planner.
+- rendu statique de composants React critiques des settings et d’ACP.
 
-La matrice Device comporte 88 cas normaux. Elle couvre commandes de lecture,
+La matrice AEL comporte 88 cas normaux. Elle couvre commandes de lecture,
 écritures bornées, séparateurs shell, substitutions, wrappers, redirections,
 sous-commandes Git et options mutantes. Toute nouvelle règle de policy doit
 ajouter ses cas sûrs et adversariaux dans cette matrice.
@@ -100,7 +107,7 @@ Cela ne remplace pas les parcours Electron. Vérifier manuellement au minimum :
 3. sauvegarde puis rechargement des conversations ;
 4. test et sauvegarde de la configuration OpenAI ;
 5. réponse OpenAI directe ;
-6. délégation au Planner puis au Device ;
+6. délégation à ACP puis à AEL ;
 7. permission autorisée une fois, permanente et refusée ;
 8. `/cmd`, saisie interactive, arrêt d’un tour et kill d’une commande ;
 9. activation/désactivation des deux agents ;
@@ -138,16 +145,17 @@ logs/storage-errors.jsonl
 secrets/openai-api-key.json
 ```
 
-Au premier démarrage après mise à jour, NovaChat copie les anciennes données
-placées à la racine de l’application si la destination n’existe pas, puis
-réécrit uniquement les anciens chemins par défaut. Les chemins personnalisés
-restent inchangés. L’état des migrations est enregistré dans
-`migration-state.json`.
+Le code actuel possède encore des migrations historiques. La phase 6.1 les
+retirera : le premier démarrage cible suivra une remise à zéro unique des seules
+données NovaChat, y compris anciennes copies et marqueurs de migration. Les
+settings et espaces seront recréés aux valeurs par défaut. Voir
+[l’ADR 005](decisions/005-acp-ael-breaking-reset.md) pour le périmètre, notamment
+les chemins personnalisés. Aucun reset n’est exécuté pendant la documentation.
 
 `settings.json` ne contient plus la clé API. Celle-ci est chiffrée par
 `electron.safeStorage` dans le fichier de secret dédié ; le backend Linux
-`basic_text` est refusé. Une ancienne installation peut encore contenir une
-clé en clair tant que sa migration n’a pas réussi : ne jamais afficher,
+`basic_text` est refusé. Avant le reset, une ancienne installation peut encore contenir une
+clé en clair : ne jamais afficher,
 journaliser ou committer les anciens settings/backups.
 
 ## Debug par domaine
@@ -159,9 +167,9 @@ journaliser ou committer les anciens settings/backups.
 | Événements de conversation | `src/renderer/services/chat/chat.events.ts` |
 | Appel OpenAI / parsing | `src/main/ai/openai.*` |
 | Boucle assistant/agents | `src/main/ai/ai.orchestrator*` |
-| Planner | `src/main/ai/ai.planner.ts`, `src/main/agents/` |
-| Commande locale | `src/main/device/`, `src/main/ai/ai.device-flow*` |
-| Permission | `src/main/ai/ai.permission.service.ts`, `src/main/device/device.policy.ts` |
+| ACP | `src/main/ai/ai.acp.ts`, `src/main/agents/` |
+| Commande locale | `src/main/ael/`, `src/main/ai/ai.ael-flow*` |
+| Permission | `src/main/ai/ai.permission.service.ts`, `src/main/ael/ael.policy.ts` |
 | Persistance chat | `src/main/chat/` |
 | Persistance agent | `src/main/agents/agent-storage.service.ts` |
 | Settings | `src/main/settings/`, `src/renderer/components/SettingsPanel/` |
@@ -179,7 +187,7 @@ journaliser ou committer les anciens settings/backups.
   `shared/chat.types.ts`, `preload`, `main`, `renderer` et du stockage.
 - Un changement d’IPC nécessite une mise à jour simultanée du handler, du
   preload et de `renderer/global.d.ts`.
-- Un changement du canal `device` doit inclure des tests de policy avant toute
+- Un changement du canal `ael` doit inclure des tests de policy avant toute
   extension fonctionnelle.
 - Une mise à jour d’Electron Forge doit tenter de retirer un par un les
   overrides `tar`, `tmp`, `uuid` et `webpack-dev-server`, puis rejouer audits,

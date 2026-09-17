@@ -1,5 +1,10 @@
 # Modèle de données et contrat IPC
 
+> Nomenclature cible de la phase 6.1 : ACP/AEL, y compris chemins, types et
+> contrats techniques. Le code n’est pas encore renommé. Le changement complet
+> et la remise à zéro sans compatibilité seront implémentés après finalisation
+> de la documentation ; voir [ADR 005](decisions/005-acp-ael-breaking-reset.md).
+
 ## Messages Nova
 
 Le type central est `ChatMessage` dans `src/shared/chat.types.ts`. Il constitue
@@ -10,14 +15,14 @@ Champs obligatoires :
 | Champ | Rôle |
 | --- | --- |
 | `id` | UUID ou identifiant stable du message |
-| `from` | `user`, `assistant`, `agent`, `device` ou `system` |
-| `to` | `user`, `assistant`, `agent` ou `device` |
+| `from` | `user`, `assistant`, `agent`, `ael` ou `system` |
+| `to` | `user`, `assistant`, `agent` ou `ael` |
 | `content` | contenu principal ou commande |
 | `createdAt` | date ISO |
 
 Champs structurants optionnels :
 
-- `agentId` : `agent-planner` ou `device-agent` dans les flux actuels ;
+- `agentId` : `agent-acp` ou `agent-ael` dans les flux cibles ;
 - `status` : état UI/exécution (`pending`, `running`, `waiting-input`,
   `success`, `partial-success`, `error`, etc.) ;
 - `result` : résultat détaillé, souvent repliable ;
@@ -29,10 +34,10 @@ Champs structurants optionnels :
 - `apiRequests` : requêtes et réponses provider brutes.
 
 Les messages `system` sont transitoires : le renderer les filtre avant
-persistance et au chargement. Pour les anciens messages sans `visibility`, le
-renderer applique une règle déterministe : messages agent et échanges vers
-assistant internes, messages utilisateur, réponses finales, permissions,
-saisies et Device vers utilisateur publics.
+persistance et au chargement. La cible ne reprend pas les anciens messages
+sans `visibility` : ils appartiennent à la base supprimée. Les nouvelles
+écritures portent explicitement la visibilité publique ou interne ; les
+permissions, saisies et résultats AEL destinés à l’utilisateur restent publics.
 
 ## Conversations
 
@@ -88,14 +93,14 @@ Sous `localFiles.agentsDirectory` :
 
 ```text
 agents/
-  agent-planner/
+  agent-acp/
     contexte.json
     permissions.json
     historique.json
     conversations/
       conversations.json
       ...
-  device-agent/
+  agent-ael/
     contexte.json
     permissions.json
     historique.json
@@ -113,10 +118,11 @@ agents/
 Toutes les opérations d’un même agent sont sérialisées par racine et ID afin
 d’éviter deux cycles lecture-modification-écriture concurrents.
 
-L’ancien identifiant `diagnostic-agent` est migré une seule fois. Son dossier
-est déplacé dans `agents/.migration-backups/`, puis copié ou fusionné dans
-`agent-planner` avec déduplication des permissions, historiques et
-conversations.
+En phase 6.1, les anciens espaces et leurs sauvegardes seront supprimés sans
+fusion ni conversion. Les deux espaces cibles seront créés vides, avec un
+contexte par défaut et aucune permission mémorisée. Les anciennes identités
+seront refusées à la lecture comme en IPC ; voir
+[l’ADR 005](decisions/005-acp-ael-breaking-reset.md).
 
 ## Settings
 
@@ -124,14 +130,14 @@ conversations.
 
 ```text
 activeProvider
-agents.agent-planner.enabled
-agents.device-agent.enabled
+agents.agent-acp.enabled
+agents.agent-ael.enabled
 apiTrace.enabled
 apiTrace.retentionDays
 apiTrace.maxEntriesPerMessage
 apiTrace.redactSensitiveData
-deviceExecution.maxOutputCharacters
-deviceExecution.timeoutMs
+aelExecution.maxOutputCharacters
+aelExecution.timeoutMs
 hideInternalConversations
 localFiles.settingsPath
 localFiles.conversationsDirectory
@@ -188,7 +194,7 @@ types, énumérations, longueurs, volume sérialisé, identifiants et chemins
 absolus. Les chemins construits à partir d’identifiants sont en plus confinés à
 leur racine de stockage.
 
-Le contrat public ne contient aucun canal Device direct ni API de conversation
+Le contrat public ne contient aucun canal AEL direct ni API de conversation
 agent sans interface. Toute exécution locale passe par le flux `ai` dans le
 main et par les contrôles de permission associés.
 
@@ -196,7 +202,7 @@ main et par les contrôles de permission associés.
 
 Les appels de l’assistant principal et des agents textuels peuvent attacher le
 payload de requête et la réponse à `apis.json`. Les traces de génération de
-commande Device sont fusionnées avec celles de la délégation et rattachées au
+command’AEL sont fusionnées avec celles de la délégation et rattachées au
 message final. Le test de connexion ne persiste aucune trace.
 
 Avant écriture, `apiTrace` peut supprimer toutes les traces, retirer celles
@@ -206,5 +212,5 @@ clés de forme `sk-*`. Ces règles s’appliquent au chat principal et aux agent
 
 Les résultats réinjectés au provider sont tronqués à 4 000 caractères. La
 sortie de commande conservée en mémoire est également plafonnée par
-`deviceExecution.maxOutputCharacters`. Les prompts et réponses fonctionnels
+`aelExecution.maxOutputCharacters`. Les prompts et réponses fonctionnels
 restent potentiellement sensibles même après la redaction ciblée des secrets.
