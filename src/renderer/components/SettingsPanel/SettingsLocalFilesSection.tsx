@@ -50,26 +50,26 @@ export default function SettingsLocalFilesSection({
         <input className="settings-panel__input" disabled={isBusy} max={300000} min={1000} onChange={(event) => {
           setDraft((current) => current ? {
             ...current,
-            deviceExecution: {
-              ...current.deviceExecution,
+            aelExecution: {
+              ...current.aelExecution,
               timeoutMs: Number(event.target.value),
             },
           } : current);
           setStatus();
-        }} type="number" value={settings.deviceExecution.timeoutMs} />
+        }} type="number" value={settings.aelExecution.timeoutMs} />
       </label>
       <label className="settings-panel__field">
         <span className="settings-panel__label">Sortie maximale conservee (caracteres)</span>
         <input className="settings-panel__input" disabled={isBusy} max={1000000} min={10000} onChange={(event) => {
           setDraft((current) => current ? {
             ...current,
-            deviceExecution: {
-              ...current.deviceExecution,
+            aelExecution: {
+              ...current.aelExecution,
               maxOutputCharacters: Number(event.target.value),
             },
           } : current);
           setStatus();
-        }} type="number" value={settings.deviceExecution.maxOutputCharacters} />
+        }} type="number" value={settings.aelExecution.maxOutputCharacters} />
       </label>
       <div className="settings-panel__section-head">
         <h3 className="settings-panel__section-title">Traces provider</h3>

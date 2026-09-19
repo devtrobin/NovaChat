@@ -25,15 +25,15 @@ autre développement fonctionnel.
 ## Phase 1 — Filet de sécurité — terminée
 
 - Vitest ajouté avec `npm test` et `npm run test:watch`.
-- Policy Device testée avec cas sûrs et cas adversariaux.
-- Parsers OpenAI et Planner testés.
+- Policy AEL testée avec cas sûrs et cas adversariaux.
+- Parsers OpenAI et ACP testés.
 - Sérialisation, round-trip du stockage et reducers d’événements testés.
-- La suite actuelle compte 277 tests réussis, dont 119 cas de policy Device.
+- La suite actuelle compte 281 tests réussis, dont 119 cas de policy AEL.
 
 La phase 2 est terminée. Les anciens
 `it.fails` sont désormais des tests de régression normaux.
 
-## Phase 2 — Sécuriser Device — terminée
+## Phase 2 — Sécuriser AEL — terminée
 
 1. ~~Refuser par défaut les commandes non analysables.~~ Terminé :
    elles sont classées `ask-always`.
@@ -75,9 +75,9 @@ de permission non ambiguë.
 5. ~~Migration vers `app.getPath("userData")`.~~ Les nouveaux chemins par
    défaut utilisent `userData` et les anciens emplacements sont copiés une
    seule fois sans remplacer les chemins personnalisés.
-6. ~~Migration idempotente de `diagnostic-agent` vers `agent-planner`.~~ Les
-   settings et dossiers sont migrés ou fusionnés, avec l’original déplacé dans
-   `.migration-backups`.
+6. ~~Migration historique d’identité agent.~~ Elle a protégé les données lors
+   de la phase 3, puis a été retirée en phase 6.1 au profit d’identifiants
+   canoniques et d’une réinitialisation assumée des données de développement.
 7. ~~Politique de rétention/redaction de `apis.json`.~~ Activation, durée,
    plafond par message et masquage des secrets sont configurables et appliqués
    aux conversations principales comme aux conversations agents.
@@ -116,7 +116,7 @@ Travaux terminés :
    `internal`, avec compatibilité déterministe pour les anciens messages.
    Permissions, saisies, progression compacte et `/cmd` utilisateur restent
    visibles ; les détails d’orchestration agent restent internes.
-5. Couverture portée à 277 tests dans 40 fichiers : permissions asynchrones,
+5. Couverture portée à 281 tests dans 41 fichiers : permissions asynchrones,
    résolution unique, annulation de tour, queue après échec, timeout OpenAI,
    sécurité de fenêtre, visibilité, payloads et composants React critiques.
 6. TypeScript renforcé : `allowJs` retiré, `strict` activé, casse des fichiers
@@ -126,10 +126,10 @@ Travaux terminés :
    `strict` et impliquent des changements de contrats plus larges.
 7. Erreurs asynchrones auditées : contrôleurs Settings/Agents/Workspace,
    hydratation, sauvegarde, interactions et reprise affichent un état contrôlé.
-   Le démarrage et le timeout Device ne laissent plus de rejet non géré.
+   Le démarrage et le timeout AEL ne laissent plus de rejet non géré.
 8. Refactors bornés réalisés : validation IPC par domaine, migrations racine
-   et agent, étape Planner de l’orchestrateur, contrôleur commun des pages
-   agents et payloads OpenAI assistant/Device/agent.
+   et agent, étape ACP de l’orchestrateur, contrôleur commun des pages
+   agents et payloads OpenAI assistant/AEL/agent.
 9. Passe de cohérence terminée : branche provider inaccessible supprimée,
    runtime provider resserré, contrôleurs dupliqués fusionnés et façades
    publiques conservées pour limiter les changements d’imports.
@@ -149,7 +149,7 @@ Critère de sortie atteint :
 - la visibilité des messages est déterministe et testée ;
 - la fenêtre principale est durcie sans accès générique du renderer ;
 - permission, abort, courses et récupération ont des tests automatisés ;
-- TypeScript strict, ESLint, 277 tests, audits npm et packaging passent ;
+- TypeScript strict, ESLint, 281 tests, audits npm et packaging passent ;
 - aucun bug reproductible connu n’est laissé sans entrée dans `RISKS.md` ;
 - les données locales et artefacts ne polluent plus `git status --short`.
 
@@ -158,14 +158,14 @@ Critère de sortie atteint :
 Découper sans refonte globale :
 
 1. ~~`agent-orchestrator.service.ts` par agent et par phase ;~~ terminé avec
-   une façade d’orchestration et des modules Planner, Device, permission,
+   une façade d’orchestration et des modules ACP, AEL, permission,
    résolution de commande et messages ;
 2. ~~`agent-storage.service.ts` entre chemins, récupération et écritures ;~~
    terminé avec une façade et des modules paths, recovery, workspace, records
    et conversations ;
-3. ~~`device.policy.ts` entre parsing et règles ;~~ terminé avec des modules
+3. ~~`ael.policy.ts` entre parsing et règles ;~~ terminé avec des modules
    dédiés aux règles, segments, chemins, tokens et types ;
-4. ~~`DeviceAgentPage.tsx` en vues d’onglets ;~~ terminé avec un hook
+4. ~~`AELAgentPage.tsx` en vues d’onglets ;~~ terminé avec un hook
    contrôleur et des vues General, Contexte, Permissions et Historique ;
 5. ~~déplacer les types de chat transversaux vers `src/shared` ;~~ terminé,
    `shared/chat.types.ts` est désormais la source unique des contrats de
@@ -186,16 +186,16 @@ socle stabilisé du projet.
 L’analyse d’un parcours réel d’inventaire Windows a révélé plusieurs défauts
 du socle existant, corrigés sans ajouter de nouvelle capacité produit :
 
-1. une décision Device `allow` ne déclenche plus de demande de permission ;
+1. une décision AEL `allow` ne déclenche plus de demande de permission ;
 2. les lectures Windows automatiques sont classées par commande et options,
    avec confirmations conservées pour le réseau, les mutations et les données
    potentiellement sensibles ;
-3. Planner transmet des objectifs et Device reste propriétaire de la syntaxe
+3. ACP transmet des objectifs et AEL reste propriétaire de la syntaxe
    shell ;
 4. le shell runtime exposé aux prompts correspond au shell réellement exécuté
    (`cmd.exe` sous Windows) ;
 5. les quatre cycles uniques sont remplacés par huit cycles assistant, six
-   exécutions Device, une détection des répétitions et une synthèse finale
+   exécutions AEL, une détection des répétitions et une synthèse finale
    réservée ;
 6. les contextes agents sont versionnés, les anciens defaults sont migrés et
    les personnalisations sont préservées ;
@@ -203,7 +203,7 @@ du socle existant, corrigés sans ajouter de nouvelle capacité produit :
    multioctets coupés entre deux chunks ;
 8. la règle Git `/agents/` est ancrée à la racine et ne masque plus les
    nouveaux modules sous `src/main/agents/`.
-9. les commandes générées par Device passent par un profil terminal
+9. les commandes générées par AEL passent par un profil terminal
    déterministe avant toute permission : trois segments au plus, aucune
    interface graphique, console secondaire, commande inconnue ou utilitaire
    interactif tel que DiskPart ;
@@ -219,41 +219,70 @@ qu’une réponse finale même lorsque le budget d’orchestration est atteint.
 
 ## Phase 6 — Réorganisation et extension des agents système
 
-### Phase 6.1 — Réorganisation des agents existants
+### Phase 6.1 — Réorganisation des agents existants — terminée
 
 Objectif retenu : harmoniser les noms, identifiants, dossiers et contrats des
 agents système existants avant d’ajouter ARI et ACA. Cette sous-phase ne doit
-ajouter aucune capacité fonctionnelle à Planner ou Device.
+ajouter aucune capacité fonctionnelle à ACP ou AEL.
 
-Deux cahiers des charges initiaux sont créés :
+Les cahiers fonctionnels et techniques validés encadrent cette phase :
 
-- [Spécification du renommage de Planner](agents_specification/PLANNER_SPECIFICATION.md) ;
-- [Spécification du renommage de Device](agents_specification/DEVICE_SPECIFICATION.md).
+- [Spécification ACP](agents_specification/ACP_SPECIFICATION.md) ;
+- [Spécification technique ACP](agents_specification/ACP_SPECIFICATION_TECHNIQUE.md) ;
+- [Spécification AEL](agents_specification/AEL_SPECIFICATION.md) ;
+- [Spécification technique AEL](agents_specification/AEL_SPECIFICATION_TECHNIQUE.md).
 
-Les noms recommandés sont :
+Les noms validés sont :
 
 - **ACP — Agent de Cadrage et de Planification**, identifiant `agent-acp` ;
 - **AEL — Agent d’Exécution Locale**, identifiant `agent-ael`.
 
-La convention cible proposée est `agent-<acronyme>`, ce qui permettra ensuite
-`agent-ari` et `agent-aca`. Les noms, acronymes et identifiants devront être
-validés avant toute modification du code ou des données.
+La convention cible est `agent-<acronyme>`, ce qui permettra ensuite
+`agent-ari` et `agent-aca`.
 
-La spécification puis le futur découpage devront couvrir :
+L’implémentation couvre :
 
 1. inventaire des identifiants, labels, types, prompts, routes, pages et tests ;
-2. migration idempotente de `diagnostic-agent`, `agent-planner` et
-   `device-agent` vers les identifiants canoniques retenus ;
-3. préservation des settings, contextes, permissions, tâches, historiques et
-   conversations ;
-4. compatibilité en lecture des anciens messages sans réécriture destructive ;
+2. réinitialisation assumée des espaces agents locaux de développement liés aux
+   anciens identifiants, sans migration ni sauvegarde ; les messages des
+   conversations principales déjà chargées sont uniquement normalisés vers les
+   identifiants canoniques afin de rester sauvegardables ;
+3. préservation des paramètres généraux et du secret OpenAI ;
+4. adoption exclusive des identifiants `agent-acp` et `agent-ael` ;
 5. centralisation du registre et des métadonnées des agents système afin de
    préparer ARI et ACA ;
-6. validation complète sans changement de comportement Planner/Device ni
+6. validation complète sans changement de comportement ACP/AEL ni
    assouplissement de la policy terminal.
 
 Cette phase 6.1 doit être spécifiée, validée, implémentée et vérifiée avant de
 commencer ARI.
+
+#### Découpage de la phase 6.1
+
+1. ~~**6.1.1 — Figer les contrats**~~ : noms, acronymes, identifiants et rupture
+   de données validés.
+2. ~~**6.1.2 — Centraliser le registre**~~ : `system-agent.registry.ts` est la
+   source de vérité partagée des identités et métadonnées système.
+3. ~~**6.1.3 — Renommer ACP**~~ : sources, contrats, prompts, pages, fichiers et
+   tests utilisent ACP et `agent-acp`.
+4. ~~**6.1.4 — Renommer AEL**~~ : sources, contrats, settings, pages, fichiers,
+   classes CSS et tests utilisent AEL et `agent-ael`.
+5. ~~**6.1.5 — Réinitialiser les données incompatibles**~~ : la compatibilité des
+   opérations et la migration des espaces agents historiques sont retirées du
+   code. Une normalisation bornée des identifiants présents dans les messages
+   de conversation évite de bloquer leur poursuite ou leur sauvegarde. Les trois
+   anciens dossiers locaux ont été supprimés après confirmation explicite ; les
+   paramètres généraux, conversations principales et le secret OpenAI sont
+   restés conservés.
+6. ~~**6.1.6 — Aligner la documentation**~~ : architecture, workflows, modèle
+   de données, risques, règles de développement et reprise sont alignés.
+7. ~~**6.1.7 — Valider**~~ : 281 tests dans 41 fichiers, TypeScript, ESLint et
+   le packaging Windows x64 passent. Le test manuel commun ACP/AEL a réussi.
+
+État au 27 août 2026 : phase 6.1 close. Aucune fonctionnalité nouvelle n’a été
+ajoutée et la policy terminal n’a pas été assouplie. La prochaine étape est la
+relecture conjointe des cahiers fonctionnel et technique ARI, la résolution des
+choix techniques puis le découpage en tâches de la phase 6.2.
 
 ### Phase 6.2 — ARI — Agent de Recherche Internet
 
@@ -262,7 +291,10 @@ rechercher et lire des pages publiques ou des contenus accessibles depuis un
 compte configuré, de privilégier les sources officielles et de restituer un
 dossier de recherche sourcé à l’assistant ou à l’agent qui l’a sollicité.
 
-Cf. [Cahier des charges — ARI](agents_specification/ARI_SPECIFICATION.md).
+Documents de référence :
+
+- [Cahier fonctionnel ARI](agents_specification/ARI_SPECIFICATION.md) ;
+- [Spécification technique ARI](agents_specification/ARI_SPECIFICATION_TECHNIQUE.md).
 
 ARI est une capacité transversale utilisable par Nova, les autres agents
 système et les agents spécialisés autorisés. Il doit être étudié, découpé,
@@ -271,7 +303,7 @@ création de connecteurs, mais ARI ne lui est pas réservé.
 
 La sous-phase inclura un écran Credentials générique, un registre JSON expurgé
 des secrets et un stockage chiffré dans le coffre système. La décision retient
-un `CredentialsService` dédié dans le process `main`, sans passage par Device,
+un `CredentialsService` dédié dans le process `main`, sans passage par AEL,
 ainsi que des sessions authentifiées strictement limitées à la lecture. ARI
 appliquera une stratégie « public d’abord » : poursuivre sur
 d’autres sources lorsqu’un site demande un compte, recenser les sites bloqués
@@ -284,7 +316,10 @@ Objectif retenu : permettre à Nova de rechercher un agent capable de répondre
 à une demande et, si cette capacité manque, de faire intervenir ACA pour
 préparer un agent spécialisé, son contexte et son connecteur configurable.
 
-Cf. [Cahier des charges — ACA](agents_specification/ACA_SPECIFICATION.md).
+Documents de référence :
+
+- [Cahier fonctionnel ACA](agents_specification/ACA_SPECIFICATION.md) ;
+- [Spécification technique ACA](agents_specification/ACA_SPECIFICATION_TECHNIQUE.md).
 
 ### Arbitrages ARI confirmés pour la reprise
 
@@ -303,7 +338,7 @@ La prochaine session repartira des décisions confirmées suivantes :
    pages ;
 7. registre Credentials global, chiffré et partagé uniquement par autorisation
    explicite de chaque agent demandeur, même lorsqu’ARI exécute la recherche ;
-8. API Credentials dédiée dans le `main` ; Device ne manipule jamais le
+8. API Credentials dédiée dans le `main` ; AEL ne manipule jamais le
    registre ni les secrets ;
 9. navigation authentifiée en lecture seule, avec intervention manuelle pour
    MFA, OAuth ou SSO et session chiffrée révocable ; tout captcha fait ignorer
@@ -332,14 +367,23 @@ sera signalée `neutrality-unverified` et ne comptera pas automatiquement parmi
 les trois confirmations. Le plafond global est fixé à trente pages HTML par
 cycle.
 
-Le cadrage fonctionnel d’ARI est complet. La prochaine étape documentaire sera
-sa relecture et sa validation finale, puis la transformation de la phase 6.2 en
-tâches ordonnées et vérifiables. Le cahier ACA sera relu et validé séparément
-avant le découpage de la phase 6.3.
+Le cadrage fonctionnel d’ARI est complet. Sa spécification technique décrit
+maintenant le pipeline Google, la récupération HTTP, l’extraction HTML/JSON/PDF,
+le rendu JavaScript isolé, les credentials, les contrats et les tests. Elle
+conserve des choix explicites à valider : dépendances, protection SSRF, schéma
+d’authentification, user-agent, délais et fragilité assumée du scraper Google.
+La prochaine étape documentaire est la relecture et la validation des deux
+cahiers ARI, puis la transformation de la phase 6.2 en tâches ordonnées et
+vérifiables.
+
+Le cahier ACA dispose également d’une première spécification technique. Son
+runtime d’exécution du TypeScript généré reste un choix de sécurité bloquant et
+sera validé séparément après ARI, avant le découpage de la phase 6.3.
 
 Chaque sous-phase commence par la rédaction et la validation de son cahier des
 charges. Elle sera ensuite découpée ici en tâches d’implémentation ordonnées.
-Aucun développement de la phase 6 ne doit commencer avant ce découpage.
+Aucun développement d’ARI ou d’ACA ne doit commencer avant le découpage de sa
+sous-phase respective.
 
 ## Phase 7 — Nouvelles capacités
 
@@ -387,5 +431,5 @@ sont susceptibles de modifier le packaging.
 - remplacement global de React/Electron ;
 - migration vers une base de données sans besoin mesuré ;
 - autonomie illimitée des agents ;
-- extension de l’allowlist Device avant tests ;
+- extension de l’allowlist AEL avant tests ;
 - nouveau méga-refactor transversal.

@@ -21,12 +21,12 @@ export function resolveMessageVisibility(
 ): MessageVisibility {
   if (message.visibility) return message.visibility;
   if (message.from === "agent") return "internal";
-  if (message.from === "device") {
+  if (message.from === "ael") {
     return message.to === "user" ? "public" : "internal";
   }
   if (
     message.from === "assistant"
-    && (message.to === "agent" || message.to === "device")
+    && (message.to === "agent" || message.to === "ael")
   ) {
     return "internal";
   }

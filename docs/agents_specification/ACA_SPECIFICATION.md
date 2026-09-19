@@ -3,8 +3,11 @@
 ## Statut
 
 Étude en cours d’alimentation. Les questions communes disposent d’une réponse
-confirmée ou provisoire ; l’ensemble reste à relire, valider puis découper avant
-toute implémentation.
+confirmée ou provisoire. La
+[spécification technique ACA](ACA_SPECIFICATION_TECHNIQUE.md) décrit une
+architecture initiale et met en évidence le choix bloquant du runtime de code
+généré. Les deux cahiers restent à relire, valider puis découper avant toute
+implémentation.
 
 ## Objectif de l’étude
 
@@ -24,7 +27,7 @@ de vie et les limites d’autonomie de ces agents.
   structurés.
 - **Action connecteur** : objet structuré contenant au minimum une opération
   identifiée par un mot-clé et ses arguments. Elle joue pour un agent
-  spécialisé le rôle que joue une commande terminal pour Device, sans être
+  spécialisé le rôle que joue une commande terminal pour AEL, sans être
   envoyée au shell.
 
 ## Décisions fonctionnelles confirmées
@@ -33,8 +36,8 @@ de vie et les limites d’autonomie de ces agents.
 
 NovaChat comportera quatre agents système principaux :
 
-1. Planner ;
-2. Device ;
+1. ACP ;
+2. AEL ;
 3. ARI ;
 4. ACA.
 
@@ -193,7 +196,7 @@ partagé entre plusieurs agents.
 Après activation, l’agent spécialisé dialoguera avec son connecteur à l’aide
 d’actions structurées utilisant des mots-clés ou noms d’opérations. Le contrat
 minimal retenu est de la forme `{ action, arguments }`. Le flux cible est
-analogue au flux Device, avec une frontière d’exécution différente :
+analogue au flux AEL, avec une frontière d’exécution différente :
 
 ```text
 Assistant principal
@@ -347,7 +350,7 @@ entre-temps.
 ### Suppression d’un agent
 
 Seuls les agents spécialisés créés par ACA ou l’utilisateur pourront être
-supprimés. Planner, Device, ARI et ACA seront non supprimables.
+supprimés. ACP, AEL, ARI et ACA seront non supprimables.
 
 La suppression définitive exigera que l’agent soit d’abord placé dans l’état
 `disabled`, puis demandera une confirmation explicite. Une fois confirmée,

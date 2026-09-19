@@ -70,7 +70,7 @@ describe("reserved final synthesis", () => {
     assistantMocks.requestAssistantReply.mockResolvedValue({
       apiRecords: [],
       providerResponse: {
-        agentId: "device-agent",
+        agentId: "agent-ael",
         content: "rg --files",
         from: "assistant",
         to: "agent",

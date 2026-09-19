@@ -1,21 +1,22 @@
 # Base de connaissance NovaChat
 
 Cette base décrit l’état réellement observé du projet, et non uniquement
-l’intention historique. Elle a été vérifiée le **19 juillet 2026** sur la
-branche `main`. Le commit `d589ae1` constitue la base historique de l’audit,
-complétée par les phases 3 et 4.
+l’intention historique. Elle a été vérifiée le **27 août 2026**. Le commit
+`d589ae1` constitue la base historique de l’audit, complétée par les phases 3
+à 5 et la réorganisation technique de la phase 6.1.
 
 Le fichier [../AGENTS.md](../AGENTS.md) fournit la version courte destinée aux
 outils et agents qui ouvrent le dépôt.
 
 ## État actif
 
-L’assainissement du code est terminé : contrats explicites, TypeScript strict,
-gestion d’erreurs, tests critiques, sécurité Electron et refactors bornés sont
-validés. La prochaine étape retenue est la phase 6 de
-[NEXT_STEPS.md](NEXT_STEPS.md) : réorganisation de Planner et Device en 6.1,
-ARI en 6.2, puis création automatique d’agents avec ACA en 6.3. Les autres
-nouvelles capacités sont reportées en phase 7.
+L’assainissement du code est terminé. Le renommage technique d’ACP et d’AEL,
+leur registre partagé, les tests, TypeScript, ESLint et le packaging de la
+phase 6.1 sont validés. Les anciens dossiers locaux ont été supprimés après
+confirmation et le test manuel ACP/AEL a réussi : la phase 6.1 est close. La
+relecture conjointe des cahiers fonctionnel et technique ARI, puis son découpage,
+constituent la prochaine étape en 6.2, avant la création automatique d’agents
+avec ACA en 6.3. Les autres nouvelles capacités sont reportées en phase 7.
 
 ## Parcours de lecture
 
@@ -32,11 +33,8 @@ Pour reprendre rapidement le projet :
    critères de validation.
 6. [RISKS.md](RISKS.md) — dette et risques classés par priorité.
 7. [NEXT_STEPS.md](NEXT_STEPS.md) — ordre de travail recommandé.
-8. [agents_specification/PLANNER_SPECIFICATION.md](agents_specification/PLANNER_SPECIFICATION.md),
-   [agents_specification/DEVICE_SPECIFICATION.md](agents_specification/DEVICE_SPECIFICATION.md),
-   [agents_specification/ARI_SPECIFICATION.md](agents_specification/ARI_SPECIFICATION.md)
-   et [agents_specification/ACA_SPECIFICATION.md](agents_specification/ACA_SPECIFICATION.md)
-   — cahiers des charges des agents système de la phase 6.
+8. [agents_specification/README.md](agents_specification/README.md) — index des
+   cahiers fonctionnels et spécifications techniques ACP, AEL, ARI et ACA.
 9. [HANDOFF.md](HANDOFF.md) — reprise express après une interruption.
 
 ## Documents normatifs

@@ -35,11 +35,11 @@ Sous macOS ou Linux, la forme habituelle est `npm ci`.
 `npm start` fonctionne dans `cmd.exe`. Sur la machine auditée, PowerShell
 interdit `npm.ps1`; `npm.cmd` est donc nécessaire.
 
-## État de validation au 19 juillet 2026
+## État de validation au 27 août 2026
 
 - `npm.cmd ci` : installation exacte depuis `package-lock.json` réussie.
 - `npm.cmd exec tsc -- --noEmit` : réussi.
-- `npm.cmd test` : 211 réussites.
+- `npm.cmd test` : 281 réussites.
 - `npm.cmd run lint` : réussi.
 - `npm.cmd run package` : réussi pour `win32-x64`.
 - `npm.cmd run check` : réussi.
@@ -57,26 +57,26 @@ pendant le développement.
 
 ## Tests
 
-Vitest 4 exécute 33 fichiers sous `src/` :
+Vitest 4 exécute 41 fichiers sous `src/` :
 
-- policy de permissions Device ;
+- policy de permissions AEL ;
 - parser des réponses OpenAI ;
-- parser du format Planner ;
+- parser du format ACP ;
 - sérialisation du stockage chat ;
 - round-trip du stockage sur un dossier temporaire ;
 - application des événements de conversation.
 - parsing et réponses des commandes slash locales.
 - validation runtime des payloads IPC ;
 - confinement des chemins de stockage ;
-- limites de sortie, timeout interactif et stratégie de kill Device.
-- formatage des résultats agent et détection des commandes Device.
+- limites de sortie, timeout interactif et stratégie de kill AEL.
+- formatage des résultats agent et détection des commandes AEL.
 - initialisation, permissions, conversations et historique du stockage agent.
-- formatage des statuts et sorties de la page Device.
+- formatage des statuts et sorties de la page AEL.
 - résolution des handoffs explicites et heuristiques.
-- fusion des traces de délégation et de génération Device.
+- fusion des traces de délégation et de génération AEL.
 - écritures JSON atomiques, backups et détection de récupération partielle ;
 - sérialisation des opérations concurrentes d’un même agent ;
-- migrations `userData` et `diagnostic-agent` ;
+- migration `userData` et registre canonique ACP/AEL ;
 - rétention et redaction des traces API ;
 - chiffrement, remplacement, suppression et migration de la clé OpenAI.
 - sécurité et politique de navigation de la fenêtre principale ;
@@ -85,9 +85,9 @@ Vitest 4 exécute 33 fichiers sous `src/` :
 - permissions asynchrones, résolution unique et annulation complète d’un tour ;
 - timeout du test OpenAI et construction des payloads assistant/agents ;
 - reprise des queues de sauvegarde après une opération rejetée ;
-- rendu statique de composants React critiques des settings et du Planner.
+- rendu statique de composants React critiques des settings et d’ACP.
 
-La matrice Device comporte 88 cas normaux. Elle couvre commandes de lecture,
+La matrice AEL comporte 119 cas normaux. Elle couvre commandes de lecture,
 écritures bornées, séparateurs shell, substitutions, wrappers, redirections,
 sous-commandes Git et options mutantes. Toute nouvelle règle de policy doit
 ajouter ses cas sûrs et adversariaux dans cette matrice.
@@ -100,7 +100,7 @@ Cela ne remplace pas les parcours Electron. Vérifier manuellement au minimum :
 3. sauvegarde puis rechargement des conversations ;
 4. test et sauvegarde de la configuration OpenAI ;
 5. réponse OpenAI directe ;
-6. délégation au Planner puis au Device ;
+6. délégation à l’ACP puis à l’AEL ;
 7. permission autorisée une fois, permanente et refusée ;
 8. `/cmd`, saisie interactive, arrêt d’un tour et kill d’une commande ;
 9. activation/désactivation des deux agents ;
@@ -159,9 +159,9 @@ journaliser ou committer les anciens settings/backups.
 | Événements de conversation | `src/renderer/services/chat/chat.events.ts` |
 | Appel OpenAI / parsing | `src/main/ai/openai.*` |
 | Boucle assistant/agents | `src/main/ai/ai.orchestrator*` |
-| Planner | `src/main/ai/ai.planner.ts`, `src/main/agents/` |
-| Commande locale | `src/main/device/`, `src/main/ai/ai.device-flow*` |
-| Permission | `src/main/ai/ai.permission.service.ts`, `src/main/device/device.policy.ts` |
+| ACP | `src/main/ai/ai.acp.ts`, `src/main/agents/` |
+| Commande locale | `src/main/ael/`, `src/main/ai/ai.ael-flow*` |
+| Permission | `src/main/ai/ai.permission.service.ts`, `src/main/ael/ael.policy.ts` |
 | Persistance chat | `src/main/chat/` |
 | Persistance agent | `src/main/agents/agent-storage.service.ts` |
 | Settings | `src/main/settings/`, `src/renderer/components/SettingsPanel/` |
@@ -179,7 +179,7 @@ journaliser ou committer les anciens settings/backups.
   `shared/chat.types.ts`, `preload`, `main`, `renderer` et du stockage.
 - Un changement d’IPC nécessite une mise à jour simultanée du handler, du
   preload et de `renderer/global.d.ts`.
-- Un changement du canal `device` doit inclure des tests de policy avant toute
+- Un changement du canal `ael` doit inclure des tests de policy avant toute
   extension fonctionnelle.
 - Une mise à jour d’Electron Forge doit tenter de retirer un par un les
   overrides `tar`, `tmp`, `uuid` et `webpack-dev-server`, puis rejouer audits,

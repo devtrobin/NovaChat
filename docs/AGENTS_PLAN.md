@@ -8,13 +8,20 @@ implémentés et activés par défaut.
 ```text
 Utilisateur
   -> Nova, assistant principal
-  -> agent-planner (optionnel)
-  -> device-agent (optionnel)
+  -> agent-acp (optionnel)
+  -> agent-ael (optionnel)
   -> Nova
   -> Utilisateur
 ```
 
 Nova reste l’unique orchestrateur. Les agents ne s’appellent pas entre eux.
+Le registre partagé `src/shared/system-agent.registry.ts` centralise leurs IDs,
+acronymes, libellés, capacités, outils et contextes par défaut.
+
+Les références fonctionnelles et techniques de chaque agent sont indexées dans
+[agents_specification/README.md](agents_specification/README.md). Les documents
+ACP/AEL décrivent le code existant ; les documents ARI/ACA séparent les choix
+retenus de ceux qui bloquent encore leur implémentation.
 
 ## Nova
 
@@ -23,21 +30,22 @@ Responsabilités :
 - maintenir la conversation utilisateur ;
 - décider de répondre ou déléguer ;
 - interpréter le résultat d’un agent ;
-- limiter le tour à quatre cycles ;
+- borner le tour à huit cycles assistant et six exécutions AEL ;
+- réserver un cycle final sans délégation lorsque le budget est atteint ;
 - produire la réponse finale.
 
 Nova reçoit tous les messages visibles du tour dans le format JSON interne.
 
-## Agent Planner
+## Agent ACP
 
-ID : `agent-planner`.
+ID : `agent-acp`.
 
 Mission :
 
 - analyser une demande non triviale ;
 - identifier un blocage ou une information manquante ;
 - proposer une seule prochaine étape atomique ;
-- recommander `device-agent` ou aucune délégation.
+- recommander `agent-ael` ou aucune délégation.
 
 Contraintes :
 
@@ -47,11 +55,11 @@ Contraintes :
 - format textuel à labels stricts ;
 - une seule étape, pas un plan complet.
 
-Le Planner est un appel OpenAI distinct utilisant son `contexte.json`.
+L’ACP est un appel OpenAI distinct utilisant son `contexte.json`.
 
-## Agent Device
+## Agent AEL
 
-ID : `device-agent`.
+ID : `agent-ael`.
 
 Mission :
 
@@ -65,7 +73,7 @@ Modes :
 
 - `command` : commande déjà formée ;
 - `goal` : génération d’une commande puis exécution ;
-- `analysis` existe dans les types mais n’a pas de branche Device spécifique ;
+- `analysis` existe dans les types mais n’a pas de branche AEL spécifique ;
 - `goal` est préféré pour les demandes de haut niveau.
 
 ## Cycle et mémoire
@@ -93,8 +101,8 @@ Chaque agent possède `settings.agents[agentId].enabled`.
 
 ## UI
 
-- `PlannerAgentPage` : général, activation, tâches actives, contexte.
-- `DeviceAgentPage` : général, contexte, permissions, historique.
+- `ACPAgentPage` : général, activation, tâches actives, contexte.
+- `AELAgentPage` : général, contexte, permissions, historique.
 - `AgentsActivityView` : tâches actives globales et historique récent.
 
 Les pages interrogent périodiquement le main. Elles ne lisent jamais
@@ -107,38 +115,33 @@ leur historique. Elles sont d’origine `assistant`, ne possèdent pas de
 composer dédié et aucune API de conversation directe n’est exposée au
 renderer.
 
-## Compatibilité historique
+## Identités canoniques
 
-L’ancien ID `diagnostic-agent` est converti vers Planner dans deux endroits :
-
-- merge du flag d’activation ;
-- parsing d’une réponse provider.
-
-Les fichiers sous `agents/diagnostic-agent/` ne sont pas migrés. Une migration
-de données explicite reste nécessaire.
+Seuls `agent-acp` et `agent-ael` sont acceptés dans les contrats, settings,
+messages et chemins. Les anciens espaces de développement ne sont pas migrés :
+ils doivent être supprimés après confirmation explicite, sans toucher aux
+paramètres généraux ni au secret OpenAI.
 
 ## Limites actuelles
 
-- Planner et Device utilisent le même modèle/configuration OpenAI que Nova.
+- ACP et AEL utilisent le même modèle/configuration OpenAI que Nova.
 - Pas de budget token ou coût par agent.
 - Pas de structured output provider : respect du format par prompt.
-- Pas de validation réelle du critère de succès du Planner.
+- Pas de validation réelle du critère de succès d’ACP.
 - Pas de récupération de tâche après redémarrage.
-- Pas de queue de stockage agent.
-- Policy Device insuffisante comme frontière de sécurité.
+- Policy AEL insuffisante comme frontière de sécurité.
 
 ## Direction recommandée
 
-Avant tout troisième agent :
-
-1. tests des formats et du cycle ;
-2. sécurisation Device ;
-3. robustesse de stockage ;
-4. métriques coût/durée/statut.
+La phase 6.1 est close après le nettoyage local confirmé et le test manuel
+ACP/AEL. Relire ensemble les cahiers fonctionnel et technique ARI, résoudre les
+choix techniques puis découper 6.2 en tâches vérifiables. ACA vient seulement
+après la validation d’ARI et la validation de sa propre frontière d’exécution.
 
 Un nouvel agent devra :
 
-- avoir un ID ajouté aux types et settings ;
+- avoir un ID et ses métadonnées ajoutés au registre partagé ;
+- dériver ses types, settings et validations de ce registre ;
 - avoir un contexte par défaut ;
 - avoir une stratégie de prompt et parsing explicite ;
 - être routé par Nova ;

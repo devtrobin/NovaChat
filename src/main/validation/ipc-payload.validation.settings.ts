@@ -1,4 +1,5 @@
-import { AppSettings } from "../../shared/settings.types";
+import { AgentSettingsMap, AppSettings } from "../../shared/settings.types";
+import { SYSTEM_AGENT_IDS } from "../../shared/system-agent.registry";
 import {
   assertSerializedSize,
   readAbsolutePath,
@@ -18,18 +19,20 @@ export function parseAppSettings(value: unknown): AppSettings {
   const settings = readRecord(value, "settings");
   const agents = readRecord(settings.agents, "settings.agents");
   const apiTrace = readRecord(settings.apiTrace, "settings.apiTrace");
-  const planner = readRecord(agents["agent-planner"], "settings.agents.agent-planner");
-  const device = readRecord(agents["device-agent"], "settings.agents.device-agent");
-  const deviceExecution = readRecord(settings.deviceExecution, "settings.deviceExecution");
+  const parsedAgents = Object.fromEntries(SYSTEM_AGENT_IDS.map((agentId) => {
+    const agent = readRecord(agents[agentId], `settings.agents.${agentId}`);
+    return [
+      agentId,
+      { enabled: readBoolean(agent.enabled, `settings.agents.${agentId}.enabled`) },
+    ];
+  })) as AgentSettingsMap;
+  const aelExecution = readRecord(settings.aelExecution, "settings.aelExecution");
   const localFiles = readRecord(settings.localFiles, "settings.localFiles");
   const openai = readRecord(settings.openai, "settings.openai");
 
   return {
     activeProvider: readEnum(settings.activeProvider, "settings.activeProvider", ACTIVE_AI_PROVIDERS),
-    agents: {
-      "agent-planner": { enabled: readBoolean(planner.enabled, "settings.agents.agent-planner.enabled") },
-      "device-agent": { enabled: readBoolean(device.enabled, "settings.agents.device-agent.enabled") },
-    },
+    agents: parsedAgents,
     apiTrace: {
       enabled: readBoolean(apiTrace.enabled, "settings.apiTrace.enabled"),
       maxEntriesPerMessage: readInteger(
@@ -44,14 +47,14 @@ export function parseAppSettings(value: unknown): AppSettings {
       ),
       retentionDays: readInteger(apiTrace.retentionDays, "settings.apiTrace.retentionDays", 1, 3_650),
     },
-    deviceExecution: {
+    aelExecution: {
       maxOutputCharacters: readInteger(
-        deviceExecution.maxOutputCharacters,
-        "settings.deviceExecution.maxOutputCharacters",
+        aelExecution.maxOutputCharacters,
+        "settings.aelExecution.maxOutputCharacters",
         10_000,
         1_000_000,
       ),
-      timeoutMs: readInteger(deviceExecution.timeoutMs, "settings.deviceExecution.timeoutMs", 1_000, 300_000),
+      timeoutMs: readInteger(aelExecution.timeoutMs, "settings.aelExecution.timeoutMs", 1_000, 300_000),
     },
     hideInternalConversations: readBoolean(settings.hideInternalConversations, "settings.hideInternalConversations"),
     localFiles: {

@@ -1,4 +1,4 @@
-import { killDeviceCommand } from "../device/device.service";
+import { killAELCommand } from "../ael/ael.service";
 import { cancelPermissionRequest } from "./ai.permission.service";
 import { AgentId } from "../../shared/agent.types";
 
@@ -163,6 +163,6 @@ async function stopTurn(turnId: string): Promise<boolean> {
   if (turn.pendingPermissionRequestId) {
     cancelPermissionRequest(turn.pendingPermissionRequestId);
   }
-  await Promise.all([...turn.commandIds].map((commandId) => killDeviceCommand(commandId)));
+  await Promise.all([...turn.commandIds].map((commandId) => killAELCommand(commandId)));
   return true;
 }

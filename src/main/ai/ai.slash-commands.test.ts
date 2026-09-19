@@ -17,8 +17,8 @@ import {
 const settings: AppSettings = {
   activeProvider: "openai",
   agents: {
-    "agent-planner": { enabled: true },
-    "device-agent": { enabled: false },
+    "agent-acp": { enabled: true },
+    "agent-ael": { enabled: false },
   },
   apiTrace: {
     enabled: true,
@@ -26,7 +26,7 @@ const settings: AppSettings = {
     redactSensitiveData: true,
     retentionDays: 30,
   },
-  deviceExecution: {
+  aelExecution: {
     maxOutputCharacters: 200_000,
     timeoutMs: 15_000,
   },
@@ -74,7 +74,7 @@ describe("slash command registry", () => {
     for (const command of SLASH_COMMANDS) {
       expect(content).toContain(command.usage);
     }
-    expect(content).toContain("sans permission de l'agent Device");
+    expect(content).toContain("sans permission de l'agent AEL");
   });
 
   it("shows focused help for a command", () => {
@@ -93,7 +93,7 @@ describe("slash command registry", () => {
 
     expect(content).toContain("OpenAI : prêt");
     expect(content).toContain("Modèle OpenAI : test-model");
-    expect(content).toContain("Agent Device : désactivé");
+    expect(content).toContain("Agent AEL : désactivé");
     expect(content).not.toContain("secret");
   });
 

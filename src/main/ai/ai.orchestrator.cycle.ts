@@ -10,11 +10,11 @@ import {
 } from "./ai.orchestrator.cycle.messages";
 import { resolveAgentHandoff } from "./ai.orchestrator.handoff";
 import {
-  createForcedPlannerHandoff,
+  createForcedACPHandoff,
   formatAgentLabel,
   isAgentEnabled,
-  shouldForcePlannerAgentHandoff,
-} from "./ai.orchestrator.planner-handoff";
+  shouldForceACPAgentHandoff,
+} from "./ai.orchestrator.acp-handoff";
 import { Emit } from "./ai.orchestrator.types";
 import { throwIfTurnStopped } from "./ai.turn-registry";
 
@@ -51,7 +51,7 @@ export async function runAssistantCycle({
   });
 
   if (providerResponse.to === "user") {
-    if (!shouldForcePlannerAgentHandoff(
+    if (!shouldForceACPAgentHandoff(
       settings,
       step,
       turnMessages,
@@ -67,7 +67,7 @@ export async function runAssistantCycle({
     return runAgentHandoff({
       conversationId,
       emit,
-      handoff: createForcedPlannerHandoff(apiRecords, userMessage.content),
+      handoff: createForcedACPHandoff(apiRecords, userMessage.content),
       onPipelineStageChange,
       settings,
       turnId,

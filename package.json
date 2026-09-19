@@ -2,7 +2,7 @@
   "name": "nova-chat",
   "productName": "nova-chat",
   "version": "1.0.0",
-  "description": "Assistant desktop Electron avec chat, orchestration Planner/Device et exécution locale contrôlée.",
+  "description": "Assistant desktop Electron avec chat, orchestration ACP/AEL et exécution locale contrôlée.",
   "main": ".webpack/main",
   "scripts": {
     "start": "electron-forge start",

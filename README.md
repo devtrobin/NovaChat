@@ -11,8 +11,8 @@ Fonctionnalités branchées :
 - conversations locales, drafts, non-lus, recherche et renommage ;
 - configuration OpenAI locale ;
 - assistant principal Nova ;
-- `agent-planner` pour proposer la prochaine étape atomique ;
-- `device-agent` pour concevoir ou exécuter une commande ;
+- `agent-acp` pour proposer la prochaine étape atomique ;
+- `agent-ael` pour concevoir ou exécuter une commande ;
 - workflow de permission `Oui`, `Oui permanent`, `Non` ;
 - commandes locales `/help`, `/status`, `/agents` et `/settings` sans appel
   provider ;
@@ -24,7 +24,7 @@ Fonctionnalités branchées :
 Seul OpenAI est réellement implémenté. Les autres providers visibles en mode
 preview sont des placeholders.
 
-Important : le canal `device` est fonctionnel mais sa policy actuelle n’est
+Important : le canal `ael` est fonctionnel mais sa policy actuelle n’est
 pas une frontière de sécurité complète. Lire
 [docs/RISKS.md](docs/RISKS.md) avant de l’étendre.
 
@@ -57,9 +57,9 @@ npm.cmd run package
 npm.cmd run ci
 ```
 
-Au 18 juillet 2026, ces commandes passent sur Windows x64. La suite Vitest
-exécute 154 cas, tous réussis. Les anciens contournements connus de la policy
-Device sont maintenant couverts par des tests de régression normaux.
+Au 27 août 2026, TypeScript, ESLint et les 281 tests Vitest répartis dans
+41 fichiers passent. Les anciens contournements connus de la policy AEL sont
+couverts par des tests de régression normaux.
 
 ## Configuration OpenAI
 
@@ -77,18 +77,17 @@ Base URL standard :
 https://api.openai.com/v1
 ```
 
-La clé est actuellement stockée en clair dans `settings.json`, fichier ignoré
-par Git.
+La clé est chiffrée avec `electron.safeStorage` dans le coffre du système. Elle
+n’est ni conservée dans `settings.json`, ni renvoyée au renderer.
 
 ## Stockage local
 
-En développement, les chemins par défaut sont à la racine du dépôt :
+Les chemins par défaut sont placés sous le répertoire Electron `userData` :
 
 ```text
-settings.json
-conversations.json
-conversations/
-agents/
+<userData>/settings.json
+<userData>/conversations/
+<userData>/agents/
 ```
 
 Les conversations sont éclatées par conversation et message. Chaque message
@@ -109,9 +108,8 @@ historique.json
 conversations/
 ```
 
-En application packagée, le code actuel utilise par défaut le dossier
-contenant l’exécutable, et non le répertoire standard `userData`. Ce point
-fait partie des chantiers prioritaires.
+Les chemins peuvent être personnalisés dans les paramètres. Les anciennes
+données placées à la racine du dépôt ne sont plus la destination par défaut.
 
 ## Architecture courte
 

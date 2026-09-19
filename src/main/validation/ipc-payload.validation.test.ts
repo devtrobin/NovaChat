@@ -29,8 +29,8 @@ function createSettings() {
   return {
     activeProvider: "openai",
     agents: {
-      "agent-planner": { enabled: true },
-      "device-agent": { enabled: true },
+      "agent-acp": { enabled: true },
+      "agent-ael": { enabled: true },
     },
     apiTrace: {
       enabled: true,
@@ -38,7 +38,7 @@ function createSettings() {
       redactSensitiveData: true,
       retentionDays: 30,
     },
-    deviceExecution: {
+    aelExecution: {
       maxOutputCharacters: 200_000,
       timeoutMs: 15_000,
     },
@@ -79,6 +79,49 @@ describe("IPC payload validation", () => {
       title: "Discussion",
       userInput: "Bonjour",
     })).toMatchObject({ conversationId: "conversation-1", userInput: "Bonjour" });
+  });
+
+  it("normalizes legacy agent identifiers found in conversation messages", () => {
+    const messages = [
+      { ...createMessage(), agentId: "agent-planner", id: "message-planner" },
+      { ...createMessage(), agentId: "diagnostic-agent", id: "message-diagnostic", to: "device" },
+      { ...createMessage(), agentId: "device-agent", from: "device", id: "message-device", to: "user" },
+    ];
+    const chatState = {
+      activeConversationId: "conversation-1",
+      conversations: [{
+        createdAt: timestamp,
+        id: "conversation-1",
+        messages,
+        title: "Discussion",
+        updatedAt: timestamp,
+      }],
+    };
+
+    expect(parsePersistedChatState(chatState).conversations[0].messages.map(({ agentId }) => agentId))
+      .toEqual(["agent-acp", "agent-acp", "agent-ael"]);
+    expect(parsePersistedChatState(chatState).conversations[0].messages.map(({ from, to }) => [from, to]))
+      .toEqual([["user", "assistant"], ["user", "ael"], ["ael", "user"]]);
+    expect(parseRunTurnRequest({
+      conversationId: "conversation-1",
+      messages,
+      title: "Discussion",
+      userInput: "Continuer",
+    }).messages.map(({ agentId }) => agentId))
+      .toEqual(["agent-acp", "agent-acp", "agent-ael"]);
+  });
+
+  it("still rejects unknown agent identifiers in conversation messages", () => {
+    expect(() => parsePersistedChatState({
+      activeConversationId: "conversation-1",
+      conversations: [{
+        createdAt: timestamp,
+        id: "conversation-1",
+        messages: [{ ...createMessage(), agentId: "agent-unknown" }],
+        title: "Discussion",
+        updatedAt: timestamp,
+      }],
+    })).toThrow("chatState.conversations[0].messages[0].agentId");
   });
 
   it.each(["../outside", "nested/id", "C:\\outside"])("rejects unsafe conversation identifiers", (conversationId) => {

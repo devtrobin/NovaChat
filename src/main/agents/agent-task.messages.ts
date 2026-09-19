@@ -1,7 +1,7 @@
 import { ChatMessage } from "../../shared/chat.types";
 import { AgentTaskRequest } from "../../shared/agent.types";
 
-export type DeviceAgentOutcomeStatus = "denied" | "error" | "partial-success" | "success";
+export type AELAgentOutcomeStatus = "denied" | "error" | "partial-success" | "success";
 
 export function createAgentResultMessage(
   agentId: AgentTaskRequest["agentId"],
@@ -28,17 +28,17 @@ export function createAgentResultMessage(
   };
 }
 
-export function createDeviceAgentSummaryMessage(
+export function createAELAgentSummaryMessage(
   taskRequest: string,
   command: string,
   output: string,
-  status: DeviceAgentOutcomeStatus,
+  status: AELAgentOutcomeStatus,
 ): ChatMessage {
   const createdAt = new Date().toISOString();
-  const summary = summarizeDeviceOutput(output, status);
+  const summary = summarizeAELOutput(output, status);
 
   return {
-    agentId: "device-agent",
+    agentId: "agent-ael",
     apiRequests: [],
     content: summary,
     createdAt,
@@ -48,25 +48,25 @@ export function createDeviceAgentSummaryMessage(
     lifecycleLog: [
       {
         at: createdAt,
-        details: "Reponse device-agent -> assistant creee.",
+        details: "Reponse agent-ael -> assistant creee.",
         event: "created",
         metadata: { command, status },
       },
     ],
-    result: formatDeviceAgentTechnicalDetails(taskRequest, command, output, status),
+    result: formatAELAgentTechnicalDetails(taskRequest, command, output, status),
     status: status === "success" ? "success" : status === "partial-success" ? "partial-success" : "error",
     to: "assistant",
     visibility: "internal",
   };
 }
 
-export function extractDeviceAgentSummaryOutput(message: ChatMessage): string {
+export function extractAELAgentSummaryOutput(message: ChatMessage): string {
   const lines = (message.result ?? message.content).split("\n");
   const resultLine = lines.find((line) => /^Resultat: |^Motif: |^Erreur: /i.test(line));
   return resultLine ? resultLine.replace(/^[^:]+:\s*/i, "") : message.content;
 }
 
-export function normalizeDeviceStatus(
+export function normalizeAELStatus(
   status?: ChatMessage["status"],
 ): "error" | "partial-success" | "success" {
   if (status === "success") return "success";
@@ -74,11 +74,11 @@ export function normalizeDeviceStatus(
   return "error";
 }
 
-function formatDeviceAgentTechnicalDetails(
+function formatAELAgentTechnicalDetails(
   taskRequest: string,
   command: string,
   output: string,
-  status: DeviceAgentOutcomeStatus,
+  status: AELAgentOutcomeStatus,
 ): string {
   if (status === "success") {
     return [
@@ -115,9 +115,9 @@ function formatDeviceAgentTechnicalDetails(
   ].join("\n");
 }
 
-function summarizeDeviceOutput(
+function summarizeAELOutput(
   output: string,
-  status: DeviceAgentOutcomeStatus,
+  status: AELAgentOutcomeStatus,
 ): string {
   const cleaned = output
     .split("\n")

@@ -6,11 +6,11 @@ calendaire.
 
 ## P0 — À traiter avant d’élargir les capacités locales
 
-### Policy `device` restrictive, mais non sandboxée
+### Policy `ael` restrictive, mais non sandboxée
 
 Les contournements connus par pipes, opérateurs, substitutions, wrappers,
 redirections, sous-commandes Git et options mutantes ont été fermés. La
-matrice Device comporte 119 tests normaux. Une construction inconnue ou trop
+matrice AEL comporte 119 tests normaux. Une construction inconnue ou trop
 complexe devient `ask-always`, ce qui interdit de la contourner avec une règle
 permanente mémorisée.
 
@@ -30,7 +30,7 @@ Les lectures Windows reconnues (`systeminfo` local, branches matérielles de
 sont analysées avec leurs sous-commandes et options. Une lecture distante,
 mutante ou non comprise n’est pas automatiquement autorisée.
 
-Les commandes proposées par Device passent en plus par un profil agent avant
+Les commandes proposées par AEL passent en plus par un profil agent avant
 la permission. Il limite chaque inspection à trois segments et rejette les
 commandes non classifiées, les wrappers de shell, les interfaces graphiques,
 les consoles secondaires et les utilitaires interactifs connus (`diskpart`,
@@ -64,19 +64,39 @@ Actions restantes :
 3. durcir les chemins si la policy doit devenir une vraie frontière ;
 4. ne jamais étendre l’allowlist sans tests sûrs et adversariaux.
 
+### ACA : runtime du code généré non choisi — bloque la phase 6.3
+
+ACA devra produire du TypeScript éditable, mais un processus Node séparé, un
+Worker, `utilityProcess` ou `node:vm` ne suffisent pas à confiner du code
+arbitraire. Un connecteur disposant des API Node pourrait sinon lire les
+fichiers, ouvrir le réseau, lancer un processus ou contourner le courtier de
+credentials malgré son manifeste.
+
+La [spécification technique ACA](agents_specification/ACA_SPECIFICATION_TECHNIQUE.md)
+propose un runtime à capacités sans accès Node direct et documente l’alternative
+d’un sandbox OS. Le choix doit démontrer le confinement de fichiers, réseau,
+shell, secrets, CPU et mémoire dans le package Electron réel. Les dépendances
+natives et scripts npm restent exclus tant que cette frontière n’est pas
+validée.
+
+Action obligatoire : ne pas implémenter ni exécuter de connecteur généré avant
+validation du runtime, du SDK RPC, des brokers et des tests adversariaux. Ce
+point est un blocage de conception, pas une vulnérabilité présente dans le code
+actuel puisque ACA n’est pas encore implémenté.
+
 ### Orchestration bornée avec synthèse finale
 
 La limite historique de quatre cycles pouvait consommer tout le budget en
-planification et tentatives Device, puis remplacer des résultats utiles par un
+planification et tentatives AEL, puis remplacer des résultats utiles par un
 message générique de « limite de sécurité ».
 
 Le runtime possède désormais deux plafonds : huit cycles assistant et six
-exécutions Device. Une commande répétée interrompt les délégations. Dans tous
+exécutions AEL. Une commande répétée interrompt les délégations. Dans tous
 les cas, un appel final avec les agents désactivés doit synthétiser les
 résultats complets ou partiels déjà obtenus. Ces plafonds restent une
 protection anti-boucle et de coût, pas une frontière de sécurité.
 
-### Contextes Planner et Device versionnés
+### Contextes ACP et AEL versionnés
 
 Le shell exact et les règles obligatoires sont injectés par le code. Les
 préférences éditables ne peuvent donc plus laisser survivre seules d’anciennes
@@ -86,12 +106,31 @@ préservées.
 
 ## P1 — Risques de données, sécurité et cohérence produit
 
+### ARI : canal de scraping à sécuriser — bloque la phase 6.2
+
+Le cahier fonctionnel impose un scraper Google local puis la lecture de pages
+et documents non fiables. Cette capacité introduira des risques SSRF, DNS
+rebinding, redirections dangereuses, bombes de compression, parseurs PDF/HTML,
+injection de prompt, fuite de credentials et exécution de JavaScript distant.
+Le HTML de Google est également une dépendance fragile sans contrat stable ;
+un changement peut bloquer la découverte des sources.
+
+La [spécification technique ARI](agents_specification/ARI_SPECIFICATION_TECHNIQUE.md)
+propose un client HTTP contrôlé, des parseurs sans scripts, un rendu Electron
+éphémère, des budgets et une suite de fixtures locales. Les dépendances, la
+connexion épinglée contre SSRF, le schéma d’authentification, les délais et la
+fragilité assumée de Google restent à valider.
+
+Action obligatoire : résoudre ces choix puis découper et tester le canal réseau
+avant d’activer ARI. Aucun contenu Web, cookie ou secret ne doit atteindre un
+contexte privilégié ou le modèle sans réduction et expurgation.
+
 ### Couverture automatisée renforcée, E2E réel restant
 
-Le socle Vitest couvre désormais la policy, les parsers OpenAI/Planner, le
+Le socle Vitest couvre désormais la policy, les parsers OpenAI/ACP, le
 stockage chat, les migrations, les commandes slash, les messages de tâche
 agent, la concurrence agent, la politique de traces et le coffre de secrets.
-Les 277 tests réussissent, dont 119 cas de policy Device. Ils couvrent aussi les
+Les 281 tests réussissent, dont 119 cas de policy AEL. Ils couvrent aussi les
 permissions asynchrones, la résolution concurrente, le registre d’arrêt, le
 timeout OpenAI, la reprise d’une queue après erreur, la sécurité de la fenêtre,
 la visibilité des messages et des composants React critiques rendus côté
@@ -188,17 +227,19 @@ restent à évaluer lors d’un chantier typage dédié.
 
 ### Frontières des modules denses — corrigées
 
-La validation IPC, les migrations, la résolution Planner, les pages agents et
+La validation IPC, les migrations, la résolution ACP, les pages agents et
 les payloads OpenAI sont séparés par responsabilités métier avec des façades
 stables. La cible de 100 lignes reste un signal de revue, pas une contrainte
 qui justifierait des micro-modules artificiels.
 
-### Migration `diagnostic-agent` — corrigée
+### Identités des agents — réorganisées en phase 6.1
 
-La migration versionnée remplace l’ancien flag, déplace le dossier source dans
-`.migration-backups`, puis le copie ou le fusionne avec `agent-planner`.
-Permissions, historique et conversations sont dédupliqués. Une nouvelle
-exécution ne rejoue pas les étapes déjà marquées.
+Les anciens aliases et la migration de workspace agent ont été retirés. Le
+registre partagé n’accepte que `agent-acp` et `agent-ael`. Les données locales
+obsolètes ont été supprimées après confirmation explicite ; les paramètres
+généraux et le secret OpenAI sont restés hors de ce nettoyage. Une normalisation
+bornée des anciens messages de chat empêche seulement le blocage de leur
+sauvegarde et ne réactive aucun espace agent historique.
 
 ### Visibilité des messages internes — corrigée avec compatibilité
 
@@ -231,18 +272,18 @@ de capacité produit.
 ### Fichiers denses — corrigé
 
 `ai.orchestrator.cycle.ts` est passé de 306 à 100 lignes. L’appel
-provider, la résolution des handoffs, l’heuristique Planner, l’exécution agent
+provider, la résolution des handoffs, l’heuristique ACP, l’exécution agent
 et les transitions de cycle vivent dans des modules métier dédiés.
 
 Les précédents découpages restent en place :
 
-- `device.policy.ts` est une façade sur les règles, segments, chemins, tokens
+- `ael.policy.ts` est une façade sur les règles, segments, chemins, tokens
   et types ;
-- `agent-orchestrator.service.ts` délègue les phases Planner, Device,
+- `agent-orchestrator.service.ts` délègue les phases ACP, AEL,
   permission, commande et messages ;
 - `agent-storage.service.ts` sépare chemins, récupération, workspace, records
   et conversations ;
-- `DeviceAgentPage.tsx` compose un contrôleur et quatre vues d’onglets.
+- `AELAgentPage.tsx` compose un contrôleur et quatre vues d’onglets.
 
 Le seuil de `CODING_GUIDELINES.md` reste une cible. Un nouveau découpage ne
 doit être engagé qu’avec une frontière métier explicite.
@@ -255,13 +296,13 @@ applicative.
 
 ### APIs, états et code orphelins — corrigé
 
-- les handlers `nova:device:*` sans consommateur ont été retirés ;
+- les handlers `nova:ael:*` sans consommateur ont été retirés ;
 - l’API, le service et le stockage de conversation agent directe sans UI ont
   été retirés ;
 - l’ancien mock `renderer/services/chat.service.ts` a été supprimé ;
 - `settings.reset`, le statut `streaming` et son curseur dormant ont été
   supprimés ;
-- les traces de génération de commande Device sont fusionnées avec la
+- les traces de génération de commande AEL sont fusionnées avec la
   délégation, attachées au message final et persistées dans la conversation
   agent.
 

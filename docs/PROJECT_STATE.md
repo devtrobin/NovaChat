@@ -2,10 +2,11 @@
 
 ## Snapshot
 
-- Date d’audit : 19 juillet 2026.
-- Branche : `main`.
+- Date d’audit : 27 août 2026.
+- Branche de travail : `docs/phase-6-agent-specifications`.
 - Base historique de l’audit : `d589ae1`
-  (`Security: store OpenAI key in OS vault`), complétée par les phases 3 et 4.
+  (`Security: store OpenAI key in OS vault`), complétée par les phases 3 à 5
+  et la réorganisation technique de la phase 6.1.
 - Les données locales sous `/agents/` sont explicitement ignorées sans masquer
   les nouveaux fichiers source de `src/main/agents/`.
 
@@ -18,7 +19,7 @@ l’exécution locale sont branchés. Le projet compile et se package.
 Le socle de code est propre, strictement typé et packagé, mais l’application ne
 doit toujours pas être considérée comme une frontière de sécurité pour
 l’exécution de commandes ni comme une distribution de production. La policy
-Device reste un contrôle de permission, pas un sandbox. Les parcours réels
+AEL reste un contrôle de permission, pas un sandbox. Les parcours réels
 avec clé OpenAI, le binaire installé et les plateformes non Windows restent à
 valider avant une diffusion.
 
@@ -33,9 +34,9 @@ valider avant une diffusion.
 | Streaming | Non implémenté | aucune surface inactive conservée |
 | Commandes slash locales | Fonctionnel | aide, état, agents et paramètres sans appel provider |
 | `/cmd` utilisateur | Fonctionnel | exécution directe sans permission agent |
-| Device agent | Fonctionnel | profil terminal non interactif, commande exacte ou générée depuis un objectif |
-| Planner agent | Fonctionnel | plan textuel structuré, étape atomique |
-| Permissions Device | Durci avec limites | lectures sûres sans prompt, syntaxe restrictive, pas un sandbox |
+| AEL — Agent d’Exécution Locale | Fonctionnel | profil terminal non interactif, commande exacte ou générée depuis un objectif |
+| ACP — Agent de Cadrage et de Planification | Fonctionnel | plan textuel structuré, étape atomique |
+| Permissions AEL | Durci avec limites | lectures sûres sans prompt, syntaxe restrictive, pas un sandbox |
 | Saisie interactive | Partielle | heuristique stdout ; timeout configurable suspendu pendant la saisie |
 | Arrêt global d’un tour | Fonctionnel | abort provider, permission, commandes |
 | Activité agents | Fonctionnel | polling 1 s + rafraîchissement sur événement |
@@ -43,14 +44,14 @@ valider avant une diffusion.
 | Historique agent | Fonctionnel | stockage et vue |
 | Providers alternatifs | Catalogue planifié | visibles comme « à venir », non sélectionnables et refusés par le main |
 | Internationalisation | Partielle | écran de boot seulement |
-| Tests automatisés | Renforcés | 277 réussites dans 40 fichiers, aucun échec attendu |
+| Tests automatisés | Renforcés | 281 réussites dans 41 fichiers, aucun échec attendu |
 | Packaging Windows x64 | Vérifié | `npm.cmd run package` réussi |
 
 ## Agents actuels
 
-### Planner
+### ACP
 
-Le Planner est activé par défaut. Nova le sollicite explicitement ou force un
+L’ACP est activé par défaut. Nova le sollicite explicitement ou force un
 handoff heuristique au premier cycle pour certaines demandes non triviales.
 
 Il renvoie :
@@ -58,16 +59,16 @@ Il renvoie :
 - un statut `ready`, `needs-info` ou `blocked` ;
 - un résumé ;
 - au plus une prochaine étape ;
-- `device-agent` ou `none` ;
+- `agent-ael` ou `none` ;
 - un mode `goal`, `analysis` ou `none` dans le contrat courant.
 
 Le parser conserve la compatibilité avec l’ancien mode `command`, mais toute
-étape Device issue du Planner est exécutée comme un objectif : seul Device
+étape AEL issue d’ACP est exécutée comme un objectif : seul AEL
 choisit la syntaxe du shell.
 
-### Device
+### AEL
 
-Le Device est activé par défaut. Il peut :
+L’AEL est activé par défaut. Il peut :
 
 - recevoir une commande déjà formée ;
 - transformer un objectif en commande via un second appel OpenAI ;
@@ -128,16 +129,16 @@ Le package vérifié est `win32-x64`.
 Le démarrage de développement a également atteint le lancement de
 l’application et du serveur renderer sur `http://localhost:9000`.
 
-La suite comprend 277 cas répartis dans 40 fichiers. Elle couvre la policy
-Device, les parsers OpenAI/Planner, les commandes slash, les handoffs
+La suite comprend 281 cas répartis dans 41 fichiers. Elle couvre la policy
+AEL, les parsers OpenAI/ACP, les commandes slash, les handoffs
 assistant-agent, la conservation des traces, les messages de tâche agent, le
-formatage de la page Device, les stockages chat/agents, les frontières IPC,
-les chemins confinés, le cycle de vie Device, les reducers d’événements, les
+formatage de la page AEL, les stockages chat/agents, les frontières IPC,
+les chemins confinés, le cycle de vie AEL, les reducers d’événements, les
 écritures atomiques, les reprises sur backup, les queues agents, les
-migrations `userData`/Planner et le coffre de secrets. Elle couvre désormais
+migrations `userData`, le registre ACP/AEL et le coffre de secrets. Elle couvre désormais
 aussi les permissions asynchrones, l’arrêt des tours, la reprise des queues,
 le timeout OpenAI, la sécurité de la fenêtre, la visibilité structurée et des
-composants React critiques. La matrice Device comporte 119 cas et tous les
+composants React critiques. La matrice AEL comporte 119 cas et tous les
 anciens contournements connus sont des tests de régression normaux.
 
 Non vérifié :
@@ -163,12 +164,12 @@ et le packaging Windows x64. Elles doivent être réévaluées lors de chaque mi
 
 Les documents précédents indiquaient notamment que :
 
-- seul `device-agent` existait ;
-- le Device ne concevait pas encore sa commande ;
+- un seul agent d’exécution locale existait ;
+- l’AEL ne concevait pas encore sa commande ;
 - le rafraîchissement live restait à faire ;
 - les fichiers principaux étaient peu denses.
 
-Ces points ne sont plus exacts. Le Planner, la génération de commande, le
+Ces points ne sont plus exacts. L’ACP, la génération de commande, le
 polling d’activité et plusieurs écrans agents sont présents. Les anciens
 fichiers monolithiques explicitement recensés en P2 ont été découpés selon
 leurs frontières métier.
@@ -188,10 +189,12 @@ Les phases 3 et 4 sont closes : données récupérables, fenêtre durcie, provid
 actif borné, settings indépendants du réseau, visibilité structurée,
 TypeScript strict, erreurs asynchrones contrôlées et modules denses découpés.
 
-La prochaine évolution retenue est la phase 6 de
-[NEXT_STEPS.md](NEXT_STEPS.md) : réorganisation de Planner et Device en phase
-6.1, ARI en phase 6.2, puis ACA et la création automatique d’agents en phase
-6.3. Leur implémentation ne commencera qu’après validation et découpage des
-cahiers des charges. ARI sera un service de recherche transversal pour Nova et
-tous les agents autorisés, et non un composant réservé à ACA. La validation
-finale des installateurs demeure la toute dernière tâche absolue.
+La réorganisation technique d’ACP et d’AEL en phase 6.1 est close : validation
+automatisée, packaging, nettoyage local confirmé et test manuel commun ont
+réussi. La prochaine étape est la relecture finale puis le découpage d’ARI en
+phase 6.2. Le cahier fonctionnel ARI est complet et une spécification technique
+détaille désormais le scraping Google, les documents, le réseau et les
+credentials ; ses choix techniques restent à valider avant le découpage. ACA
+possède aussi un cahier technique initial, dont le runtime du code généré reste
+bloquant. ARI demeure un service transversal et doit être validé avant ACA. La
+validation finale des installateurs reste la toute dernière tâche absolue.

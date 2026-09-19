@@ -12,7 +12,7 @@ type AgentExchangeStatus = "denied" | "error" | "interrupted" | "partial-success
 
 export function createAgentConversationTitle(userPrompt: string): string {
   const title = userPrompt.trim().slice(0, 48);
-  return title || "Execution device";
+  return title || "Execution ael";
 }
 
 export function createAgentConversation(
@@ -37,7 +37,7 @@ export function createAssistantToAgentMessage(
   command: string,
 ): ChatMessage {
   const createdAt = new Date().toISOString();
-  if (agentId !== "device-agent") {
+  if (agentId !== "agent-ael") {
     return {
       agentId,
       apiRequests: [],
@@ -60,7 +60,7 @@ export function createAssistantToAgentMessage(
   const isGoalRequest = /^goal\s*:/i.test(assistantRequest.trim());
   const content = isGoalRequest
     ? `Objectif delegue par l'assistant:\n${assistantRequest.replace(/^goal\s*:\s*/i, "").trim()}\n\nCommande retenue:\n${command}`
-    : `Execute la commande suivante sur le device:\n${command}`;
+    : `Execute la commande suivante avec AEL:\n${command}`;
 
   return {
     apiRequests: [],
@@ -71,11 +71,11 @@ export function createAssistantToAgentMessage(
     lifecycleLog: [
       {
         at: createdAt,
-        details: "Demande assistant -> device-agent creee.",
+        details: "Demande assistant -> agent-ael creee.",
         event: "created",
       },
     ],
-    to: "device",
+    to: "ael",
     visibility: "internal",
   };
 }
@@ -88,7 +88,7 @@ export function createAgentResultMessage(
   apiRequests: ChatMessage["apiRequests"] = [],
 ): ChatMessage {
   const createdAt = new Date().toISOString();
-  if (agentId !== "device-agent") {
+  if (agentId !== "agent-ael") {
     return {
       agentId,
       apiRequests: [...(apiRequests ?? [])],
@@ -114,13 +114,13 @@ export function createAgentResultMessage(
     apiRequests: [...(apiRequests ?? [])],
     content: command,
     createdAt,
-    from: "device",
+    from: "ael",
     id: crypto.randomUUID(),
     isExpandable: true,
     lifecycleLog: [
       {
         at: createdAt,
-        details: "Resultat device-agent -> assistant cree.",
+        details: "Resultat agent-ael -> assistant cree.",
         event: "created",
         metadata: { status },
       },

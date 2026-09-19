@@ -1,8 +1,9 @@
 import { PersistedChatState, StorageRecoveryNotice } from "./chat.types";
+import { SystemAgentId } from "./system-agent.registry";
 
 export const AGENT_CONTEXT_SCHEMA_VERSION = 3;
 
-export type AgentId = "agent-planner" | "device-agent";
+export type AgentId = SystemAgentId;
 export type AgentConversationOrigin = "assistant" | "user";
 export type AgentPermissionDecision = "allow" | "deny";
 export type AgentTaskMode = "analysis" | "command" | "goal";

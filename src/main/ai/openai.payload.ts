@@ -1,3 +1,3 @@
 export { buildInput } from "./openai.payload.assistant";
-export { buildDeviceAgentInput } from "./openai.payload.device";
+export { buildAELAgentInput } from "./openai.payload.ael";
 export { buildGenericAgentInput } from "./openai.payload.agent";

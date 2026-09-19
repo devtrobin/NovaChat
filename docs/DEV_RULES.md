@@ -24,7 +24,7 @@ Regle pratique :
 ## Main Process Rules
 
 - toute logique provider doit rester dans `src/main/ai`
-- toute logique shell / machine doit rester dans `src/main/device`
+- toute logique shell / machine doit rester dans `src/main/ael`
 - toute persistence conversationnelle doit rester dans `src/main/chat`
 - l'enregistrement des IPC doit rester dans `src/main/ipc`
 
@@ -60,12 +60,12 @@ Eviter :
 - `message.json`, `log.json`, `apis.json` ont des roles distincts
 - ne pas retransformer le stockage en un seul gros fichier
 
-## AI / Device Rules
+## AI / AEL Rules
 
 - les messages Nova sont la source de verite
 - `from` / `to` doivent rester explicites
 - les traces API et logs ne doivent pas polluer le payload provider
-- la boucle `assistant -> device -> assistant` doit rester cote `main`
+- la boucle `assistant -> ael -> assistant` doit rester cote `main`
 
 ## Refactor Rules
 
@@ -89,17 +89,17 @@ Si le chantier touche un flux critique, verifier aussi manuellement :
 - envoi d'un message
 - ouverture de settings
 - navigation sidebar
-- si concerne : `/cmd` ou `device`
+- si concerne : `/cmd` ou `ael`
 
 ## Agent Rules
 
 Le systeme d'agents existe :
 - garder Nova comme chef d'orchestre
-- garder `agent-planner` consultatif
-- garder `device-agent` specialise et atomique
+- garder `agent-acp` consultatif
+- garder `agent-ael` specialise et atomique
 - brancher tout nouvel agent sur le registre de tour du `main`
 - ne pas contourner le workflow de permissions
-- lire `docs/RISKS.md` avant toute extension de `device`
+- lire `docs/RISKS.md` avant toute extension de `ael`
 
 ## When In Doubt
 

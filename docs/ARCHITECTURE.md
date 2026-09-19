@@ -14,7 +14,7 @@ Electron preload
     ▼
 Electron main
     ├── OpenAI Responses API
-    ├── orchestration Planner / Device
+    ├── orchestration ACP / AEL
     ├── shell local
     └── stockage JSON local
 ```
@@ -84,8 +84,8 @@ App
     └── page active
         ├── ChatPage
         ├── AgentsPage
-        │   ├── DeviceAgentPage
-        │   └── PlannerAgentPage
+        │   ├── AELAgentPage
+        │   └── ACPAgentPage
         └── SettingsPage
             └── SettingsPanel
 ```
@@ -102,7 +102,7 @@ App
 La logique est répartie entre `WorkspaceLayout.service.ts` et les hooks
 `useWorkspace*`.
 
-`DeviceAgentPage.tsx` compose quatre vues d’onglets dédiées. Device et Planner
+`AELAgentPage.tsx` compose quatre vues d’onglets dédiées. AEL et ACP
 partagent le chargement, le polling et les mutations via
 `useAgentPageController.ts`; chaque page conserve ses vues déclaratives.
 
@@ -126,7 +126,7 @@ renvoie ensuite tout `PersistedChatState` au main.
 `MessageItem` route selon `from`, `to`, `status` et `commandId` :
 
 - `MessageItemChat` : user, assistant, agent et délégations ;
-- `MessageItemDevice` : commande, progression, input et résultat ;
+- `MessageItemAEL` : commande, progression, input et résultat ;
 - `MessageItemSystem` : état transitoire, erreur de configuration et
   permission.
 
@@ -146,13 +146,13 @@ runTurn
 ├── /cmd <commande> ? -> runDirectCommandTurn
 ├── validation OpenAI
 ├── création du tour annulable
-└── jusqu’à 8 cycles assistant et 6 exécutions Device
+└── jusqu’à 8 cycles assistant et 6 exécutions AEL
     ├── generateOpenAIReply
     ├── réponse utilisateur -> fin
     └── handoff agent
-        ├── agent-planner
-        │   └── parse du plan puis éventuel device-agent
-        └── device-agent
+        ├── agent-acp
+        │   └── parse du plan puis éventuel agent-ael
+        └── agent-ael
             └── génération/exécution de commande
     └── plafond atteint ou répétition
         └── cycle final sans agent pour synthétiser les résultats disponibles
@@ -160,7 +160,7 @@ runTurn
 
 Fichiers clés :
 
-- `ai.orchestrator.ts` : boucle, limite et traitement du Planner ;
+- `ai.orchestrator.ts` : boucle, limite et traitement d’ACP ;
 - `ai.orchestrator.budget.ts` : budgets séparés et détection des commandes
   répétées ;
 - `ai.orchestrator.finalization.ts` : synthèse finale réservée sans nouvelle
@@ -168,13 +168,13 @@ Fichiers clés :
 - `ai.orchestrator.cycle.ts` : routage d’une réponse assistant ;
 - `ai.orchestrator.assistant-request.ts` : appel provider et abort controller ;
 - `ai.orchestrator.handoff.ts` : résolution d’une délégation explicite ;
-- `ai.orchestrator.planner-handoff.ts` : handoff Planner heuristique ;
+- `ai.orchestrator.acp-handoff.ts` : handoff ACP heuristique ;
 - `ai.orchestrator.agent-cycle.ts` : exécution d’un agent et fusion des traces ;
-- `ai.planner.ts` : parsing du format textuel du Planner ;
+- `ai.acp.ts` : parsing du format textuel d’ACP ;
 - `ai.turn-registry.ts` : tours, tâches, abort controllers, commandes et
   permissions en cours ;
 - `ai.permission.service.ts` : attente et résolution d’une permission ;
-- `ai.device-flow.ts` : adaptation d’une commande en messages Nova ;
+- `ai.ael-flow.ts` : adaptation d’une commande en messages Nova ;
 - `openai.*` : payload, transport, parsing et erreurs provider.
 
 Le transport utilise `fetch` et accepte un `AbortSignal` pour les tours. Le
@@ -182,19 +182,21 @@ test de connexion Settings possède un timeout explicite de dix secondes.
 
 ### Domaine `agents`
 
-Deux agents sont définis.
+Deux agents sont définis. Leurs IDs, acronymes, libellés, capacités et contextes
+par défaut proviennent de `src/shared/system-agent.registry.ts`, partagé par le
+main et le renderer.
 
-`agent-planner` :
+`agent-acp` :
 
 - reçoit une demande de planification ;
 - appelle OpenAI avec son contexte propre ;
 - renvoie un texte structuré `STATUS`, `SUMMARY`, `AGENT`, `MODE`, etc. ;
 - n’exécute aucune action ;
-- formule les demandes Device comme objectifs en langage naturel, jamais comme
+- formule les demandes AEL comme objectifs en langage naturel, jamais comme
   commandes shell ;
-- ne peut recommander actuellement que `device-agent` ou `none`.
+- ne peut recommander actuellement que `agent-ael` ou `none`.
 
-`device-agent` :
+`agent-ael` :
 
 - accepte une commande exacte ou un objectif ;
 - pour un objectif, appelle OpenAI afin de produire une commande ;
@@ -211,8 +213,8 @@ complémentaires. Son schéma est versionné et les anciennes valeurs par défau
 sont migrées sans remplacer les personnalisations.
 
 `agent-orchestrator.service.ts` coordonne le cycle de vie commun. Les phases
-sont séparées entre `agent-task.planner.ts`, `agent-task.device.ts`,
-`agent-task.device-command.ts`, `agent-task.device-permission.ts`,
+sont séparées entre `agent-task.acp.ts`, `agent-task.ael.ts`,
+`agent-task.ael-command.ts`, `agent-task.ael-permission.ts`,
 `agent-task.messages.ts`, `agent-context.migration.ts` et les modules
 `ai.orchestrator.*`.
 `agent-storage.service.ts` reste la façade publique du stockage agent. Les
@@ -220,44 +222,44 @@ responsabilités sont séparées entre `agent-storage.paths.ts`,
 `agent-storage.recovery.ts`, `agent-storage.workspace.ts`,
 `agent-storage.records.ts` et `agent-storage.conversations.ts`.
 
-### Domaine `device`
+### Domaine `ael`
 
 ```text
 command string
   -> normalizeCommand
   -> assertCommandAllowed
-  -> validateDeviceAgentCommand (commandes générées uniquement)
+  -> validateAELAgentCommand (commandes générées uniquement)
   -> resolveShell
   -> spawn
   -> registry
   -> stdout/stderr progress
   -> timeout / input / kill
-  -> DeviceCommandResult
+  -> AELCommandResult
 ```
 
 Sur Windows : `cmd.exe /d /s /c`, après passage interne de la page de code à
-UTF-8. Le shell communiqué à Nova, Planner et Device provient de la même
+UTF-8. Le shell communiqué à Nova, ACP et AEL provient de la même
 résolution que l’exécuteur.
 
 Sur macOS/Linux : `$SHELL -lc`, avec `/bin/zsh` en fallback.
 
 Le registre est uniquement mémoire. Le timeout actif et la limite de sortie
-sont configurables dans `deviceExecution`. Le timeout est suspendu pendant une
+sont configurables dans `aelExecution`. Le timeout est suspendu pendant une
 attente de saisie détectée, puis réarmé à la soumission. L’arrêt cible l’arbre
 de processus (`taskkill /t /f` sous Windows, groupe détaché sous Unix).
 
-La classification de permission de `device.policy.ts` intervient dans le flux
-agent, avant `startDeviceCommand`. Cette façade s’appuie sur les modules
-`device.policy.segment.ts`, `device.policy.command-rules.ts`,
-`device.policy.paths.ts`, `device.policy.read.ts`, `device.policy.windows.ts`,
-`device.policy.tokens.ts` et
-`device.policy.types.ts`. Le parseur sépare les segments et redirections ;
+La classification de permission de `ael.policy.ts` intervient dans le flux
+agent, avant `startAELCommand`. Cette façade s’appuie sur les modules
+`ael.policy.segment.ts`, `ael.policy.command-rules.ts`,
+`ael.policy.paths.ts`, `ael.policy.read.ts`, `ael.policy.windows.ts`,
+`ael.policy.tokens.ts` et
+`ael.policy.types.ts`. Le parseur sépare les segments et redirections ;
 toute syntaxe inconnue, dynamique ou complexe devient `ask-always` et ne peut
 donc pas recevoir d’autorisation permanente. La policy ne s’applique pas à
 `/cmd`, qui est une exécution explicitement demandée par l’utilisateur. Voir
 [RISKS.md](RISKS.md) pour ses limites.
 
-Avant cette classification, `device.agent-command-profile.ts` applique aux
+Avant cette classification, `ael.agent-command-profile.ts` applique aux
 seules commandes issues de l’agent un profil plus étroit : au plus trois
 segments, uniquement des commandes déjà classifiées par la policy, sans
 wrapper de shell, interface graphique, console secondaire ou utilitaire
@@ -301,8 +303,9 @@ deux à la sauvegarde.
 
 Les références par défaut résident sous `app.getPath("userData")`. Au
 démarrage, `data-migration.service.ts` copie une seule fois les anciennes
-données placées près de l’exécutable, préserve les chemins personnalisés et
-migre `diagnostic-agent` vers `agent-planner`.
+conversations et la configuration générale placées près de l’exécutable. Les
+chemins personnalisés sont préservés, mais les anciens settings et dossiers
+d’agents ne sont pas importés dans les espaces canoniques ACP/AEL.
 
 La clé OpenAI vit dans `userData/secrets/openai-api-key.json`, chiffrée par
 `electron.safeStorage`. `settings.service.ts` sépare les settings publics des
@@ -322,6 +325,7 @@ d’une validation complets.
 - `src/shared/chat.types.ts` : message, conversation, commande ;
 - `src/shared/ai.types.ts` : requêtes et événements du tour ;
 - `src/shared/agent.types.ts` : tâches et espace de travail agent ;
+- `src/shared/system-agent.registry.ts` : IDs et métadonnées des agents système ;
 - `src/shared/settings.types.ts` : configuration.
 
 Ces contrats sont indépendants des couches `main`, `preload` et `renderer`.
@@ -331,13 +335,15 @@ Ces contrats sont indépendants des couches `main`, `preload` et `renderer`.
 Les IDs actifs sont :
 
 ```text
-agent-planner
-device-agent
+agent-acp
+agent-ael
 ```
 
-`diagnostic-agent` est un ancien nom accepté pendant la migration. Son flag et
-son espace de données sont migrés de façon idempotente ; la copie source est
-conservée sous `.migration-backups`.
+Ces identifiants sont canoniques et exclusifs pour les opérations d’agent, les
+settings et les chemins de stockage. À la seule frontière des messages de chat,
+les anciens identifiants connus et l’ancien rôle d’exécution locale dans
+`from`/`to` sont convertis vers ACP/AEL afin qu’une conversation déjà chargée
+puisse encore être poursuivie et sauvegardée. Toute autre valeur reste refusée.
 
 ### Persistance et observabilité
 
@@ -359,15 +365,15 @@ avant chaque écriture, y compris dans les conversations agents.
   permissionnée du main, pas une exception globale accordée au renderer.
 - L’orchestration multi-agent reste centralisée par Nova, pas distribuée entre
   agents autonomes.
-- Le Planner recommande ; Nova décide et exécute.
-- Le Device exécute une étape atomique puis rend la main.
+- L’ACP recommande ; Nova décide et exécute.
+- L’AEL exécute une étape atomique puis rend la main.
 - Les messages Nova restent la représentation commune des flux visibles.
 
 ## Zones à ne pas confondre
 
 - `activeProvider` ne peut actuellement valoir que `openai`; le catalogue
   planifié ne constitue pas un routage multi-provider.
-- `device.policy.ts` décide d’une demande de permission ; ce n’est pas un
+- `ael.policy.ts` décide d’une demande de permission ; ce n’est pas un
   sandbox.
 - Les conversations internes sont produites uniquement par les tâches
   orchestrées ; aucune API de conversation directe n’est exposée.

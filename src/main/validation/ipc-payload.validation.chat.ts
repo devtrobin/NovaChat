@@ -21,8 +21,8 @@ import {
   readTimestamp,
 } from "./ipc-payload.validation.primitives";
 
-const MESSAGE_SENDERS = ["user", "assistant", "agent", "device", "system"] as const;
-const MESSAGE_RECIPIENTS = ["user", "assistant", "agent", "device"] as const;
+const MESSAGE_SENDERS = ["user", "assistant", "agent", "ael", "system"] as const;
+const MESSAGE_RECIPIENTS = ["user", "assistant", "agent", "ael"] as const;
 const MESSAGE_STATUSES = ["idle", "error", "pending", "partial-success", "running", "success", "waiting-input"] as const;
 const SYSTEM_ACTION_IDS = [
   "open-settings",
@@ -82,13 +82,21 @@ function parseChatMessage(value: unknown, field: string): ChatMessage {
     apiRequests: parseApiRequests(message.apiRequests, field),
     content: readString(message.content, `${field}.content`, 0, MAX_MESSAGE_CHARACTERS),
     createdAt: readTimestamp(message.createdAt, `${field}.createdAt`),
-    from: readEnum(message.from, `${field}.from`, MESSAGE_SENDERS),
+    from: parseChatMessageSender(message.from, `${field}.from`),
     id: readSafeId(message.id, `${field}.id`),
     lifecycleLog: parseLifecycleLog(message.lifecycleLog, field),
-    to: readEnum(message.to, `${field}.to`, MESSAGE_RECIPIENTS),
+    to: parseChatMessageRecipient(message.to, `${field}.to`),
   };
   assignOptionalMessageFields(parsed, message, field);
   return parsed;
+}
+
+function parseChatMessageSender(value: unknown, field: string): ChatMessage["from"] {
+  return value === "device" ? "ael" : readEnum(value, field, MESSAGE_SENDERS);
+}
+
+function parseChatMessageRecipient(value: unknown, field: string): ChatMessage["to"] {
+  return value === "device" ? "ael" : readEnum(value, field, MESSAGE_RECIPIENTS);
 }
 
 function assignOptionalMessageFields(
@@ -98,7 +106,9 @@ function assignOptionalMessageFields(
 ): void {
   parsed.actionLabel = readOptionalString(message.actionLabel, `${field}.actionLabel`, 200);
   parsed.actionType = readOptionalEnum(message.actionType, `${field}.actionType`, SYSTEM_ACTION_IDS);
-  parsed.agentId = message.agentId === undefined ? undefined : parseAgentId(message.agentId, `${field}.agentId`);
+  parsed.agentId = message.agentId === undefined
+    ? undefined
+    : parseChatMessageAgentId(message.agentId, `${field}.agentId`);
   parsed.commandId = message.commandId === undefined ? undefined : readSafeId(message.commandId, `${field}.commandId`);
   parsed.inputPlaceholder = readOptionalString(message.inputPlaceholder, `${field}.inputPlaceholder`, 500);
   parsed.inputRequested = readOptionalBoolean(message.inputRequested, `${field}.inputRequested`);
@@ -108,6 +118,23 @@ function assignOptionalMessageFields(
   parsed.status = readOptionalEnum(message.status, `${field}.status`, MESSAGE_STATUSES);
   parsed.visibility = readOptionalEnum(message.visibility, `${field}.visibility`, ["internal", "public"] as const);
   parsed.actions = parseActions(message.actions, field);
+}
+
+function parseChatMessageAgentId(
+  value: unknown,
+  field: string,
+): NonNullable<ChatMessage["agentId"]> {
+  // Conversation history may still contain the identifiers used before phase 6.1.
+  // Normalize them at the chat boundary only; active agent IPC remains strict.
+  switch (value) {
+    case "agent-planner":
+    case "diagnostic-agent":
+      return "agent-acp";
+    case "device-agent":
+      return "agent-ael";
+    default:
+      return parseAgentId(value, field);
+  }
 }
 
 function parseApiRequests(value: unknown, field: string): ChatMessage["apiRequests"] {

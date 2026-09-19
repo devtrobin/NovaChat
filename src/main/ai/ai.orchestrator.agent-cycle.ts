@@ -31,7 +31,7 @@ export async function runAgentHandoff({
   onPipelineStageChange?.("requesting-agent", handoff.agentId);
   emit({ conversationId, messages: [delegationMessage], type: "append-messages" });
 
-  const { deviceMessage } = await runAgentTask({
+  const { aelMessage } = await runAgentTask({
     conversationId,
     emit,
     messageId: delegationMessage.id,
@@ -49,10 +49,10 @@ export async function runAgentHandoff({
     turnId,
   });
 
-  finalizeAgentCycleMessage(deviceMessage, delegationMessage, handoff.agentId);
-  emit({ conversationId, messages: [deviceMessage], type: "append-messages" });
-  turnMessages.push(deviceMessage);
-  return { kind: "agent", message: deviceMessage };
+  finalizeAgentCycleMessage(aelMessage, delegationMessage, handoff.agentId);
+  emit({ conversationId, messages: [aelMessage], type: "append-messages" });
+  turnMessages.push(aelMessage);
+  return { kind: "agent", message: aelMessage };
 }
 
 export function finalizeAgentCycleMessage(

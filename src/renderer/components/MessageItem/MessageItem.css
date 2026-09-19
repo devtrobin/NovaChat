@@ -40,7 +40,7 @@
   justify-self: end;
 }
 
-.message-item--device {
+.message-item--ael {
   justify-self: center;
   width: min(680px, 100%);
   gap: 8px;

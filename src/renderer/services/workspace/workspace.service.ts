@@ -8,70 +8,14 @@ import {
 } from "../chat/chat.service";
 import { Conversation } from "../../../shared/chat.types";
 import { AgentSettingsMap } from "../../../shared/settings.types";
+import { SYSTEM_AGENT_DEFINITIONS } from "../../../shared/system-agent.registry";
 
-export const AGENTS = [
-  {
-    capabilities: [
-      "shell-execution",
-      "interactive-input",
-      "permission-checking",
-      "execution-history",
-    ],
-    context: "Agent specialise dans l'execution locale, l'analyse machine et les interactions terminales.",
-    description: "Execution des commandes et interactions device.",
-    features: [
-      "execution de commandes",
-      "saisie interactive",
-      "journalisation locale",
-      "diagnostic terminal",
-    ],
-    id: "device-agent",
-    mission: "Executer des commandes locales, verifier les permissions et remonter un resultat exploitable a l'assistant principal.",
-    name: "Device",
-    processes: [
-      "prepare une action terminale",
-      "execute la commande sur le device",
-      "collecte la sortie et les erreurs",
-      "remonte un resultat exploitable",
-    ],
-    tools: [
-      "device.run",
-      "device.kill",
-      "device.input",
-    ],
-  },
-  {
-    capabilities: [
-      "task-planning",
-      "atomic-step-design",
-      "agent-routing",
-    ],
-    context: "Agent specialise dans la planification des demandes Nova et le decoupage en actions atomiques.",
-    description: "Planification, routage agent et prochaine etape atomique.",
-    features: [
-      "decoupage des demandes",
-      "selection d'agent recommande",
-      "resume JSON et debug",
-    ],
-    id: "agent-planner",
-    mission: "Transformer une demande non triviale en prochaine action atomique pour Nova, sans executer lui-meme les actions.",
-    name: "Planner",
-    processes: [
-      "analyse la demande courante",
-      "identifie les informations manquantes",
-      "propose une prochaine action atomique",
-      "recommande l'agent a appeler",
-    ],
-    tools: [
-      "agent.context",
-      "planner.next-step",
-    ],
-  },
-] as const;
+export const AGENTS = Object.values(SYSTEM_AGENT_DEFINITIONS);
 
 export function buildAgentDefinitions(agentSettings: AgentSettingsMap) {
   return AGENTS.map((agent) => ({
     ...agent,
+    name: agent.acronym,
     enabled: agentSettings[agent.id]?.enabled ?? true,
   }));
 }

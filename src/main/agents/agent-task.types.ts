@@ -15,6 +15,6 @@ export type RunAgentTaskArgs = {
 };
 
 export type AgentTaskExecutionResult = {
-  deviceMessage: ChatMessage;
+  aelMessage: ChatMessage;
   result: AgentTaskResult;
 };

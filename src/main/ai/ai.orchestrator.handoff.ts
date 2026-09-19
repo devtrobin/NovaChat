@@ -17,17 +17,17 @@ export function resolveAgentHandoff(args: {
 }): ResolvedAgentHandoff {
   const agentId = args.providerResponse.to === "agent"
     ? args.providerResponse.agentId
-    : "device-agent";
+    : "agent-ael";
   const content = args.providerResponse.content;
-  const goal = agentId === "device-agent"
-    ? extractDeviceGoal(content) ?? (!isLikelyShellCommand(content) ? content.trim() : null)
+  const goal = agentId === "agent-ael"
+    ? extractAELGoal(content) ?? (!isLikelyShellCommand(content) ? content.trim() : null)
     : null;
 
   if (!goal) {
     return {
       agentId,
       apiRecords: args.apiRecords,
-      mode: agentId === "device-agent" ? "command" : "analysis",
+      mode: agentId === "agent-ael" ? "command" : "analysis",
       previewContent: content,
       request: content,
     };
@@ -42,7 +42,7 @@ export function resolveAgentHandoff(args: {
   };
 }
 
-function extractDeviceGoal(value: string): string | null {
+function extractAELGoal(value: string): string | null {
   const match = value.trim().match(/^(?:goal|objective|task)\s*:\s*([\s\S]+)$/i);
   return match?.[1]?.trim() ? match[1].trim() : null;
 }

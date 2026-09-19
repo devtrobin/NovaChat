@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   cancelPermissionRequest,
-  requestDevicePermission,
+  requestAELPermission,
   resolvePermissionRequest,
 } from "./ai.permission.service";
 import { finishTurn, startTurn } from "./ai.turn-registry";
@@ -15,12 +15,12 @@ afterEach(() => {
   }
 });
 
-describe("device permission workflow", () => {
+describe("ael permission workflow", () => {
   it("settles an allowed request once and removes the transient resolution", async () => {
     vi.useFakeTimers();
     const events: Array<Record<string, unknown>> = [];
     const turnId = startTestTurn("conversation-allow");
-    const permission = requestDevicePermission(
+    const permission = requestAELPermission(
       "conversation-allow",
       "npm test",
       (event) => events.push(event),
@@ -44,7 +44,7 @@ describe("device permission workflow", () => {
   it("cancels a pending request without publishing a false decision", async () => {
     const events: Array<Record<string, unknown>> = [];
     const turnId = startTestTurn("conversation-cancel");
-    const permission = requestDevicePermission(
+    const permission = requestAELPermission(
       "conversation-cancel",
       "npm test",
       (event) => events.push(event),
@@ -63,14 +63,14 @@ describe("device permission workflow", () => {
   it("rejects two simultaneous permission prompts in one conversation", async () => {
     const events: Array<Record<string, unknown>> = [];
     const turnId = startTestTurn("conversation-race");
-    const firstPermission = requestDevicePermission(
+    const firstPermission = requestAELPermission(
       "conversation-race",
       "npm test",
       (event) => events.push(event),
       turnId,
     );
 
-    await expect(requestDevicePermission(
+    await expect(requestAELPermission(
       "conversation-race",
       "npm run lint",
       () => undefined,

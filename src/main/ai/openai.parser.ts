@@ -1,4 +1,6 @@
 import { ProviderResponse } from "./openai.types";
+import { AgentId } from "../../shared/agent.types";
+import { SYSTEM_AGENT_IDS } from "../../shared/system-agent.registry";
 
 export function extractText(data: { output?: Array<{ content?: Array<{ text?: string; type?: string }> }> }): string {
   return data.output?.flatMap((item) => item.content ?? [])
@@ -42,8 +44,8 @@ function parseProviderResponseObject(value: string): ProviderResponse | null {
     ) {
       return {
         agentId: normalizedAgentId,
-        content: normalizedAgentId === "device-agent"
-          ? normalizeDeviceCommand(maybeResponse.content)
+        content: normalizedAgentId === "agent-ael"
+          ? normalizeAELCommand(maybeResponse.content)
           : maybeResponse.content.trim(),
         from: "assistant",
         to: "agent",
@@ -51,13 +53,13 @@ function parseProviderResponseObject(value: string): ProviderResponse | null {
     }
 
     if (
-      (maybeResponse.to === "user" || maybeResponse.to === "device")
+      (maybeResponse.to === "user" || maybeResponse.to === "ael")
       && typeof maybeResponse.content === "string"
       && maybeResponse.content.trim()
     ) {
       return {
-        content: maybeResponse.to === "device"
-          ? normalizeDeviceCommand(maybeResponse.content)
+        content: maybeResponse.to === "ael"
+          ? normalizeAELCommand(maybeResponse.content)
           : maybeResponse.content.trim(),
         from: "assistant",
         to: maybeResponse.to,
@@ -68,10 +70,10 @@ function parseProviderResponseObject(value: string): ProviderResponse | null {
   return null;
 }
 
-function normalizeAgentId(value: unknown): "agent-planner" | "device-agent" | null {
-  if (value === "agent-planner" || value === "device-agent") return value;
-  if (value === "diagnostic-agent") return "agent-planner";
-  return null;
+function normalizeAgentId(value: unknown): AgentId | null {
+  return typeof value === "string" && SYSTEM_AGENT_IDS.includes(value as AgentId)
+    ? value as AgentId
+    : null;
 }
 
 function parseJsonRecursively(value: string, depth = 0): unknown {
@@ -95,7 +97,7 @@ function extractJsonObject(value: string): string | null {
   return value.slice(start, end + 1).trim();
 }
 
-export function normalizeDeviceCommand(command: string): string {
+export function normalizeAELCommand(command: string): string {
   const trimmed = command.trim();
   const shellWrappedMatch = trimmed.match(
     /^(?:bash|zsh|sh)\s+-lc\s+(['"])([\s\S]*)\1$/i,

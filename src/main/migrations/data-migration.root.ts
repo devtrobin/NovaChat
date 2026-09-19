@@ -1,7 +1,6 @@
 import { cp, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { writeJsonFile } from "../chat/chat-storage.io";
-import { migrateDiagnosticAgentSetting } from "./data-migration.agent";
 import {
   isRecord,
   pathExists,
@@ -18,7 +17,7 @@ export async function migrateLegacyRoot(
   if (resolvedLegacy === resolvedUserData) return;
   await mkdir(resolvedUserData, { recursive: true });
 
-  for (const name of ["conversations", "agents", "conversations.json"]) {
+  for (const name of ["conversations", "conversations.json"]) {
     await copyIfDestinationMissing(
       path.join(resolvedLegacy, name),
       path.join(resolvedUserData, name),
@@ -67,7 +66,9 @@ export function rewriteLegacySettings(
     const replacement = mappings.get(path.resolve(value));
     if (replacement) localFiles[key] = replacement;
   }
-  return migrateDiagnosticAgentSetting({ ...settings, localFiles }).value;
+  const normalized: Record<string, unknown> = { ...settings, localFiles };
+  delete normalized.agents;
+  return normalized;
 }
 
 async function copyIfDestinationMissing(

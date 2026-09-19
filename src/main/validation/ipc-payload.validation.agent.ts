@@ -4,6 +4,7 @@ import {
   AgentId,
   AgentPermissionDecision,
 } from "../../shared/agent.types";
+import { SYSTEM_AGENT_IDS } from "../../shared/system-agent.registry";
 import {
   SubmitCommandInputRequest,
   SubmitPermissionDecisionRequest,
@@ -16,12 +17,11 @@ import {
   readString,
 } from "./ipc-payload.validation.primitives";
 
-const AGENT_IDS = ["agent-planner", "device-agent"] as const;
 const PERMISSION_DECISIONS = ["allow", "allow-always", "deny", "deny-always"] as const;
 const STORED_PERMISSION_DECISIONS = ["allow", "deny"] as const;
 
 export function parseAgentId(value: unknown, field = "agentId"): AgentId {
-  return readEnum(value, field, AGENT_IDS);
+  return readEnum(value, field, SYSTEM_AGENT_IDS);
 }
 
 export function parseTaskId(value: unknown): string {

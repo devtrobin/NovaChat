@@ -11,15 +11,15 @@ import { AgentSettingsMap } from "../../../shared/settings.types";
 export function useWorkspaceLayoutState() {
   const initialState = React.useMemo(() => loadChatPageState(), []);
   const defaultAgentSettings = React.useMemo<AgentSettingsMap>(() => ({
-    "agent-planner": { enabled: true },
-    "device-agent": { enabled: true },
+    "agent-acp": { enabled: true },
+    "agent-ael": { enabled: true },
   }), []);
   const [conversations, setConversations] = React.useState<Conversation[]>(initialState.conversations);
   const [activeConversationId, setActiveConversationId] = React.useState<string | null>(
     initialState.activeConversationId,
   );
   const [activeSection, setActiveSection] = React.useState<"agents" | "conversations" | "settings">("conversations");
-  const [activeAgentId, setActiveAgentId] = React.useState<string | null>("device-agent");
+  const [activeAgentId, setActiveAgentId] = React.useState<string | null>("agent-ael");
   const [agentSettings, setAgentSettings] = React.useState<AgentSettingsMap>(defaultAgentSettings);
   const [activeSettingsCategory, setActiveSettingsCategory] = React.useState<WorkspaceLayoutController["activeSettingsCategory"]>("local-files");
   const [sendingConversationIds, setSendingConversationIds] = React.useState<string[]>([]);
