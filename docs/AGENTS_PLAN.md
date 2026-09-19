@@ -122,6 +122,10 @@ messages et chemins. Les anciens espaces de développement ne sont pas migrés :
 ils doivent être supprimés après confirmation explicite, sans toucher aux
 paramètres généraux ni au secret OpenAI.
 
+La décision, son périmètre de données final et l’unique tolérance réservée aux
+messages historiques sont consignés dans
+[l’ADR 005](decisions/005-acp-ael-breaking-reset.md).
+
 ## Limites actuelles
 
 - ACP et AEL utilisent le même modèle/configuration OpenAI que Nova.
@@ -147,3 +151,70 @@ Un nouvel agent devra :
 - être routé par Nova ;
 - avoir une UI minimale d’état ;
 - ne pas contourner le registre de tour ni les permissions.
+
+## Références techniques par agent
+
+Chaque agent possède un cahier fonctionnel et un compagnon technique. Les
+documents ACP/AEL décrivent l’existant ; ARI/ACA restent des conceptions à
+valider avant implémentation.
+
+| Agent | Outil principal | Spécification technique |
+| --- | --- | --- |
+| ACP | Modèle et parser de cadrage, sans outil d’action | [ACP](agents_specification/ACP_SPECIFICATION_TECHNIQUE.md) |
+| AEL | Terminal local contrôlé par le `main` | [AEL](agents_specification/AEL_SPECIFICATION_TECHNIQUE.md) |
+| ARI | HTTP contrôlé, extraction de documents et rendu Electron isolé | [ARI](agents_specification/ARI_SPECIFICATION_TECHNIQUE.md) |
+| ACA | Génération, compilation, tests et activation de connecteurs | [ACA](agents_specification/ACA_SPECIFICATION_TECHNIQUE.md) |
+
+## Relations entre agents
+
+| Demandeur | Destination | Usage et disponibilité |
+| --- | --- | --- |
+| Nova | ACP, AEL | Cadrage et action locale, implémentés |
+| ACP | AEL | Recommandation d’une étape que Nova décide d’exécuter, implémentée |
+| Nova, ACP, AEL | ARI | Recherche documentaire via l’orchestrateur, à construire en phase 6.2 |
+| ACA et agents spécialisés autorisés | ARI | Documentation ou complément d’information après leur implémentation |
+| Nova | ACA | Création cadrée et confirmée, prévue en phase 6.3 |
+| ARI | Demandeur initial | Retour du dossier sourcé via Nova, sans nouvelle délégation automatique |
+
+Les agents ne s’appellent jamais directement. Une relation autorisée signifie
+que le demandeur remet une requête structurée au `main`; celui-ci vérifie les
+droits, crée la tâche cible et rattache son résultat au parent. ARI n’utilise
+pas AEL pour scraper et ACA n’utilise pas AEL comme substitut à son futur
+environnement d’exécution isolé.
+
+## Contrat technique de délégation proposé
+
+Ce contrat prépare les phases 6.2 et 6.3. Il ne décrit pas une API déjà
+disponible et ne doit pas être ajouté implicitement au socle ACP/AEL.
+
+L’orchestrateur du `main` construira et validera une enveloppe contenant au
+minimum :
+
+- `delegationId`, `turnId`, `parentTaskId`, conversation et message d’origine ;
+- `originatorId`, identité de la tâche racine ;
+- `requesterAgentId`, agent qui demande réellement le travail, ou `nova` ;
+- `targetAgentId`, capacité demandée et objectif borné ;
+- contexte expurgé, URL ou références de résultats strictement nécessaires ;
+- échéance héritée, budgets restants et référence d’annulation.
+
+Les identités proviennent des tâches enregistrées par le `main`. Un modèle ne
+peut ni les choisir dans son texte ni emprunter les droits de Nova, d’ARI ou
+d’un autre agent. Avant lancement, le `main` contrôle l’activation, la
+capacité autorisée, les droits du demandeur effectif, l’absence de boucle, le
+budget et le temps restant. Le courtier Credentials vérifie les ACL de ce même
+demandeur, même lorsque la recherche est exécutée par ARI.
+
+Le résultat contient l’identifiant de délégation, un statut terminal, les
+données typées de la capacité, les budgets consommés et des diagnostics
+expurgés. Le `main` le rattache au parent ; le simple retour d’un résultat ne
+peut pas créer une nouvelle tâche.
+
+La proposition initiale limite un parent à une sous-tâche active, refuse une
+destination déjà présente dans la chaîne et borne l’enfant au temps restant
+du parent. Une délégation ne remet aucun compteur à zéro. L’arrêt du parent
+annule les appels, attentes et opérations encore annulables de ses enfants.
+
+La phase 6.2 devra figer le schéma exact, la profondeur, les budgets, l’état
+d’attente du parent et les tests d’annulation/reprise. La phase 6.3 devra en
+plus définir la persistance des sous-tâches sans jamais rejouer
+automatiquement un effet externe incertain après redémarrage.

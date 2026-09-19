@@ -106,6 +106,40 @@ sera verrouillée au moment de l’implémentation après audit npm. Les parseur
 devront jamais activer une option d’exécution de script ou de chargement de
 ressource implicite.
 
+### Alternative réseau et compatibilité à arbitrer
+
+Une variante étudiée utilise `session.fetch` dans une partition Electron
+dédiée pour Google et les pages. Elle simplifie l’intégration des cookies et
+des sessions authentifiées, mais ne démontre pas à elle seule le blocage à la
+connexion réelle d’une adresse privée, d’un DNS rebinding, d’un proxy ou d’une
+redirection. À l’inverse, `undici` avec dispatcher contrôlé facilite
+l’épinglage de la résolution pour le trafic public, mais ne doit pas devenir
+une seconde pile d’authentification implicite.
+
+La relecture devra donc choisir explicitement entre :
+
+- `undici` pour le trafic public et `session.fetch` seulement dans le broker
+  authentifié ou la fenêtre de rendu ;
+- une passerelle unique fondée sur Electron, à condition de prouver les mêmes
+  garanties SSRF au moment de chaque connexion.
+
+Aucune des deux variantes n’est validée par la seule séparation de session.
+Les redirections, sous-ressources et URL finales restent soumises aux mêmes
+contrôles et budgets.
+
+La sélection des versions doit aussi être confrontée à Electron `39.8.10`, au
+bundling Webpack, au packaging et aux moteurs Node déclarés par le projet. Une
+revue du 16 septembre 2026 a notamment signalé que la version courante de la
+documentation Cheerio pouvait exiger Node 22.19 ou ultérieur, alors que
+NovaChat autorise encore Node 20. Cette compatibilité doit être vérifiée avant
+verrouillage sans relever silencieusement le prérequis du projet.
+
+Références à contrôler pendant cet arbitrage :
+[Electron `session`](https://www.electronjs.org/docs/latest/api/session),
+[Cheerio](https://cheerio.js.org/docs/intro/),
+[Readability](https://github.com/mozilla/readability),
+[PDF.js](https://mozilla.github.io/pdf.js/).
+
 ## Pipeline complet d’une recherche
 
 ```text

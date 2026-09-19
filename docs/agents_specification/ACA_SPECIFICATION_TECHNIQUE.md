@@ -334,6 +334,25 @@ confirmation :
 Les scripts npm, binaires natifs et dépendances demandant Node complet restent
 hors périmètre de la première version, sauf nouvelle étude de sécurité.
 
+### Outils de build et de test à figer
+
+L’application packagée ne peut pas supposer que les dépendances de
+développement du dépôt existent chez l’utilisateur. La décision technique doit
+préciser comment Node, TypeScript et npm — ou leurs remplaçants — sont livrés,
+versionnés et exécutés avec ASAR et les fuses Electron sur chaque plateforme.
+
+Une variante étudiée utilise `node:test` et `node:assert/strict` dans le runtime
+isolé afin de ne pas embarquer Vitest dans chaque agent. Elle doit être
+comparée au format déclaratif `ConnectorTestDefinition` : dans les deux cas,
+un harnais de confiance garde la maîtrise des entrées, des attentes et des
+tests négatifs. Un rapport produit uniquement par le code généré ne prouve ni
+le confinement ni le refus effectif d’un accès.
+
+Les schémas `ajv` devront refuser les références distantes et les mots-clés non
+autorisés, borner taille, profondeur et expressions régulières, et ne jamais
+décider seuls d’une permission. De même, un audit npm indisponible ou
+inexécutable est un échec de validation, pas une réussite implicite.
+
 ## Frontière d’exécution du connecteur
 
 Le code généré ne doit jamais être chargé par `import()` dans le process
@@ -356,6 +375,11 @@ Une solution de type QuickJS/WASM est une candidate cohérente avec ce modèle,
 mais doit encore être comparée à un helper Node protégé par un sandbox OS. La
 solution choisie devra fonctionner dans le package Electron Windows et être
 testée comme une frontière, pas seulement comme une séparation de processus.
+
+Sur une plateforme où la frontière retenue n’est pas disponible ou n’a pas
+été validée, l’activation et l’exécution du connecteur doivent être refusées.
+Il ne peut exister aucun repli vers AEL, `utilityProcess`, les permissions Node
+seules ou un processus Node non confiné.
 
 Tant que ce choix n’est pas validé, ACA ne peut pas être considéré comme
 techniquement spécifié : autoriser du TypeScript arbitraire dans un simple
