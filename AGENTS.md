@@ -10,9 +10,11 @@ Avant toute modification significative, lire dans cet ordre :
 4. `docs/RISKS.md`
 5. `docs/NEXT_STEPS.md`
 
-La documentation a été auditée contre le code le 27 août 2026. Le commit
-`d589ae1` est la base historique de l’audit, complétée par les phases 3 à 5 et
-la réorganisation technique de la phase 6.1.
+Revue de cohérence documentaire : 21 septembre 2026, sur `6245e7a`.
+Le commit `d589ae1` est la base historique de l’audit ; la phase 6.1 est livrée
+par `ebb9b03` et intégrée dans `6245e7a`, tous deux du 19 septembre 2026.
+Cette revue ne constitue pas une nouvelle exécution des validations.
+La finalisation documentaire 6.2 du 22 septembre ne modifie pas ce bilan.
 
 ## État actif
 
@@ -25,16 +27,31 @@ Les anciens identifiants encore présents dans des messages de conversation
 sont normalisés vers ACP/AEL à la frontière IPC afin de ne pas bloquer une
 sauvegarde ; cette tolérance ne s’applique pas aux opérations, settings ou
 espaces de stockage des agents.
-La prochaine étape est la relecture conjointe du cahier fonctionnel et de la
-spécification technique ARI, la résolution des choix techniques listés, puis le
-découpage en tâches de la phase 6.2. ARI doit être validé avant ACA, en
-préservant les contrats de sécurité, données, visibilité et validation.
-ARI est une capacité de recherche transversale accessible à Nova et à tout
-agent autorisé ; il ne doit pas être conçu comme un composant réservé à ACA.
-Le cadrage fonctionnel d’ARI ne contient plus de question ouverte, mais son
-cahier technique n’est pas encore validé. ACA possède aussi un cahier technique
-initial ; sa frontière d’exécution du code généré reste bloquante. Les réponses
-ACA restent à relire avec l’utilisateur avant le découpage de la phase 6.3.
+La documentation 6.2 est finalisée le 22 septembre 2026 et prête pour le
+développement. Références normatives :
+`docs/agents_specification/ARI_SPECIFICATION.md` et son compagnon technique.
+Les tâches 6.2.1–6.2.11 sont dans `docs/NEXT_STEPS.md`. ARI n’est pas encore
+implémenté ; aucun résultat de test ARI n’est acquis par cette rédaction.
+
+Périmètre obligatoire : Google/URL directe via curl, lecture statique et PDF,
+Credentials, registre d’accords révocables, Outlook personnel et Microsoft 365
+professionnel/scolaire, routage Nova/ACP/AEL. Gmail et Orange sont facultatifs.
+Exception robots uniquement pour `/search` Google, jamais captcha/403/429.
+Pas d’API de recherche hébergée ni de navigateur de scraping. API officielles
+et IMAP chiffré sont autorisés pour les services. Le runner curl est dédié au
+main, sans shell et sans élargissement d’AEL.
+
+Les accords portent sur compte, demandeur réel et provider/destination ; ils
+sont mémorisés et contrôlés aussi lors de la réutilisation du chat privé.
+Les versions, artefacts curl, configuration Microsoft et comptes réels sont
+qualifiés pendant les tâches de développement, pas présumés disponibles.
+ARI est transversal et doit être implémenté et validé avant ACA. Le runtime
+ACA reste bloquant pour 6.3 et ses cahiers restent à finaliser séparément.
+
+La demande active est uniquement documentaire : aucun code, installation de
+dépendance ni suppression de données dans ce chantier. La prochaine étape de
+code est 6.2.1. Chaque agent garde un cahier fonctionnel et un compagnon
+technique ; distinguer systématiquement cible documentée et code livré.
 
 ## Invariants d’architecture
 

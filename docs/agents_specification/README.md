@@ -10,6 +10,9 @@ Chaque agent système possède deux documents distincts :
 En cas de contradiction, le cahier fonctionnel validé exprime l’intention
 produit. La spécification technique doit être corrigée avant implémentation ; le
 code existant reste la référence factuelle pour ACP et AEL.
+Si deux exigences fonctionnelles se contredisent ou si leur faisabilité reste
+à établir, signaler l’arbitrage à l’utilisateur avant de valider les cahiers.
+Une proposition technique ne vaut pas modification implicite de ses décisions.
 
 Tous les cahiers doivent préserver les consignes de [AGENTS.md](../../AGENTS.md),
 les frontières d’[ARCHITECTURE.md](../ARCHITECTURE.md), les contrats de
@@ -21,7 +24,7 @@ les frontières d’[ARCHITECTURE.md](../ARCHITECTURE.md), les contrats de
 | --- | --- | --- | --- |
 | ACP | [ACP_SPECIFICATION.md](ACP_SPECIFICATION.md) | [ACP_SPECIFICATION_TECHNIQUE.md](ACP_SPECIFICATION_TECHNIQUE.md) | implémenté et validé en 6.1 |
 | AEL | [AEL_SPECIFICATION.md](AEL_SPECIFICATION.md) | [AEL_SPECIFICATION_TECHNIQUE.md](AEL_SPECIFICATION_TECHNIQUE.md) | implémenté et validé en 6.1 |
-| ARI | [ARI_SPECIFICATION.md](ARI_SPECIFICATION.md) | [ARI_SPECIFICATION_TECHNIQUE.md](ARI_SPECIFICATION_TECHNIQUE.md) | fonctionnel complet, technique à valider en 6.2 |
+| ARI | [ARI_SPECIFICATION.md](ARI_SPECIFICATION.md) | [ARI_SPECIFICATION_TECHNIQUE.md](ARI_SPECIFICATION_TECHNIQUE.md) | cahiers finalisés le 22 septembre, tâches prêtes ; code 6.2 non implémenté |
 | ACA | [ACA_SPECIFICATION.md](ACA_SPECIFICATION.md) | [ACA_SPECIFICATION_TECHNIQUE.md](ACA_SPECIFICATION_TECHNIQUE.md) | études fonctionnelle et technique à valider en 6.3 |
 
 ## Ordre de validation

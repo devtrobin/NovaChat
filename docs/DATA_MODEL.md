@@ -52,7 +52,10 @@ locale dans `from` et `to`. Cette compatibilité bornée protège la lecture, la
 poursuite et la sauvegarde des conversations existantes ; elle ne s’applique ni
 aux opérations d’agent, ni aux settings, ni aux chemins de stockage. Après
 validation, l’état sauvegardé contient les identifiants et rôles canoniques
-ACP/AEL. Une valeur inconnue reste invalide.
+ACP/AEL. Une valeur inconnue reste invalide. Ce traitement s’applique aux
+messages reçus dans `chat.save` et `ai.runTurn` ; le parser ne vérifie pas
+qu’ils existaient auparavant sur disque. Il ne fournit pas d’alias aux
+opérations d’agent.
 
 ## Stockage des conversations principales
 
@@ -217,3 +220,33 @@ Les résultats réinjectés au provider sont tronqués à 4 000 caractères. La
 sortie de commande conservée en mémoire est également plafonnée par
 `aelExecution.maxOutputCharacters`. Les prompts et réponses fonctionnels
 restent potentiellement sensibles même après la redaction ciblée des secrets.
+
+## Extension cible 6.2 — contrats ARI et accès, non implémentés
+
+Les schémas version 1 sont définis dans le
+[compagnon technique ARI](agents_specification/ARI_SPECIFICATION_TECHNIQUE.md#contrats-partagés-et-validation).
+L’intention public/account est séparée de l’enveloppe d’identité construite par
+le main. Les handlers ne font confiance ni aux IDs de demandeur ni aux droits
+annoncés dans un payload renderer/modèle.
+
+Stockages cibles : entrées et accords par UUID dans `userData/credentials/`,
+cache OAuth chiffré dans `userData/secrets/credentials/`, tâches dans
+`agentsDirectory/agent-ari/tasks/`. Les ACL visibles sont une projection des
+accords, pas un registre concurrent. Le modèle des conversations/messages
+reste éclaté et les marqueurs de provenance privée sont conservés par le main.
+
+L’extension de `ChatMessage` transporte une référence de provenance privée ;
+`chat.save` doit la préserver/reconcilier avec le registre main. Avant chaque
+appel provider, y compris un tour ultérieur, les messages privés sans accord
+valide pour la destination sont remplacés par un marqueur sans contenu.
+`visibility` continue à commander l’affichage et n’accorde aucun droit d’export.
+Les traces d’appels contenant des extraits privés ne conservent que les métriques
+et motifs expurgés. Les résultats privés ARI sont chiffrés ; le chat entier
+n’est pas implicitement migré ou chiffré par cette extension.
+
+Rétention ARI : 90 jours ou 1 000 tâches finales. La provenance d’un message
+survit à la purge de sa tâche tant que le message existe. Révoquer un accord
+bloque les appels futurs sans effacer le chat ; restaurer un backup d’accords
+ne réactive pas silencieusement un droit. Le schéma de stockage, l’IPC et les
+courses de révocation sont détaillés dans le compagnon pour éviter les copies
+divergentes de contrats.

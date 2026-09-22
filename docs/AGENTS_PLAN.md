@@ -14,7 +14,8 @@ Utilisateur
   -> Utilisateur
 ```
 
-Nova reste l’unique orchestrateur. Les agents ne s’appellent pas entre eux.
+Nova reste l’unique orchestrateur. Les agents ne s’appellent pas directement ;
+les délégations futures à ARI passent également par le main.
 Le registre partagé `src/shared/system-agent.registry.ts` centralise leurs IDs,
 acronymes, libellés, capacités, outils et contextes par défaut.
 
@@ -117,12 +118,14 @@ renderer.
 
 ## Identités canoniques
 
-Seuls `agent-acp` et `agent-ael` sont acceptés dans les contrats, settings,
-messages et chemins. Les anciens espaces de développement ne sont pas migrés :
-ils doivent être supprimés après confirmation explicite, sans toucher aux
-paramètres généraux ni au secret OpenAI.
+Seuls `agent-acp` et `agent-ael` sont acceptés pour les opérations, settings
+et chemins agents. Les messages de chat reçus en IPC bénéficient d’une
+normalisation des anciens identifiants et rôles connus ; la validation ne
+vérifie pas l’ancienneté de ces messages. Les anciens espaces de développement
+ont été supprimés selon le bilan de clôture, sans migration et sans toucher
+aux paramètres généraux, conversations principales ni au secret OpenAI.
 
-La décision, son périmètre de données final et l’unique tolérance réservée aux
+La décision, son périmètre de données final et la normalisation destinée aux
 messages historiques sont consignés dans
 [l’ADR 005](decisions/005-acp-ael-breaking-reset.md).
 
@@ -137,10 +140,9 @@ messages historiques sont consignés dans
 
 ## Direction recommandée
 
-La phase 6.1 est close après le nettoyage local confirmé et le test manuel
-ACP/AEL. Relire ensemble les cahiers fonctionnel et technique ARI, résoudre les
-choix techniques puis découper 6.2 en tâches vérifiables. ACA vient seulement
-après la validation d’ARI et la validation de sa propre frontière d’exécution.
+La phase 6.1 est close. Les cahiers ARI 6.2 sont finalisés et les tâches
+6.2.1–11 sont prêtes pour le développement. Implémenter puis valider ARI avant
+ACA ; la finalisation de 6.2 ne valide pas le runtime ou les cahiers ACA.
 
 Un nouvel agent devra :
 
@@ -155,14 +157,14 @@ Un nouvel agent devra :
 ## Références techniques par agent
 
 Chaque agent possède un cahier fonctionnel et un compagnon technique. Les
-documents ACP/AEL décrivent l’existant ; ARI/ACA restent des conceptions à
-valider avant implémentation.
+documents ACP/AEL décrivent l’existant ; ARI décrit la cible 6.2 finalisée
+mais non implémentée ; ACA reste une conception à valider.
 
 | Agent | Outil principal | Spécification technique |
 | --- | --- | --- |
 | ACP | Modèle et parser de cadrage, sans outil d’action | [ACP](agents_specification/ACP_SPECIFICATION_TECHNIQUE.md) |
 | AEL | Terminal local contrôlé par le `main` | [AEL](agents_specification/AEL_SPECIFICATION_TECHNIQUE.md) |
-| ARI | HTTP contrôlé, extraction de documents et rendu Electron isolé | [ARI](agents_specification/ARI_SPECIFICATION_TECHNIQUE.md) |
+| ARI | curl contrôlé, extraction statique et lecture Outlook via Graph | [ARI](agents_specification/ARI_SPECIFICATION_TECHNIQUE.md) |
 | ACA | Génération, compilation, tests et activation de connecteurs | [ACA](agents_specification/ACA_SPECIFICATION_TECHNIQUE.md) |
 
 ## Relations entre agents
@@ -182,39 +184,26 @@ droits, crée la tâche cible et rattache son résultat au parent. ARI n’utili
 pas AEL pour scraper et ACA n’utilise pas AEL comme substitut à son futur
 environnement d’exécution isolé.
 
-## Contrat technique de délégation proposé
+## Contrat technique de délégation ARI — cible 6.2
 
-Ce contrat prépare les phases 6.2 et 6.3. Il ne décrit pas une API déjà
-disponible et ne doit pas être ajouté implicitement au socle ACP/AEL.
+Le schéma normatif `ARIEnvelope`, `ARIInput`, `ARIResult`, les états, budgets
+et contraintes sont dans le
+[compagnon ARI](agents_specification/ARI_SPECIFICATION_TECHNIQUE.md#contrats-partagés-et-validation).
+Le main crée les identités depuis ses tâches enregistrées ; aucun modèle ou
+renderer ne choisit originator/requester/target/budget/provider.
 
-L’orchestrateur du `main` construira et validera une enveloppe contenant au
-minimum :
+Une sous-tâche active par parent, une recherche ARI par tour, profondeur de deux
+arêtes depuis Nova et refus des cycles. Le parent attend avec `waiting-agent` ;
+ARI ne délègue pas et retourne son dossier. Arrêt et révocation se propagent.
+Le temps enfant est borné par le budget parent et aucun compteur n’est réarmé.
+Les tâches retrouvées au redémarrage sont interrompues, jamais rejouées.
 
-- `delegationId`, `turnId`, `parentTaskId`, conversation et message d’origine ;
-- `originatorId`, identité de la tâche racine ;
-- `requesterAgentId`, agent qui demande réellement le travail, ou `nova` ;
-- `targetAgentId`, capacité demandée et objectif borné ;
-- contexte expurgé, URL ou références de résultats strictement nécessaires ;
-- échéance héritée, budgets restants et référence d’annulation.
+L’action Nova est `request-ari-research`. ACP peut signaler `needs-research` ;
+AEL peut demander une recherche pendant la résolution d’objectif avant toute
+permission/exécution. Une reprise maximum, sans modifier les permissions AEL.
+Les droits privés sont vérifiés sur l’origine, le demandeur réel, ARI et le
+provider destinataire. Les résumés restent marqués privés et contrôlés dans les
+tours suivants. Les extensions sont à implémenter, pas déjà présentes en 6.1.
 
-Les identités proviennent des tâches enregistrées par le `main`. Un modèle ne
-peut ni les choisir dans son texte ni emprunter les droits de Nova, d’ARI ou
-d’un autre agent. Avant lancement, le `main` contrôle l’activation, la
-capacité autorisée, les droits du demandeur effectif, l’absence de boucle, le
-budget et le temps restant. Le courtier Credentials vérifie les ACL de ce même
-demandeur, même lorsque la recherche est exécutée par ARI.
-
-Le résultat contient l’identifiant de délégation, un statut terminal, les
-données typées de la capacité, les budgets consommés et des diagnostics
-expurgés. Le `main` le rattache au parent ; le simple retour d’un résultat ne
-peut pas créer une nouvelle tâche.
-
-La proposition initiale limite un parent à une sous-tâche active, refuse une
-destination déjà présente dans la chaîne et borne l’enfant au temps restant
-du parent. Une délégation ne remet aucun compteur à zéro. L’arrêt du parent
-annule les appels, attentes et opérations encore annulables de ses enfants.
-
-La phase 6.2 devra figer le schéma exact, la profondeur, les budgets, l’état
-d’attente du parent et les tests d’annulation/reprise. La phase 6.3 devra en
-plus définir la persistance des sous-tâches sans jamais rejouer
-automatiquement un effet externe incertain après redémarrage.
+ACA réutilisera ce contrat et le registre d’accords après sa propre validation.
+Son futur confinement ne peut pas être remplacé par AEL.

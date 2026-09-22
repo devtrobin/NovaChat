@@ -2,13 +2,19 @@
 
 ## Statut
 
-Étude technique initiale à relire après validation et implémentation d’ARI.
+Étude technique initiale à relire après implémentation et validation d’ARI.
+Les contrats documentaires 6.2 sont finalisés ; cela ne valide pas ceux d’ACA.
 ACA et les agents spécialisés ne sont pas encore implémentés. Ce document
 complète le [cahier fonctionnel ACA](ACA_SPECIFICATION.md) et sépare les
 décisions déjà prises des choix techniques encore bloquants.
 
 La phase 6.3 ne pourra pas être découpée tant que le cahier fonctionnel ACA et
 la frontière d’exécution du code généré n’auront pas été validés.
+
+Le choix initial d’API Node natives dans le cahier fonctionnel reste à
+réconcilier avec le runtime à capacités proposé ici. TypeScript est retenu,
+mais ni l’accès direct à Node ni QuickJS/WASM ne sont validés comme solution
+d’exécution du code généré.
 
 ## Objectifs techniques
 
@@ -236,8 +242,10 @@ ACA, le modèle et le code source généré ne reçoivent jamais la valeur d’u
 secret. Le `CredentialBroker` résout la référence au moment d’une opération
 autorisée et applique l’authentification sans retourner la valeur au connecteur.
 
-Le registre Credentials développé pour ARI est réutilisé. Chaque référence
-vérifie `allowedAgentIds`, les domaines et la méthode d’authentification.
+Le registre Credentials prévu par ARI est réutilisé. Les droits viennent du
+registre d’accords ; `allowedAgentIds` n’en est qu’une projection. Le courtier
+vérifie aussi domaines, méthode d’authentification et provenance/destinataire
+lorsqu’un contenu privé est envoyé au provider.
 
 ## Contrat des actions connecteur
 
@@ -544,3 +552,12 @@ Les tests ne doivent jamais utiliser une boîte e-mail ou un compte réel en CI.
 
 Ces décisions sont nécessaires avant de déclarer la spécification technique
 ACA complète. Elles n’empêchent pas de finaliser d’abord ARI en phase 6.2.
+
+## Contrats partagés désormais fixés par ARI 6.2
+
+Les accords persistants, la provenance privée, l’enveloppe de délégation et les
+budgets sont définis dans [ARI_SPECIFICATION_TECHNIQUE.md](ARI_SPECIFICATION_TECHNIQUE.md).
+ACA devra réutiliser ces contrats, sans réintroduire de droits implicites
+lorsqu’il agit comme demandeur. Ils sont prêts pour le développement ARI mais
+pas encore disponibles dans le code. Les propositions de ce cahier 6.3 doivent
+être alignées sur cette base lors de sa finalisation.

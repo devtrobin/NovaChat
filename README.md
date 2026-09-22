@@ -57,8 +57,9 @@ npm.cmd run package
 npm.cmd run ci
 ```
 
-Au 27 août 2026, TypeScript, ESLint et les 281 tests Vitest répartis dans
-41 fichiers passent. Les anciens contournements connus de la policy AEL sont
+Le bilan de phase 6.1, intégré le 19 septembre 2026, rapporte la réussite de
+TypeScript, ESLint et des 281 tests Vitest répartis dans 41 fichiers. Ces
+contrôles n’ont pas été rejoués pendant la revue documentaire du 21 septembre. Les anciens contournements connus de la policy AEL sont
 couverts par des tests de régression normaux.
 
 ## Configuration OpenAI
@@ -144,3 +145,10 @@ Lecture recommandée :
 - [handoff express](docs/HANDOFF.md).
 
 NovaChat est distribué sous [licence MIT](LICENSE).
+
+## Prochain développement
+
+La documentation de la phase 6.2 est prête : ARI, recherche publique par curl,
+accords persistants et Outlook personnel/professionnel/scolaire. Son code reste
+à développer selon [NEXT_STEPS.md](docs/NEXT_STEPS.md). Gmail et Orange sont
+facultatifs pour cette première livraison ; ACA vient après la validation ARI.

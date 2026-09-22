@@ -330,3 +330,25 @@ en clair.
 - `hideInternalConversations` filtre les messages dont la visibilité résolue
   vaut `internal`, sans modifier le stockage. Les permissions, saisies,
   progressions publiques et résultats d’un `/cmd` utilisateur restent visibles.
+
+## 14. Cible ARI 6.2 — recherche publique et privée, non implémentée
+
+Contrat de référence : [spécification technique ARI](agents_specification/ARI_SPECIFICATION_TECHNIQUE.md).
+
+Recherche publique : Nova reçoit une demande, le main crée l’enveloppe,
+examine l’URL directe éventuelle puis Google si nécessaire, contrôle les
+candidats, extrait le texte et retourne sources/faits/limites. Aucun script de
+page n’est exécuté. Les sites demandant un compte deviennent des tentatives
+structurées et peuvent produire un brouillon inactif ; les alternatives
+publiques sont poursuivies.
+
+Recherche privée : choisir le compte Outlook, vérifier les accords, connecter
+par OAuth si nécessaire, interroger Graph via curl puis soumettre les seuls
+extraits utiles au provider autorisé. Aucun passage par Google. Le résultat
+et ses dérivés conservent la provenance privée jusque dans la conversation.
+
+Une demande issue d’ACP/AEL passe par Nova/main, met le parent en attente puis
+le reprend une seule fois. L’identité du véritable demandeur est préservée.
+Arrêter le tour ou révoquer un accès annule les opérations concernées ; aucune
+reprise automatique après redémarrage. Les interfaces Credentials et Accès
+accordés rendent les droits persistants consultables et révocables.

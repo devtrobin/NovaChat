@@ -32,7 +32,7 @@ expliquer la rupture de données de développement réalisée pendant la phase 6
 - identifiant canonique : `agent-ael` ;
 - dossier local : `agents/agent-ael/` ;
 
-Le nom recommandé décrit la capacité réelle sans la confondre avec un appareil
+Le nom validé décrit la capacité réelle sans la confondre avec un appareil
 matériel : AEL transforme un objectif en commande terminal, applique les
 contrôles de permission et exécute localement.
 
@@ -90,8 +90,9 @@ existants sont normalisés vers ACP/AEL à la frontière IPC.
 - Le renderer ne reçoit aucun accès direct au shell.
 - Les commandes inconnues, interactives ou non analysables conservent leur
   traitement restrictif.
-- Le renommage ne modifie ni `/cmd`, ni les catégories de permission, ni les
-  règles mémorisées.
+- Le renommage ne modifie ni `/cmd`, ni les catégories ou la sémantique des
+  permissions ; les anciennes règles mémorisées ont disparu avec les espaces
+  agents supprimés. Les nouvelles règles sont stockées dans les espaces canoniques.
 
 ## Non-objectifs
 

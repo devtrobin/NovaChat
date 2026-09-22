@@ -1,9 +1,10 @@
 # Base de connaissance NovaChat
 
 Cette base décrit l’état réellement observé du projet, et non uniquement
-l’intention historique. Elle a été vérifiée le **27 août 2026**. Le commit
-`d589ae1` constitue la base historique de l’audit, complétée par les phases 3
-à 5 et la réorganisation technique de la phase 6.1.
+l’intention historique. Revue de cohérence documentaire le **21 septembre
+2026** sur `6245e7a`, sans nouvelle exécution des validations. Le commit
+`d589ae1` constitue la base historique de l’audit ; la phase 6.1 est livrée par
+`ebb9b03`, intégré dans `6245e7a` le 19 septembre 2026.
 
 Le fichier [../AGENTS.md](../AGENTS.md) fournit la version courte destinée aux
 outils et agents qui ouvrent le dépôt.
@@ -14,9 +15,12 @@ L’assainissement du code est terminé. Le renommage technique d’ACP et d’A
 leur registre partagé, les tests, TypeScript, ESLint et le packaging de la
 phase 6.1 sont validés. Les anciens dossiers locaux ont été supprimés après
 confirmation et le test manuel ACP/AEL a réussi : la phase 6.1 est close. La
-relecture conjointe des cahiers fonctionnel et technique ARI, puis son découpage,
-constituent la prochaine étape en 6.2, avant la création automatique d’agents
-avec ACA en 6.3. Les autres nouvelles capacités sont reportées en phase 7.
+documentation ARI 6.2 est finalisée le 22 septembre 2026, avec tâches ordonnées
+prêtes pour le développement : curl, recherche publique, accords persistants
+et Outlook personnel/professionnel/scolaire. Gmail et Orange restent
+facultatifs. ARI n’est pas encore implémenté. Voir [NEXT_STEPS.md](NEXT_STEPS.md)
+et [RISKS.md](RISKS.md) pour les validations et prérequis d’exécution.
+ACA 6.3 conserve ses propres choix ouverts ; les autres capacités restent en 7.
 
 ## Parcours de lecture
 

@@ -2,9 +2,10 @@
 
 ## Statut
 
-Référence technique de l’implémentation existante, auditée contre le code le
-27 août 2026. Cette spécification décrit le comportement livré à la clôture de
-la phase 6.1. Elle complète le
+Référence technique du code de phase 6.1 intégré le 19 septembre 2026
+(`ebb9b03`, puis `6245e7a`). Revue documentaire le 21 septembre 2026 ;
+les validations d’exécution rapportées ne sont pas rejouées par cette revue.
+Cette spécification décrit le comportement livré à la clôture de la phase 6.1. Elle complète le
 [cahier fonctionnel AEL](AEL_SPECIFICATION.md), qui reste la source de vérité
 pour la mission et les règles métier.
 
@@ -26,7 +27,7 @@ pour la mission et les règles métier.
 | Définition système | `src/shared/system-agent.registry.ts` |
 | Orchestration de tâche | `src/main/agents/agent-task.ael.ts` |
 | Résolution objectif → commande | `src/main/agents/agent-task.ael-command.ts` |
-| Profil des commandes générées | `src/main/ael/ael.agent-command-profile.ts` |
+| Profil des commandes confiées à AEL | `src/main/ael/ael.agent-command-profile.ts` |
 | Policy de permission | `src/main/ael/ael.policy*.ts` |
 | Parser shell | `src/main/ael/ael.command-parser.ts` |
 | Demande de permission | `src/main/agents/agent-task.ael-permission.ts` |
@@ -43,10 +44,10 @@ pour la mission et les règles métier.
 ## Flux d’exécution
 
 ```text
-Nova ou ACP délègue une demande à AEL
+Nova délègue à AEL, directement ou sur recommandation d’ACP
   -> mode command : conserver une commande reconnue
      ou mode goal : demander une commande au provider
-  -> profil terminal des commandes générées
+  -> profil terminal de toutes les commandes agent
   -> parsing et classification par la policy
   -> lecture sûre : autorisation automatique
      action classée : règle mémorisée ou confirmation
@@ -78,9 +79,11 @@ explication. Les wrappers de shell, scripts multilignes, interfaces graphiques,
 consoles secondaires et outils interactifs connus sont interdits par le prompt
 et vérifiés ensuite par le profil terminal.
 
-## Profil terminal des commandes générées
+## Profil terminal des commandes agent
 
-`evaluateAELAgentCommandProfile` s’applique avant la policy de permission. Il
+`evaluateAELAgentCommandProfile` s’applique dans `runAELAgentTask` avant la
+policy de permission, aussi bien à une commande exacte en mode `command` qu’à
+une commande générée depuis un objectif. Il
 refuse notamment :
 
 - une syntaxe que le parser classe comme dangereuse ou non analysable ;
@@ -232,7 +235,7 @@ commande est en cours.
 
 - Le shell appartient exclusivement au process `main`.
 - Le preload n’expose qu’une API minimale et validée à l’exécution.
-- Le profil terminal réduit les commandes générées par l’IA.
+- Le profil terminal filtre toutes les commandes passant par une tâche AEL.
 - La policy décide d’une UX de consentement ; elle n’est pas un sandbox.
 - Une commande explicitement autorisée est toujours interprétée par le shell de
   la plateforme et peut employer une syntaxe que l’analyse statique ne comprend
@@ -246,7 +249,7 @@ La couverture automatisée comprend notamment :
 
 - 119 cas normaux et adversariaux de policy ;
 - séparateurs, expansions, wrappers, redirections, chemins et options mutantes ;
-- profil terminal des commandes générées ;
+- profil terminal de toutes les commandes agent ;
 - commandes Windows de lecture ciblée ;
 - buffer UTF-8 avec caractères multioctets séparés entre chunks ;
 - détection de saisie et suspension du timeout ;
@@ -271,3 +274,13 @@ Electron.
 
 Toute extension doit lire `docs/RISKS.md` et conserver la matrice restrictive
 avant d’élargir une allowlist ou un canal d’exécution.
+
+## Extension documentée pour ARI en 6.2 — non implémentée
+
+La [spécification ARI](ARI_SPECIFICATION_TECHNIQUE.md#états-délégation-et-appels-aux-autres-agents)
+fixe l’action de recherche via Nova/main et la reprise unique du parent.
+AEL pourra demander une recherche pendant la résolution de l’objectif, avant toute permission ou exécution shell.
+Le main construit l’identité, applique budgets et droits et réinjecte le
+résultat au demandeur. Cette extension ciblée appartient à 6.2.8 ; le reste de
+ce document décrit le comportement livré en 6.1. La policy et les permissions
+terminal ne sont pas assouplies.

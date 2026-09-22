@@ -35,7 +35,11 @@ Sous macOS ou Linux, la forme habituelle est `npm ci`.
 `npm start` fonctionne dans `cmd.exe`. Sur la machine auditée, PowerShell
 interdit `npm.ps1`; `npm.cmd` est donc nécessaire.
 
-## État de validation au 27 août 2026
+## Dernier bilan de validation enregistré
+
+Bilan associé à la phase 6.1 intégrée le 19 septembre 2026. La date exacte des
+exécutions n’est pas établie par cette revue documentaire du 21 septembre ;
+les résultats ci-dessous sont rapportés, pas nouvellement vérifiés.
 
 - `npm.cmd ci` : installation exacte depuis `package-lock.json` réussie.
 - `npm.cmd exec tsc -- --noEmit` : réussi.
@@ -43,7 +47,8 @@ interdit `npm.ps1`; `npm.cmd` est donc nécessaire.
 - `npm.cmd run lint` : réussi.
 - `npm.cmd run package` : réussi pour `win32-x64`.
 - `npm.cmd run check` : réussi.
-- `npm.cmd audit` et `npm.cmd audit --omit=dev` : 0 vulnérabilité.
+- `npm.cmd audit` et `npm.cmd audit --omit=dev` : 0 vulnérabilité dans le bilan
+  historique, à remesurer lors de la prochaine validation technique.
 - `npm.cmd run make` : non exécuté et volontairement reporté à la toute
   dernière phase de validation de distribution.
 
@@ -184,3 +189,18 @@ journaliser ou committer les anciens settings/backups.
 - Une mise à jour d’Electron Forge doit tenter de retirer un par un les
   overrides `tar`, `tmp`, `uuid` et `webpack-dev-server`, puis rejouer audits,
   tests, démarrage et packaging.
+
+## Préparation du développement ARI 6.2
+
+Les cahiers ARI sont finalisés et le [plan ordonné](NEXT_STEPS.md#phase-62--ari--agent-de-recherche-internet)
+commence par la qualification curl/CA/npm, sans prétendre qu’ils sont déjà
+installés. Conserver la distinction entre contrôles historiques du socle et
+résultats ARI futurs. La validation obligatoire cible Windows x64 ; les tests
+natifs macOS/Linux ne sont pas déduits de ce résultat.
+
+6.2.6 demande un enregistrement Microsoft client public acceptant comptes
+personnels et organisations, son redirect loopback et des permissions déléguées
+minimales. 6.2.11 demande un compte de test de chaque type, sans secrets dans les
+fixtures ou le dépôt. Les tests CI utilisent des transports/fixtures simulés.
+Les vérifications du package sont distinctes de `make` et des installateurs,
+qui restent réservés à la dernière phase.

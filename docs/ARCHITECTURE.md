@@ -200,7 +200,8 @@ main et le renderer.
 
 - accepte une commande exacte ou un objectif ;
 - pour un objectif, appelle OpenAI afin de produire une commande ;
-- valide la commande générée avec un profil terminal non interactif ;
+- valide toute commande de tâche agent, exacte ou générée, avec le profil
+  terminal non interactif ;
 - évalue la policy de permission ;
 - consulte les règles exactes mémorisées ;
 - demande éventuellement une décision à l’utilisateur ;
@@ -225,10 +226,12 @@ responsabilités sont séparées entre `agent-storage.paths.ts`,
 ### Domaine `ael`
 
 ```text
-command string
+commande exacte ou générée d’une tâche AEL
+  -> evaluateAELAgentCommandProfile
+  -> résolution de permission
+  -> startAELCommand
   -> normalizeCommand
   -> assertCommandAllowed
-  -> validateAELAgentCommand (commandes générées uniquement)
   -> resolveShell
   -> spawn
   -> registry
@@ -259,9 +262,9 @@ donc pas recevoir d’autorisation permanente. La policy ne s’applique pas à
 `/cmd`, qui est une exécution explicitement demandée par l’utilisateur. Voir
 [RISKS.md](RISKS.md) pour ses limites.
 
-Avant cette classification, `ael.agent-command-profile.ts` applique aux
-seules commandes issues de l’agent un profil plus étroit : au plus trois
-segments, uniquement des commandes déjà classifiées par la policy, sans
+Avant cette classification, `ael.agent-command-profile.ts` applique à toutes
+les commandes de tâche AEL, exactes ou générées, un profil plus étroit : au plus
+trois segments, uniquement des commandes déjà classifiées par la policy, sans
 wrapper de shell, interface graphique, console secondaire ou utilitaire
 interactif. Une commande rejetée est renvoyée à Nova sans permission et sans
 exécution. Ce profil ne s’applique pas à `/cmd`, qui exprime directement
@@ -379,3 +382,21 @@ avant chaque écriture, y compris dans les conversations agents.
   orchestrées ; aucune API de conversation directe n’est exposée.
 - Les messages `system` sont des états UI transitoires, pas un historique
   durable.
+
+## Cible finalisée 6.2 — ARI, non implémentée
+
+Le [compagnon ARI](agents_specification/ARI_SPECIFICATION_TECHNIQUE.md) est
+normatif pour cette extension. Le main pilote un runner curl à capacités fixes,
+sans shell ni délégation AEL, les parseurs en utilityProcess, les adaptateurs
+Outlook et les services globaux Credentials/Accès accordés. Le navigateur
+système sert uniquement à OAuth interactif ; aucun navigateur ne scrape les pages.
+
+La recherche privée ne passe pas par Google. Les accords et la provenance des
+résultats privés sont contrôlés avant chaque appel provider, y compris dans
+les tours ultérieurs du chat. Le renderer reçoit des projections expurgées par
+preload, jamais un accès générique au réseau ou au coffre. Les providers futurs
+ne sont pas activés par cette phase. Les conversations restent éclatées.
+
+Outlook personnel et professionnel/scolaire sont obligatoires ; Gmail/Orange
+facultatifs. Le [plan 6.2](NEXT_STEPS.md#phase-62--ari--agent-de-recherche-internet)
+définit la qualification et les tests avant de déclarer cette cible livrée.

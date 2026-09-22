@@ -64,6 +64,30 @@ Actions restantes :
 3. durcir les chemins si la policy doit devenir une vraie frontière ;
 4. ne jamais étendre l’allowlist sans tests sûrs et adversariaux.
 
+### ARI : contrats finalisés, qualification requise avant livraison — phase 6.2
+
+Le [cahier technique](agents_specification/ARI_SPECIFICATION_TECHNIQUE.md)
+fixe le runner curl, les contrôles réseau, les budgets, OAuth/Graph Outlook
+personnel et professionnel/scolaire, les accords et leur révocation. Il n’y a
+plus d’arbitrage produit bloquant le développement. Le code reste à réaliser.
+
+Les risques conditionnent les tâches et la clôture, pas une nouvelle série de
+questions utilisateur :
+
+- 6.2.1 : versions npm compatibles/auditées, curl et CA vérifiables dans le
+  package ; ne pas utiliser une version courante incompatible avec Node ;
+- 6.2.3–4 : SSRF, DNS, redirections, parseurs, limites et Google instable ;
+- 6.2.5 : aucun secret ou extrait privé dans les traces, accords effectifs et
+  provenance persistée jusque dans la réutilisation du chat ;
+- 6.2.6–7 : enregistrement Microsoft, politiques tenant, refresh et absence
+  de mutation de mail ; les deux types de comptes sont obligatoires ;
+- 6.2.10–11 : tests, récupération et parcours réels, dont un compte de chaque type.
+
+L’exception robots est limitée à la recherche Google ; captcha/403/429 ne sont
+jamais contournés. Un HTML changé ou un refus externe produit un état explicite,
+pas une promesse de disponibilité. Gmail, Orange et les autres adaptateurs
+privés restent facultatifs. Aucune qualification n’est prétendue exécutée ici.
+
 ### ACA : runtime du code généré non choisi — bloque la phase 6.3
 
 ACA devra produire du TypeScript éditable, mais un processus Node séparé, un
@@ -106,32 +130,28 @@ préservées.
 
 ## P1 — Risques de données, sécurité et cohérence produit
 
-### ARI : canal de scraping à sécuriser — bloque la phase 6.2
+### ARI : contrôles de collecte à démontrer pendant l’implémentation
 
-Le cahier fonctionnel impose un scraper Google local puis la lecture de pages
-et documents non fiables. Cette capacité introduira des risques SSRF, DNS
-rebinding, redirections dangereuses, bombes de compression, parseurs PDF/HTML,
-injection de prompt, fuite de credentials et exécution de JavaScript distant.
-Le HTML de Google est également une dépendance fragile sans contrat stable ;
-un changement peut bloquer la découverte des sources.
+Le réseau et les parseurs traitent des données non fiables. Les contrôles
+normatifs du [compagnon ARI](agents_specification/ARI_SPECIFICATION_TECHNIQUE.md)
+remplacent les anciennes variantes ouvertes : curl sans shell, connexion
+épinglée, refus des proxys non pris en charge, parseurs sans scripts, budgets,
+processus tuable et fixtures. Un processus séparé n’est pas un sandbox complet.
 
-La [spécification technique ARI](agents_specification/ARI_SPECIFICATION_TECHNIQUE.md)
-propose un client HTTP contrôlé, des parseurs sans scripts, un rendu Electron
-éphémère, des budgets et une suite de fixtures locales. Les dépendances, la
-connexion épinglée contre SSRF, le schéma d’authentification, les délais et la
-fragilité assumée de Google restent à valider.
-
-Action obligatoire : résoudre ces choix puis découper et tester le canal réseau
-avant d’activer ARI. Aucun contenu Web, cookie ou secret ne doit atteindre un
-contexte privilégié ou le modèle sans réduction et expurgation.
+La matrice de 6.2.10 doit démontrer ces contrôles et l’exception robots exacte.
+Le contrôle de provenance privée couvre aussi le chat et tous les appels
+provider, sans désactiver arbitrairement les fonctions existantes. Une
+révocation n’efface pas les données déjà envoyées. La fragilité du HTML Google
+reste une limite opérationnelle documentée, pas un choix technique à rouvrir.
 
 ### Couverture automatisée renforcée, E2E réel restant
 
 Le socle Vitest couvre désormais la policy, les parsers OpenAI/ACP, le
 stockage chat, les migrations, les commandes slash, les messages de tâche
 agent, la concurrence agent, la politique de traces et le coffre de secrets.
-Les 281 tests réussissent, dont 119 cas de policy AEL. Ils couvrent aussi les
-permissions asynchrones, la résolution concurrente, le registre d’arrêt, le
+Le dernier bilan rapporte 281 tests réussis, dont 119 cas de policy AEL ;
+ils n’ont pas été rejoués pendant la revue documentaire du 21 septembre 2026.
+Ils couvrent aussi les permissions asynchrones, la résolution concurrente, le registre d’arrêt, le
 timeout OpenAI, la reprise d’une queue après erreur, la sécurité de la fenêtre,
 la visibilité des messages et des composants React critiques rendus côté
 serveur.
@@ -331,20 +351,24 @@ licence MIT déclarée est matérialisée par `LICENSE`.
 
 ### Résolutions npm transitives — surveillance continue
 
-L’audit npm est revenu à zéro grâce aux mises à jour directes et à quatre
-résolutions transitives : `tar`, `tmp`, `uuid` et `webpack-dev-server`.
+L’audit npm était revenu à zéro dans le bilan historique grâce aux mises à
+jour directes et à quatre résolutions transitives : `tar`, `tmp`, `uuid` et `webpack-dev-server`.
 Celles-ci compensent des contraintes amont d’Electron Forge 7 et peuvent
 devenir inutiles ou incompatibles lors d’une prochaine mise à jour.
 
 Action recommandée : à chaque mise à jour d’Electron Forge, tenter de retirer
 les résolutions une par une, puis rejouer audit, tests, démarrage et packaging.
 
-## Ce qui est sain aujourd’hui
+## Acquis du socle et validations rapportées
 
-- Les audits npm complet et production signalent 0 vulnérabilité.
-- TypeScript `--noEmit` passe.
-- ESLint passe.
-- Le packaging Windows x64 passe.
+Les résultats d’exécution ci-dessous sont ceux du dernier bilan enregistré,
+pas une nouvelle mesure de la revue documentaire du 21 septembre 2026.
+
+- Audits npm complet et production : 0 vulnérabilité dans le bilan historique,
+  à actualiser lors de la prochaine validation technique.
+- TypeScript `--noEmit` : réussite rapportée.
+- ESLint : réussite rapportée.
+- Packaging Windows x64 : réussite rapportée.
 - Les domaines main/renderer/preload sont identifiables.
 - Le contrat événementiel du chat est simple.
 - La persistance éclatée est atomique par fichier, sauvegardée et observable.

@@ -25,6 +25,8 @@ Regle pratique :
 
 - toute logique provider doit rester dans `src/main/ai`
 - toute logique shell / machine doit rester dans `src/main/ael`
+- le transport curl cible d’ARI réside dans `src/main/ari` : exécutable et
+  arguments contrôlés sans shell, aucune commande générique ni extension AEL
 - toute persistence conversationnelle doit rester dans `src/main/chat`
 - l'enregistrement des IPC doit rester dans `src/main/ipc`
 

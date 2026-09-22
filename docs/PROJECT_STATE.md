@@ -2,7 +2,10 @@
 
 ## Snapshot
 
-- Date d’audit : 27 août 2026.
+- Revue du socle : 21 septembre 2026 ; documentation cible 6.2 finalisée le
+  22 septembre, sans réexécution des checks du code.
+- Code de référence : `6245e7a`, intégration du 19 septembre 2026.
+- Réorganisation 6.1 : commit `ebb9b03` du 19 septembre 2026.
 - Branche de travail : `docs/phase-6-agent-specifications`.
 - Base historique de l’audit : `d589ae1`
   (`Security: store OpenAI key in OS vault`), complétée par les phases 3 à 5
@@ -43,6 +46,7 @@ valider avant une diffusion.
 | Contexte agent éditable | Fonctionnel | `contexte.json` versionné, règles internes non éditables |
 | Historique agent | Fonctionnel | stockage et vue |
 | Providers alternatifs | Catalogue planifié | visibles comme « à venir », non sélectionnables et refusés par le main |
+| ARI 6.2 | Documentation prête, non implémenté | tâches 6.2.1–11, Outlook personnel et professionnel/scolaire obligatoires |
 | Internationalisation | Partielle | écran de boot seulement |
 | Tests automatisés | Renforcés | 281 réussites dans 41 fichiers, aucun échec attendu |
 | Packaging Windows x64 | Vérifié | `npm.cmd run package` réussi |
@@ -82,7 +86,9 @@ Sous Windows, le runtime communiqué aux agents est désormais le même
 émettre de syntaxe PowerShell ou Unix, ni dépendre de `wmic`. Un profil
 déterministe les refuse avant toute permission si elles lancent un wrapper,
 une interface graphique, une console secondaire ou un utilitaire interactif
-tel que DiskPart. Il borne aussi une inspection à trois segments et refuse les
+tel que DiskPart. Ce profil s’applique également aux commandes exactes confiées
+à une tâche AEL, contrairement à la voie utilisateur `/cmd`. Il borne aussi
+une inspection à trois segments et refuse les
 commandes que la policy ne sait pas classifier. Les commandes terminal sûres
 restent exécutables sans confirmation ; `/cmd` conserve son comportement
 d’exécution explicite par l’utilisateur.
@@ -112,7 +118,8 @@ n’existe. Ils sont désactivés dans l’UI et rejetés par la validation main
 
 ## Validation technique
 
-Réussites :
+Dernier bilan enregistré avec la phase 6.1 (résultats rapportés, non rejoués
+pendant la revue documentaire du 21 septembre 2026) :
 
 ```text
 npm.cmd test
@@ -152,7 +159,9 @@ Non vérifié :
 L’audit initial signalait 57 vulnérabilités dans l’arbre complet, dont
 2 critiques, et aucune dans les dépendances de production. Après mises à jour
 ciblées et résolutions transitives, les audits complet et production
-signalent tous les deux 0 vulnérabilité.
+signalaient tous les deux 0 vulnérabilité dans le bilan conservé. Aucun audit
+npm n’a été relancé lors de cette revue ; ce chiffre ne décrit pas une mesure
+actualisée des avis de sécurité.
 
 Les résolutions `tar`, `tmp`, `uuid` et `webpack-dev-server` de `package.json`
 compensent des contraintes amont trop anciennes d’Electron Forge 7. Elles ont
@@ -191,10 +200,12 @@ TypeScript strict, erreurs asynchrones contrôlées et modules denses découpés
 
 La réorganisation technique d’ACP et d’AEL en phase 6.1 est close : validation
 automatisée, packaging, nettoyage local confirmé et test manuel commun ont
-réussi. La prochaine étape est la relecture finale puis le découpage d’ARI en
-phase 6.2. Le cahier fonctionnel ARI est complet et une spécification technique
-détaille désormais le scraping Google, les documents, le réseau et les
-credentials ; ses choix techniques restent à valider avant le découpage. ACA
-possède aussi un cahier technique initial, dont le runtime du code généré reste
-bloquant. ARI demeure un service transversal et doit être validé avant ACA. La
-validation finale des installateurs reste la toute dernière tâche absolue.
+réussi. Les cahiers ARI et le découpage de 6.2 sont finalisés le 22 septembre
+2026 et prêts pour le développement, qui commence par 6.2.1. La cible comprend
+curl, recherche publique, comptes et accords persistants, Outlook personnel et
+Microsoft 365 professionnel/scolaire. Gmail et Orange sont facultatifs.
+Aucun composant ARI n’est encore livré et ses validations restent à exécuter.
+Les artefacts curl et la configuration Microsoft seront qualifiés pendant le
+code. ACA conserve son blocage de runtime ; sa documentation sera finalisée
+séparément. ARI reste transversal et doit être validé avant ACA. Les
+installateurs restent la dernière phase absolue.

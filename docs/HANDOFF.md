@@ -11,9 +11,10 @@ NovaChat est un Electron + React fonctionnel avec :
 - `agent-ael` pour générer/exécuter une commande locale ;
 - permissions, historique, activité et arrêt de tâches.
 
-Tests, TypeScript strict, lint et packaging Windows x64 passent au
-27 août 2026. La suite compte 281 réussites dans 41 fichiers, dont 119 cas de
-policy AEL.
+Le bilan de phase 6.1 intégré le 19 septembre 2026 rapporte tests, TypeScript
+strict, lint et packaging Windows x64 réussis : 281 tests dans 41 fichiers,
+dont 119 cas de policy AEL. Revue documentaire du 21 septembre sur `6245e7a` ;
+ces validations n’ont pas été rejouées aujourd’hui.
 La phase 2 de sécurisation AEL et la priorité P2 de maintenabilité recensée
 dans `RISKS.md` sont terminées. La phase 3 de fiabilisation des données est
 également terminée : JSON atomiques et récupérables, queues agents, migration
@@ -32,21 +33,22 @@ denses séparés.
 Pour un flux précis, consulter [WORKFLOWS.md](WORKFLOWS.md). Pour les fichiers
 et contrats, consulter [DATA_MODEL.md](DATA_MODEL.md).
 
-## Prochaine décision
+## Prochain chantier
 
-La phase 6.1 est close : réorganisation technique ACP/AEL, validation
-automatisée, packaging, suppression confirmée des trois dossiers obsolètes et
-test manuel commun ont réussi. Relire maintenant le cadrage complet d’ARI en
-phase 6.2 avec sa
-[spécification technique](agents_specification/ARI_SPECIFICATION_TECHNIQUE.md),
-résoudre les choix listés puis le découper en tâches vérifiables. Relire ensuite
-les cahiers [fonctionnel ACA](agents_specification/ACA_SPECIFICATION.md) et
-[technique ACA](agents_specification/ACA_SPECIFICATION_TECHNIQUE.md) avant le
-découpage de la phase 6.3. ARI doit être implémenté et validé avant ACA, mais
-reste un service transversal utilisable par Nova et tous les agents autorisés,
-pas une dépendance privée d’ACA. Les autres nouvelles capacités restent en
-phase 7. Les installateurs et essais du binaire distribué restent la toute
-dernière tâche absolue.
+La phase 6.1 est close. Les cahiers ARI sont finalisés pour le développement
+au 22 septembre 2026 : [fonctionnel](agents_specification/ARI_SPECIFICATION.md)
+et [technique](agents_specification/ARI_SPECIFICATION_TECHNIQUE.md).
+Commencer par 6.2.1 dans [NEXT_STEPS.md](NEXT_STEPS.md), puis suivre les dépendances.
+Aucun code ARI n’a été ajouté pendant la préparation documentaire.
+
+Outlook personnel et Microsoft 365 professionnel/scolaire sont obligatoires ;
+Gmail et Orange sont facultatifs. Les contrats fixent curl sans shell, budgets,
+lecture privée sans Google, accords révocables et provenance privée jusque dans
+les appels provider ultérieurs. Qualifier les versions/artefacts et configurer
+le client Microsoft pendant le développement ; ne pas les supposer déjà prêts.
+
+Après la validation du code ARI, finaliser les deux cahiers ACA et son runtime,
+puis découper 6.3. L’installateur `make` reste réservé à la phase finale.
 
 ## Commandes de départ
 
@@ -104,8 +106,8 @@ journaliser.
 
 ## Phrase de reprise
 
-> Reprendre NovaChat après la clôture de la phase 6.1 : relire les cahiers
-> fonctionnel et technique ARI, résoudre leurs choix puis découper la phase 6.2.
-> Relire ensuite les deux cahiers ACA avant le découpage de la phase 6.3.
-> Préserver les frontières main/preload/renderer et garder la validation de
-> distribution comme dernière tâche absolue.
+> Reprendre NovaChat à la tâche 6.2.1 : les cahiers ARI et les tâches sont
+> prêts pour le développement. Implémenter et valider le socle public, les
+> accords et Outlook personnel/professionnel/scolaire avant ACA. Ne pas
+> confondre contrats documentés et capacités livrées ; garder les installateurs
+> comme dernière tâche absolue.

@@ -17,10 +17,10 @@ Mettre le projet au propre avant toute nouvelle fonctionnalité :
 - CI, audits et packaging verts.
 
 La phase 4 a été clôturée le 19 juillet 2026 sans ajout de provider, agent ou
-workflow utilisateur. Le socle peut maintenant entrer dans la phase 6,
-consacrée d’abord à la réorganisation des agents existants, puis à l’Agent de
-Recherche Internet et enfin à la création automatique d’agents, avant tout
-autre développement fonctionnel.
+workflow utilisateur. La phase 6.1 de réorganisation ACP/AEL est désormais
+close et intégrée le 19 septembre 2026. Le cadrage et le découpage d’ARI en 6.2
+sont finalisés le 22 septembre. Son développement précède ACA en 6.3, puis les
+autres capacités.
 
 ## Phase 1 — Filet de sécurité — terminée
 
@@ -28,7 +28,8 @@ autre développement fonctionnel.
 - Policy AEL testée avec cas sûrs et cas adversariaux.
 - Parsers OpenAI et ACP testés.
 - Sérialisation, round-trip du stockage et reducers d’événements testés.
-- La suite actuelle compte 281 tests réussis, dont 119 cas de policy AEL.
+- Le dernier bilan de phase 6.1 rapporte 281 tests réussis, dont 119 cas de
+  policy AEL ; ce total ne correspond pas au seul filet de tests initial.
 
 La phase 2 est terminée. Les anciens
 `it.fails` sont désormais des tests de régression normaux.
@@ -116,7 +117,7 @@ Travaux terminés :
    `internal`, avec compatibilité déterministe pour les anciens messages.
    Permissions, saisies, progression compacte et `/cmd` utilisateur restent
    visibles ; les détails d’orchestration agent restent internes.
-5. Couverture portée à 281 tests dans 41 fichiers : permissions asynchrones,
+5. Couverture renforcée pendant cette phase : permissions asynchrones,
    résolution unique, annulation de tour, queue après échec, timeout OpenAI,
    sécurité de fenêtre, visibilité, payloads et composants React critiques.
 6. TypeScript renforcé : `allowJs` retiré, `strict` activé, casse des fichiers
@@ -149,7 +150,8 @@ Critère de sortie atteint :
 - la visibilité des messages est déterministe et testée ;
 - la fenêtre principale est durcie sans accès générique du renderer ;
 - permission, abort, courses et récupération ont des tests automatisés ;
-- TypeScript strict, ESLint, 281 tests, audits npm et packaging passent ;
+- TypeScript strict, ESLint, suite de tests, audits npm et packaging validés
+  lors de la clôture ; le total de 281 tests appartient au bilan ultérieur 6.1 ;
 - aucun bug reproductible connu n’est laissé sans entrée dans `RISKS.md` ;
 - les données locales et artefacts ne polluent plus `git status --short`.
 
@@ -254,8 +256,8 @@ L’implémentation couvre :
 6. validation complète sans changement de comportement ACP/AEL ni
    assouplissement de la policy terminal.
 
-Cette phase 6.1 doit être spécifiée, validée, implémentée et vérifiée avant de
-commencer ARI.
+La phase 6.1 est implémentée et close. Les deux cahiers ARI sont finalisés
+et le découpage de la phase 6.2 figure ci-dessous ; son code reste à réaliser.
 
 #### Découpage de la phase 6.1
 
@@ -279,111 +281,96 @@ commencer ARI.
 7. ~~**6.1.7 — Valider**~~ : 281 tests dans 41 fichiers, TypeScript, ESLint et
    le packaging Windows x64 passent. Le test manuel commun ACP/AEL a réussi.
 
-État au 27 août 2026 : phase 6.1 close. Aucune fonctionnalité nouvelle n’a été
-ajoutée et la policy terminal n’a pas été assouplie. La prochaine étape est la
-relecture conjointe des cahiers fonctionnel et technique ARI, la résolution des
-choix techniques puis le découpage en tâches de la phase 6.2.
+État revu le 21 septembre 2026 : phase 6.1 close, livrée dans `ebb9b03` puis
+intégrée dans `6245e7a` le 19 septembre. Les résultats de validation ci-dessus
+proviennent du bilan enregistré ; ils ne sont pas réexécutés par cette revue.
+Aucune fonctionnalité nouvelle n’a été ajoutée et la policy terminal n’a pas été
+assouplie en 6.1. La préparation documentaire 6.2 est finalisée le 22 septembre ;
+le prochain chantier de code commence par la tâche 6.2.1.
 
 ### Phase 6.2 — ARI — Agent de Recherche Internet
 
-Objectif retenu : ajouter un agent système de recherche Internet capable de
-rechercher et lire des pages publiques ou des contenus accessibles depuis un
-compte configuré, de privilégier les sources officielles et de restituer un
-dossier de recherche sourcé à l’assistant ou à l’agent qui l’a sollicité.
+**Prête pour le développement au 22 septembre 2026 ; non implémentée.**
+Le [cahier fonctionnel](agents_specification/ARI_SPECIFICATION.md) et le
+[compagnon technique](agents_specification/ARI_SPECIFICATION_TECHNIQUE.md)
+constituent la base finalisée. Aucune décision produit restante ; les preuves
+techniques et prérequis externes ci-dessous restent à réaliser pendant le code.
 
-Documents de référence :
+Périmètre obligatoire : recherche Google et URL directe par curl, lecture
+statique HTML/texte/JSON/PDF, Credentials et accords persistants révocables,
+Outlook personnel **et** Microsoft 365 professionnel/scolaire, routage
+Nova/ACP/AEL, interface et validations. Gmail, Orange et les autres adaptateurs
+authentifiés restent facultatifs. Aucun code ni nettoyage de données n’est
+réalisé par cette préparation documentaire.
 
-- [Cahier fonctionnel ARI](agents_specification/ARI_SPECIFICATION.md) ;
-- [Spécification technique ARI](agents_specification/ARI_SPECIFICATION_TECHNIQUE.md).
+Décisions à préserver : exception robots uniquement pour la recherche Google,
+aucun contournement de captcha/403/429, aucune API de recherche hébergée,
+aucun rendu navigateur automatique. API officielles des services et IMAP
+chiffré sont autorisés. Une recherche privée ne passe jamais par Google.
+Les accords sont vérifiés pour le compte, le demandeur réel et le provider
+réellement destinataire, y compris lors de la reprise d’une conversation.
 
-ARI est une capacité transversale utilisable par Nova, les autres agents
-système et les agents spécialisés autorisés. Il doit être étudié, découpé,
-implémenté et validé avant ACA ; ACA sera l’un de ses consommateurs pour la
-création de connecteurs, mais ARI ne lui est pas réservé.
+#### Tâches ordonnées et critères de fin
 
-La sous-phase inclura un écran Credentials générique, un registre JSON expurgé
-des secrets et un stockage chiffré dans le coffre système. La décision retient
-un `CredentialsService` dédié dans le process `main`, sans passage par AEL,
-ainsi que des sessions authentifiées strictement limitées à la lecture. ARI
-appliquera une stratégie « public d’abord » : poursuivre sur
-d’autres sources lorsqu’un site demande un compte, recenser les sites bloqués
-et arrêter le cycle après dix sites candidats par défaut si aucune réponse
-suffisante n’a été trouvée.
+Chaque tâche inclut ses tests utiles et la mise à jour de l’état réellement
+livré. Les contrôles 6.2.10/11 consolident ces preuves sans remplacer les tests
+de chaque composant. Toutes les cases sont ouvertes : ce document n’est pas
+un bilan d’implémentation.
+
+| Tâche | Dépendances | Travail et preuve de fin |
+| --- | --- | --- |
+| [ ] **6.2.1 — Qualifier outils et dépendances** | 6.1 close | versions exactes compatibles Node/Electron/Webpack, audit/licences, curl+CA hors ASAR et manifeste d’empreintes ; prévol hors réseau et absence de téléchargement runtime |
+| [ ] **6.2.2 — Figer les schémas dans le code** | 6.2.1 | registre `agent-ari`, schémas v1 intention/enveloppe/résultat/compte/accord, budgets, états, provenance ; payloads malformés et identités forgées refusés |
+| [ ] **6.2.3 — Construire le transport curl** | 6.2.1–2 | arguments et stdin contrôlés, DNS épinglé, robots et exception exacte, redirections, tailles, TLS, abort ; fixtures sûres/adversariales et zéro fuite de secret |
+| [ ] **6.2.4 — Recherche publique et documents** | 6.2.3 | URL directe, Google organique, extraction statique/PDF en worker, classement/regroupement et citations ; changement HTML/captcha/budgets produisent les états prévus |
+| [ ] **6.2.5 — Comptes, coffre, accords et provenance** | 6.2.2 | écritures atomiques, safeStorage, brouillons, registre global, révocation et marquage du chat ; garde avant tous les appels provider et réutilisation après redémarrage |
+| [ ] **6.2.6 — Connecter Microsoft** | 6.2.3, 6.2.5 | app publique personnelle+organisations, MSAL PKCE via curl, callback local, cache chiffré, scopes minimaux, compte stable et erreurs tenant ; fixtures OAuth et configuration de test |
+| [ ] **6.2.7 — Lire Outlook** | 6.2.4, 6.2.6 | Graph v1.0 pour les deux types de comptes, critères structurés, pagination, corps et pièces jointes texte/PDF ; aucune mutation ni divulgation à Google |
+| [ ] **6.2.8 — Raccorder Nova, ACP et AEL** | 6.2.4–7 | demande structurée, attente/reprise parent, identité main, un cycle par tour et anti-boucle ; droits vérifiés et annulation propagée, comportement existant préservé |
+| [ ] **6.2.9 — Interface et IPC** | 6.2.5–8 | page ARI, Credentials, Accès accordés, activation, consentements uniques, citations et états ; API minimale validée, aucune valeur de secret retournée |
+| [ ] **6.2.10 — Régressions et récupération** | 6.2.3–9 | matrice réseau/parseurs/permissions/routage, révocation en course, provenance privée après purge, corruption, reprise sans rejeu et régressions ACP/AEL/chat |
+| [ ] **6.2.11 — Qualifier et clôturer le lot** | 6.2.1–10 | Vitest, tsc, lint, audits et package Windows x64 ; parcours en développement public et Outlook réel personnel+pro/scolaire, absence de mutations, accords/révocation, bilan et docs de l’existant |
+
+Les choix détaillés de transport, stockage, budget et types sont dans le
+compagnon ; ne pas créer une deuxième définition divergente dans les tickets.
+La première tâche peut identifier une incompatibilité de version concrète : la
+résoudre sans installer un paquet incompatible ou annoncer un contrôle non fait.
+
+#### Prérequis externes et sortie
+
+L’enregistrement Microsoft exige un clientId public et un redirect autorisé.
+Sa configuration appartient à 6.2.6 ; les tests réels de 6.2.11 nécessitent un
+compte personnel et un compte professionnel/scolaire autorisé. Ni la rédaction
+ni des fixtures ne prouvent ces parcours. Une politique tenant refusant l’app
+est testée comme blocage explicite ; elle n’autorise pas une escalade de droits.
+
+Les douze scénarios F01–F12 du cahier fonctionnel et la matrice du compagnon
+sont obligatoires. Les tests Google réels restent manuels pour ne pas rendre la
+CI dépendante du moteur. L’implémentation n’est close qu’après un bilan traçable,
+avec les limites externes explicitement distinguées des validations réussies.
+Les artefacts du package sont contrôlés ; le lancement du binaire distribué,
+`make` et les installateurs restent en phase finale.
+
+#### Extensions facultatives après le socle obligatoire
+
+- **6.2.O1 — Gmail** : OAuth/lecture officielle, mêmes contrats de droits,
+  provenance et tests de non-mutation ; exigences fournisseur documentées.
+- **6.2.O2 — Orange** : IMAPS dédié via curl, lecture sans flag Seen, tests de
+  compte et de TLS ; aucun SMTP ni élargissement du client Web.
+- **6.2.O3 — Autres sites authentifiés** : un adaptateur explicite par parcours
+  réellement testé ; texte seulement pour YouTube/streaming.
+
+Ces extensions ne conditionnent pas la clôture de 6.2.11. Elles restent
+signalées « non prises en charge » lorsqu’elles ne sont pas livrées.
 
 ### Phase 6.3 — ACA — Agent de Création Automatique
 
-Objectif retenu : permettre à Nova de rechercher un agent capable de répondre
-à une demande et, si cette capacité manque, de faire intervenir ACA pour
-préparer un agent spécialisé, son contexte et son connecteur configurable.
-
-Documents de référence :
-
-- [Cahier fonctionnel ACA](agents_specification/ACA_SPECIFICATION.md) ;
-- [Spécification technique ACA](agents_specification/ACA_SPECIFICATION_TECHNIQUE.md).
-
-### Arbitrages ARI confirmés pour la reprise
-
-La prochaine session repartira des décisions confirmées suivantes :
-
-1. découverte publique par un scraper Google local, sans outil de recherche
-   OpenAI, puis extraction des dix premiers sites organiques retenus ;
-2. scraping public ou authentifié par des composants contrôlés dans le `main`,
-   avec assainissement du HTML avant transmission au modèle ;
-3. dix sites distincts par cycle, avec budgets séparés pour requêtes, pages,
-   temps et documents ;
-4. PDF texte pris en charge, sans OCR automatique dans la première version ;
-5. citations visibles et résultat structuré commun à tous les agents ;
-6. conservation des résultats et métadonnées pendant 90 jours et au plus
-   1 000 tâches finales, sans archive persistante du contenu intégral des
-   pages ;
-7. registre Credentials global, chiffré et partagé uniquement par autorisation
-   explicite de chaque agent demandeur, même lorsqu’ARI exécute la recherche ;
-8. API Credentials dédiée dans le `main` ; AEL ne manipule jamais le
-   registre ni les secrets ;
-9. navigation authentifiée en lecture seule, avec intervention manuelle pour
-   MFA, OAuth ou SSO et session chiffrée révocable ; tout captcha fait ignorer
-   le site sans tentative de résolution ;
-10. ACA et les agents spécialisés peuvent solliciter ARI, sans en faire un
-    connecteur privé d’ACA.
-
-Les règles du scraper Google sont confirmées : résultats organiques
-dédupliqués par domaine, arrêt si Google présente un captcha, abandon de tout
-site avec captcha, rendu JavaScript seulement dans une session Electron
-isolée, respect de `robots.txt` et des réponses `403`/`429`, et une seule
-requête Google par cycle.
-
-Les autres règles confirmées sont : URL directe examinée avant Google, lecture
-publique et création structurelle de credentials autorisées par défaut lorsque
-ARI est actif, session Google éphémère sans compte ni SafeSearch, et validation
-d’un fait par une donnée officielle ou trois sources réellement indépendantes.
-Les copies, propriétaires communs et sources politiquement ou éditorialement
-orientées ne comptent pas comme confirmations distinctes.
-
-ARI pourra suivre jusqu’à dix pages pertinentes sur un même site. La première
-version restera limitée aux contenus textuels exploitables et refusera les
-exécutables, archives, téléchargements forcés, destinations locales ou privées
-et pages malveillantes. Une source dont la neutralité ne peut pas être établie
-sera signalée `neutrality-unverified` et ne comptera pas automatiquement parmi
-les trois confirmations. Le plafond global est fixé à trente pages HTML par
-cycle.
-
-Le cadrage fonctionnel d’ARI est complet. Sa spécification technique décrit
-maintenant le pipeline Google, la récupération HTTP, l’extraction HTML/JSON/PDF,
-le rendu JavaScript isolé, les credentials, les contrats et les tests. Elle
-conserve des choix explicites à valider : dépendances, protection SSRF, schéma
-d’authentification, user-agent, délais et fragilité assumée du scraper Google.
-La prochaine étape documentaire est la relecture et la validation des deux
-cahiers ARI, puis la transformation de la phase 6.2 en tâches ordonnées et
-vérifiables.
-
-Le cahier ACA dispose également d’une première spécification technique. Son
-runtime d’exécution du TypeScript généré reste un choix de sécurité bloquant et
-sera validé séparément après ARI, avant le découpage de la phase 6.3.
-
-Chaque sous-phase commence par la rédaction et la validation de son cahier des
-charges. Elle sera ensuite découpée ici en tâches d’implémentation ordonnées.
-Aucun développement d’ARI ou d’ACA ne doit commencer avant le découpage de sa
-sous-phase respective.
+Après implémentation et validation d’ARI : relire et finaliser les cahiers
+[fonctionnel ACA](agents_specification/ACA_SPECIFICATION.md) et
+[technique ACA](agents_specification/ACA_SPECIFICATION_TECHNIQUE.md), résoudre
+le confinement du code généré puis découper 6.3. La finalisation d’ARI ne valide
+pas le runtime ACA. Les contrats communs de droits et de délégation 6.2 seront
+réutilisés ; ARI reste transversal, pas une dépendance privée d’ACA.
 
 ## Phase 7 — Nouvelles capacités
 
