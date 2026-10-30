@@ -57,9 +57,15 @@ npm.cmd run package
 npm.cmd run ci
 ```
 
-Au 27 août 2026, TypeScript, ESLint et les 281 tests Vitest répartis dans
-41 fichiers passent. Les anciens contournements connus de la policy AEL sont
+Le bilan de phase 6.1, intégré le 19 septembre 2026, rapporte la réussite de
+TypeScript, ESLint et des 281 tests Vitest répartis dans 41 fichiers. Ces
+contrôles n’ont pas été rejoués pendant la revue documentaire du 21 septembre. Les anciens contournements connus de la policy AEL sont
 couverts par des tests de régression normaux.
+
+La qualification de 6.2.1 du 30 octobre 2026 valide Electron 44, Forge 8 et
+Packager 20 : 285 tests dans 42 fichiers sous Node 22/24, typage, lint,
+audits à zéro et harnais DOM/PDF packagé. Voir
+[le rapport](docs/validation/ARI_RUNTIME_6_2_1.md).
 
 ## Configuration OpenAI
 
@@ -144,3 +150,10 @@ Lecture recommandée :
 - [handoff express](docs/HANDOFF.md).
 
 NovaChat est distribué sous [licence MIT](LICENSE).
+
+## Prochain développement
+
+Le plan ARI validé comprend 17 tâches, avec HTTP contrôlé par Undici et rendu
+Chromium soumis à ses preuves de confinement. La qualification de 6.2.1 est
+terminée ; la prochaine tâche est 6.2.2, contrats et délégations, selon
+[NEXT_STEPS.md](docs/NEXT_STEPS.md). ARI reste inactif et doit être validé avant ACA.

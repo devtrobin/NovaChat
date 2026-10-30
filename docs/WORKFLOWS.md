@@ -330,3 +330,27 @@ en clair.
 - `hideInternalConversations` filtre les messages dont la visibilité résolue
   vaut `internal`, sans modifier le stockage. Les permissions, saisies,
   progressions publiques et résultats d’un `/cmd` utilisateur restent visibles.
+
+## 14. Cible ARI 6.2 — recherche transversale, non implémentée
+
+Contrat de référence : [spécification technique ARI](agents_specification/ARI_SPECIFICATION_TECHNIQUE.md).
+
+Recherche publique : Nova reçoit une demande, le main crée l’enveloppe,
+examine l’URL directe éventuelle puis Google si nécessaire, contrôle les
+candidats, extrait le texte et retourne sources/faits/limites. Le transport
+public est Undici contrôlé, puis l’extraction statique sans scripts ni réseau
+implicite. Un rendu Chromium isolé n’est permis qu’après la preuve de sortie
+6.2.5, avec les mêmes budgets. Les autres candidats publics restent accessibles
+lorsqu’un site exige un compte ou un captcha.
+
+Lecture authentifiée : une entrée Credentials activée par l’utilisateur fournit
+une référence opaque. Le courtier main contrôle les ACL du demandeur effectif
+et le profil du site, puis utilise une partition Chromium dédiée après les
+preuves 6.2.5 et 6.2.10. Les cookies et secrets restent privés au courtier ;
+seuls des fragments bornés et expurgés peuvent alimenter la synthèse.
+
+Une demande issue d’ACP/AEL passe par Nova/main, met le parent en attente puis
+le reprend une seule fois. L’identité du véritable demandeur est préservée.
+Arrêter le tour ou révoquer un accès annule les opérations concernées ; aucune
+reprise automatique après redémarrage. L’interface Credentials expose des
+projections expurgées et des commandes étroites de partage et révocation.

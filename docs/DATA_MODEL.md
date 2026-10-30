@@ -52,7 +52,10 @@ locale dans `from` et `to`. Cette compatibilité bornée protège la lecture, la
 poursuite et la sauvegarde des conversations existantes ; elle ne s’applique ni
 aux opérations d’agent, ni aux settings, ni aux chemins de stockage. Après
 validation, l’état sauvegardé contient les identifiants et rôles canoniques
-ACP/AEL. Une valeur inconnue reste invalide.
+ACP/AEL. Une valeur inconnue reste invalide. Ce traitement s’applique aux
+messages reçus dans `chat.save` et `ai.runTurn` ; le parser ne vérifie pas
+qu’ils existaient auparavant sur disque. Il ne fournit pas d’alias aux
+opérations d’agent.
 
 ## Stockage des conversations principales
 
@@ -217,3 +220,24 @@ Les résultats réinjectés au provider sont tronqués à 4 000 caractères. La
 sortie de commande conservée en mémoire est également plafonnée par
 `aelExecution.maxOutputCharacters`. Les prompts et réponses fonctionnels
 restent potentiellement sensibles même après la redaction ciblée des secrets.
+
+## Extension cible 6.2 — contrats ARI, non implémentés
+
+Les schémas v1 requête/résultat/source/affirmation/budgets sont définis par le
+[compagnon technique ARI](agents_specification/ARI_SPECIFICATION_TECHNIQUE.md).
+L’intention est séparée de l’enveloppe construite par le main : identités,
+rattachement parent/enfant et budgets ne proviennent pas du renderer ou du
+modèle. Leur implémentation relève de 6.2.2 dans le plan de 17 tâches.
+
+Le registre Credentials global conserve une projection expurgée, des références
+opaques et des ACL strictes. Les secrets et snapshots de sessions restent
+chiffrés et privés au main ; le courtier vérifie le demandeur effectif, les
+profils de lecture et la génération de révocation. Ces composants relèvent de
+6.2.9/6.2.10 et ne sont pas fournis par la qualification du runtime de 6.2.1.
+
+Les tâches ARI seront stockées séparément avec écritures atomiques, reprise
+explicite et rétention de 90 jours ou 1 000 tâches finales. Corps bruts,
+credentials, cookies et URL signées sont exclus des traces. Les citations
+publiques sont autonomes et restent lisibles après purge de la tâche ; les
+conversations et messages restent éclatés. Les détails sont implémentés en
+6.2.13, sans remplacement du stockage existant.

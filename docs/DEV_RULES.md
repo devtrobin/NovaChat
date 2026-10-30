@@ -25,6 +25,8 @@ Regle pratique :
 
 - toute logique provider doit rester dans `src/main/ai`
 - toute logique shell / machine doit rester dans `src/main/ael`
+- les transports ARI résident dans `src/main/ari` : HTTP Undici contrôlé et
+  rendu Chromium après preuve de confinement, sans shell ni extension AEL
 - toute persistence conversationnelle doit rester dans `src/main/chat`
 - l'enregistrement des IPC doit rester dans `src/main/ipc`
 

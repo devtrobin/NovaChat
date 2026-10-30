@@ -439,14 +439,20 @@ protections du process `main`, d’accéder aux secrets ou d’obtenir des droit
 non déclarés.
 
 Pour la première version, ACA générera uniquement des connecteurs en
-TypeScript. Le code source de référence sera `connector.ts` et utilisera le
-runtime Node déjà maîtrisé par NovaChat. Python et les autres langages sont
-hors du périmètre initial ; ils pourront être étudiés ultérieurement sans
+TypeScript. Le code source de référence sera `connector.ts`. Python et les
+autres langages sont hors du périmètre initial ; ils pourront être étudiés ultérieurement sans
 modifier le contrat fonctionnel `{ action, arguments }`.
 
-ACA privilégiera les API natives de Node afin de limiter les dépendances.
-Lorsqu’une bibliothèque externe est nécessaire, le connecteur pourra posséder
-son propre `package.json` et son lockfile dans le dossier de l’agent.
+Le choix initial d’un runtime Node et de ses API natives est **à réexaminer** :
+il n’est pas réconcilié avec le confinement demandé ni avec la proposition de
+runtime à capacités de la [spécification technique ACA](ACA_SPECIFICATION_TECHNIQUE.md).
+Le runtime, les API accessibles et les dépendances compatibles doivent être
+validés ensemble. QuickJS/WASM et un helper protégé par un sandbox OS restent
+des pistes, sans choix définitif.
+
+Lorsqu’une bibliothèque externe compatible avec le runtime retenu est
+nécessaire, le connecteur pourra posséder son propre `package.json` et son
+lockfile dans le dossier de l’agent.
 
 Avant toute installation ou mise à jour, NovaChat présentera à l’utilisateur :
 
@@ -778,10 +784,12 @@ provisoirement résolus ainsi :
    pas d’instruction contraire : CRUD exposé autant que le fournisseur le
    permet, lectures automatiques et confirmation des créations, modifications,
    envois et suppressions.
-7. **Questions restantes.** Les seules réponses encore à valider concernent le
-   périmètre propre d’ARI et sont centralisées dans
-   [ARI_SPECIFICATION.md](ARI_SPECIFICATION.md). Aucun choix ACA ne bloque la
-   reprise de l’étude.
+7. **Questions restantes.** Les cahiers ARI sont finalisés et son code reste
+   à réaliser selon [ARI_SPECIFICATION.md](ARI_SPECIFICATION.md). Pour ACA, le choix du runtime,
+   des API accessibles au code généré et des dépendances compatibles reste
+   bloquant avant découpage et implémentation. Les alternatives et validations
+   attendues figurent dans la
+   [spécification technique ACA](ACA_SPECIFICATION_TECHNIQUE.md).
 
 ## Méthode de travail pour les prochaines sessions
 

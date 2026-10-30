@@ -2,8 +2,9 @@
 
 ## Statut
 
-Référence technique de l’implémentation existante, auditée contre le code le
-27 août 2026. Cette spécification décrit le comportement réellement livré à la
+Référence technique du code de phase 6.1 intégré le 19 septembre 2026
+(`ebb9b03`, puis `6245e7a`). Revue documentaire le 21 septembre 2026 ;
+les validations d’exécution rapportées ne sont pas rejouées par cette revue. Cette spécification décrit le comportement réellement livré à la
 clôture de la phase 6.1. Elle complète le
 [cahier fonctionnel ACP](ACP_SPECIFICATION.md), qui reste la source de vérité
 pour la mission et les limites métier.
@@ -235,3 +236,13 @@ TypeScript, ESLint et packaging Electron.
 
 Toute extension d’ACP pour ARI ou ACA devra préserver son rôle consultatif et
 mettre à jour simultanément registre, types, prompt, parser, routeur et tests.
+
+## Extension documentée pour ARI en 6.2 — non implémentée
+
+La [spécification ARI](ARI_SPECIFICATION_TECHNIQUE.md#délégation-et-cycle-de-vie)
+fixe l’action de recherche via Nova/main et la reprise unique du parent.
+ACP pourra demander une recherche avec une intention bornée avant son cadrage.
+Le main construit l’identité, applique budgets et droits et réinjecte le
+résultat au demandeur. Cette extension ciblée appartient à 6.2.14 ; le reste de
+ce document décrit le comportement livré en 6.1. La policy et les permissions
+terminal ne sont pas assouplies.

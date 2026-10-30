@@ -33,7 +33,7 @@ expliquer la rupture de données de développement réalisée pendant la phase 6
 - identifiant canonique : `agent-acp` ;
 - dossier local : `agents/agent-acp/` ;
 
-Le nom recommandé décrit mieux le comportement réel : ACP cadre la demande,
+Le nom validé décrit mieux le comportement réel : ACP cadre la demande,
 signale les informations manquantes et choisit une prochaine étape. Il ne
 devient pas l’orchestrateur général, responsabilité qui reste à Nova.
 

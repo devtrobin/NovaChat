@@ -14,7 +14,8 @@ Utilisateur
   -> Utilisateur
 ```
 
-Nova reste l’unique orchestrateur. Les agents ne s’appellent pas entre eux.
+Nova reste l’unique orchestrateur. Les agents ne s’appellent pas directement ;
+les délégations futures à ARI passent également par le main.
 Le registre partagé `src/shared/system-agent.registry.ts` centralise leurs IDs,
 acronymes, libellés, capacités, outils et contextes par défaut.
 
@@ -117,10 +118,12 @@ renderer.
 
 ## Identités canoniques
 
-Seuls `agent-acp` et `agent-ael` sont acceptés dans les contrats, settings,
-messages et chemins. Les anciens espaces de développement ne sont pas migrés :
-ils doivent être supprimés après confirmation explicite, sans toucher aux
-paramètres généraux ni au secret OpenAI.
+Seuls `agent-acp` et `agent-ael` sont acceptés pour les opérations, settings
+et chemins agents. Les messages de chat reçus en IPC bénéficient d’une
+normalisation des anciens identifiants et rôles connus ; la validation ne
+vérifie pas l’ancienneté de ces messages. Les anciens espaces de développement
+ont été supprimés selon le bilan de clôture, sans migration et sans toucher
+aux paramètres généraux, conversations principales ni au secret OpenAI.
 
 La décision, son périmètre de données final et l’unique tolérance réservée aux
 messages historiques sont consignés dans
@@ -160,7 +163,7 @@ Un nouvel agent devra :
 
 Chaque agent possède un cahier fonctionnel et un compagnon technique. Les
 documents ACP/AEL décrivent l’existant. La conception ARI est arrêtée pour la
-préparation de 6.2 et son découpage est approuvé, avec 6.2.1 en cours ;
+préparation de 6.2 et son découpage est approuvé, avec 6.2.1 qualifiée ;
 ACA reste une étude à valider séparément.
 
 | Agent | Outil principal | Spécification technique |

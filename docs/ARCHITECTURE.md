@@ -209,7 +209,8 @@ main et le renderer.
 
 - accepte une commande exacte ou un objectif ;
 - pour un objectif, appelle OpenAI afin de produire une commande ;
-- valide la commande générée avec un profil terminal non interactif ;
+- valide toute commande de tâche agent, exacte ou générée, avec le profil
+  terminal non interactif ;
 - évalue la policy de permission ;
 - consulte les règles exactes mémorisées ;
 - demande éventuellement une décision à l’utilisateur ;
@@ -234,10 +235,12 @@ responsabilités sont séparées entre `agent-storage.paths.ts`,
 ### Domaine `ael`
 
 ```text
-command string
+commande exacte ou générée d’une tâche AEL
+  -> evaluateAELAgentCommandProfile
+  -> résolution de permission
+  -> startAELCommand
   -> normalizeCommand
   -> assertCommandAllowed
-  -> validateAELAgentCommand (commandes générées uniquement)
   -> resolveShell
   -> spawn
   -> registry
@@ -268,9 +271,9 @@ donc pas recevoir d’autorisation permanente. La policy ne s’applique pas à
 `/cmd`, qui est une exécution explicitement demandée par l’utilisateur. Voir
 [RISKS.md](RISKS.md) pour ses limites.
 
-Avant cette classification, `ael.agent-command-profile.ts` applique aux
-seules commandes issues de l’agent un profil plus étroit : au plus trois
-segments, uniquement des commandes déjà classifiées par la policy, sans
+Avant cette classification, `ael.agent-command-profile.ts` applique à toutes
+les commandes de tâche AEL, exactes ou générées, un profil plus étroit : au plus
+trois segments, uniquement des commandes déjà classifiées par la policy, sans
 wrapper de shell, interface graphique, console secondaire ou utilitaire
 interactif. Une commande rejetée est renvoyée à Nova sans permission et sans
 exécution. Ce profil ne s’applique pas à `/cmd`, qui exprime directement

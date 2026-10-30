@@ -563,6 +563,8 @@ arbitrage, jamais un contournement silencieux.
 L’utilisateur a approuvé les 17 tâches le 29 octobre 2026, puis demandé de
 continuer. Cette approbation autorise la réalisation ordonnée, pas une exception
 aux portes de sécurité. Ne pas redemander l’accord sur ce découpage à la reprise.
+Le 30 octobre, lors de la résolution de la divergence documentaire distante,
+l’utilisateur a confirmé ce plan de 17 tâches avec Undici/Chromium comme référence.
 La qualification de 6.2.1 est réussie. La prochaine tâche est 6.2.2, contrats
 et provenance des délégations. Le rendu et l’authentification restent fermés
 avant 6.2.5 et 6.2.10.

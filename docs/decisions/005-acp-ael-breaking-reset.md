@@ -19,7 +19,8 @@ fichiers, dossiers, symboles, contrats, settings agents, prompts, UI, styles,
 tests, scripts et métadonnées concernés suivent le renommage.
 
 Les identifiants canoniques sont `agent-acp` et `agent-ael`. Les préfixes de
-code sont `acp`/`Acp`/`ACP` et `ael`/`Ael`/`AEL` selon la convention du support.
+code utilisent `acp`/`ACP` et `ael`/`AEL`, notamment `ACPAgentPage`,
+`AELAgentPage`, `parseACPMessageContent` et `startAELCommand`.
 Le domaine d’exécution locale est `src/main/ael/`, son paramétrage
 `aelExecution` et son rôle de message `ael`.
 
@@ -36,12 +37,14 @@ ni de rouvrir un ancien workspace, ni de réutiliser un ancien setting.
 ## Correspondances historiques
 
 Les anciens noms restent recensés ici uniquement pour expliquer la rupture.
-Ils ne constituent pas des identifiants acceptés par la cible.
+Ils ne constituent pas des alias d’opérations ; seule la normalisation des
+messages de chat décrite ci-dessus les accepte en entrée. Le parser applique
+cette normalisation sans vérifier la provenance historique des messages.
 
 | Ancienne surface | Cible |
 | --- | --- |
-| Planner, `planner`, `Planner*`, `PLANNER` | ACP, `acp`, `Acp*`, `ACP` |
-| Device, `device`, `Device*`, `DEVICE` | AEL, `ael`, `Ael*`, `AEL` |
+| Planner, `planner`, `Planner*`, `PLANNER` | ACP, `acp`, `ACP*` |
+| Device, `device`, `Device*`, `DEVICE` | AEL, `ael`, `AEL*` |
 | `agent-planner`, `diagnostic-agent` | `agent-acp` |
 | `device-agent` | `agent-ael` |
 | `src/main/device/` | `src/main/ael/` |
