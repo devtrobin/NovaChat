@@ -1,5 +1,6 @@
 import { ChatMessage } from "../../shared/chat.types";
 import { RuntimeAppSettings } from "../../shared/settings.types";
+import { AgentTaskAction } from "../../shared/agent.types";
 import { runAgentTask } from "../agents/agent-orchestrator.service";
 import { createAgentRequestMessage, PipelineStage } from "./ai.orchestrator.cycle.messages";
 import { ResolvedAgentHandoff } from "./ai.orchestrator.handoff";
@@ -30,6 +31,9 @@ export async function runAgentHandoff({
   const delegationMessage = createAgentRequestMessage(handoff.agentId, handoff.request, handoff.apiRecords);
   onPipelineStageChange?.("requesting-agent", handoff.agentId);
   emit({ conversationId, messages: [delegationMessage], type: "append-messages" });
+  const taskAction: AgentTaskAction = handoff.mode === "write-file"
+    ? { mode: "write-file", fileOperation: handoff.fileOperation }
+    : { mode: handoff.mode };
 
   const { aelMessage } = await runAgentTask({
     conversationId,
@@ -39,7 +43,7 @@ export async function runAgentHandoff({
     settings,
     task: {
       agentId: handoff.agentId,
-      mode: handoff.mode,
+      ...taskAction,
       request: handoff.request,
       turnId,
       triggerMessageId: userMessage.id,

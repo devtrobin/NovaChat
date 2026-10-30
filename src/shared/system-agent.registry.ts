@@ -57,6 +57,7 @@ export const SYSTEM_AGENT_DEFINITIONS = {
     acronym: "AEL",
     capabilities: [
       "shell-execution",
+      "file-creation",
       "interactive-input",
       "permission-checking",
       "execution-history",
@@ -72,6 +73,7 @@ export const SYSTEM_AGENT_DEFINITIONS = {
     description: "Execution des commandes et interactions AEL.",
     features: [
       "execution de commandes",
+      "creation de fichiers avec permission et verification",
       "saisie interactive",
       "journalisation locale",
       "diagnostic terminal",
@@ -87,6 +89,7 @@ export const SYSTEM_AGENT_DEFINITIONS = {
     ],
     tools: [
       "ael.run",
+      "ael.write-file",
       "ael.kill",
       "ael.input",
     ],

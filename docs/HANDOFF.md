@@ -9,11 +9,16 @@ NovaChat est un Electron + React fonctionnel avec :
 - assistant principal Nova ;
 - `agent-acp` pour la prochaine étape atomique ;
 - `agent-ael` pour générer/exécuter une commande locale ;
+- création structurée de nouveaux fichiers par AEL, avec aperçu, permission
+  ponctuelle et relecture, sans exécuter le code créé ;
 - permissions, historique, activité et arrêt de tâches.
 
 Tests, TypeScript strict, lint et packaging Windows x64 passent au
 27 août 2026. La suite compte 281 réussites dans 41 fichiers, dont 119 cas de
 policy AEL.
+Le correctif du 30 octobre 2026 porte la suite à 337 tests dans 47 fichiers
+sous Node 22/24 et ajoute un test Electron à fournisseur synthétique. Voir
+[les preuves et limites AEL](validation/AEL_FILE_WRITE.md).
 La phase 2 de sécurisation AEL et la priorité P2 de maintenabilité recensée
 dans `RISKS.md` sont terminées. La phase 3 de fiabilisation des données est
 également terminée : JSON atomiques et récupérables, queues agents, migration

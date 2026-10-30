@@ -5,6 +5,7 @@ import {
   SystemActionId,
 } from "../../shared/chat.types";
 import { parseAgentId } from "./ipc-payload.validation.agent";
+import { parseFileWritePreview } from "./ael-file.validation";
 import {
   assertSerializedSize,
   assertUniqueIds,
@@ -110,6 +111,7 @@ function assignOptionalMessageFields(
     ? undefined
     : parseChatMessageAgentId(message.agentId, `${field}.agentId`);
   parsed.commandId = message.commandId === undefined ? undefined : readSafeId(message.commandId, `${field}.commandId`);
+  parsed.fileWritePreview = message.fileWritePreview === undefined ? undefined : parseFileWritePreview(message.fileWritePreview);
   parsed.inputPlaceholder = readOptionalString(message.inputPlaceholder, `${field}.inputPlaceholder`, 500);
   parsed.inputRequested = readOptionalBoolean(message.inputRequested, `${field}.inputRequested`);
   parsed.inputSecret = readOptionalBoolean(message.inputSecret, `${field}.inputSecret`);

@@ -1,5 +1,6 @@
 import { copyFile, mkdir, open, readFile, rename, rm } from "node:fs/promises";
 import path from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
 import { reportStorageIssue } from "../storage/storage-journal";
 import { StorageIssue, StorageReadResult } from "../storage/storage.types";
 
@@ -147,7 +148,18 @@ async function writeFileAtomically(filePath: string, content: string): Promise<v
   }
 
   try {
-    await rename(temporaryPath, filePath);
+    // Windows scanners can briefly deny replacement of a file they are reading.
+    // Retry the same atomic rename; never unlink the destination as a fallback.
+    for (let attempt = 0; ; attempt += 1) {
+      try {
+        await rename(temporaryPath, filePath);
+        break;
+      } catch (error) {
+        if (process.platform !== "win32" || attempt >= 5
+          || !["EPERM", "EACCES", "EBUSY"].includes((error as NodeJS.ErrnoException).code ?? "")) throw error;
+        await delay(25 * 2 ** attempt);
+      }
+    }
   } catch (error) {
     await rm(temporaryPath, { force: true }).catch((): undefined => undefined);
     throw error;

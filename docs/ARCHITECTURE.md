@@ -139,6 +139,23 @@ renvoie ensuite tout `PersistedChatState` au main.
 - `MessageItemSystem` : état transitoire, erreur de configuration et
   permission.
 
+### Création structurée de fichiers AEL
+
+`AELWriteFileOperation` (`src/shared/ael-file.types.ts`) traverse le parser
+provider et le handoff en mode `write-file`. Un objectif AEL peut aussi
+produire ce contrat. `agent-task.ael-file.ts` orchestre la permission et
+`filesystem/ael-file-write.ts` prépare puis exécute l'écriture dans le main.
+Le preload conserve son API existante de décision de permission ; aucune API
+générique d'écriture n'est exposée au renderer.
+
+La préparation validée est conservée dans une `WeakMap` du main, consommable
+une fois. Le message `fileWritePreview` n'est qu'un aperçu. L'action utilise
+un temporaire exclusif synchronisé, un lien physique vers une cible absente,
+puis une relecture bornée et une comparaison exacte des octets. Un fichier
+existant n'est jamais remplacé. L'historique distingue `operation: write-file`
+des échanges shell. Les identités du dossier et du fichier sont contrôlées,
+sans constituer un confinement OS contre un processus local hostile.
+
 `ChatMessage.visibility` décide séparément si un message est `public` ou
 `internal`. Le filtre n’altère pas l’état canonique. Une règle de compatibilité
 fondée sur `from`/`to` couvre les anciennes données sans champ explicite.

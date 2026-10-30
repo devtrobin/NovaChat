@@ -17,6 +17,7 @@ import {
   updateActiveAgentTaskStatus,
 } from "../ai/ai.turn-registry";
 import { evaluateAELAgentCommandProfile } from "../ael/ael.agent-command-profile";
+import { runAELFileWriteTask } from "./agent-task.ael-file";
 
 export async function runAELAgentTask(
   args: RunAgentTaskArgs,
@@ -34,8 +35,10 @@ export async function runAELAgentTask(
   const {
     apiRecords: commandApiRecords,
     command: resolvedCommand,
+    fileOperation,
   } = await resolveAELAgentCommand(settings, task);
   throwIfTurnStopped(turnId);
+  if (fileOperation) return runAELFileWriteTask(args, activeTaskId, currentAgentConversationId, fileOperation, commandApiRecords);
 
   const profileDecision = evaluateAELAgentCommandProfile(resolvedCommand);
   if (profileDecision.kind === "reject") {

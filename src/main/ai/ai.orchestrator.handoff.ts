@@ -1,20 +1,27 @@
 import { ApiRequestRecord } from "../../shared/chat.types";
-import { AgentId, AgentTaskRequest } from "../../shared/agent.types";
+import { AgentId, AgentTaskAction } from "../../shared/agent.types";
 import { isLikelyShellCommand } from "./ai.command-detection";
 import { ProviderResponse } from "./openai.types";
 
 export type ResolvedAgentHandoff = {
   agentId: AgentId;
   apiRecords: ApiRequestRecord[];
-  mode: AgentTaskRequest["mode"];
   previewContent: string;
   request: string;
-};
+} & AgentTaskAction;
 
 export function resolveAgentHandoff(args: {
   apiRecords: ApiRequestRecord[];
   providerResponse: Exclude<ProviderResponse, { to: "user" }>;
 }): ResolvedAgentHandoff {
+  if ("action" in args.providerResponse && args.providerResponse.action === "write-file") {
+    const { action, target, content, overwrite } = args.providerResponse;
+    const request = `Creer ${target.name} dans ${target.directory === "desktop" ? "le Bureau" : "le dossier de travail"}.`;
+    return {
+      agentId: "agent-ael", apiRecords: args.apiRecords, mode: "write-file",
+      fileOperation: { action, target, content, overwrite }, previewContent: request, request,
+    };
+  }
   const agentId = args.providerResponse.to === "agent"
     ? args.providerResponse.agentId
     : "agent-ael";

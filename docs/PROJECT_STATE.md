@@ -3,7 +3,7 @@
 ## Snapshot
 
 - Date d’audit : 27 août 2026.
-- Branche de travail : `docs/phase-6-agent-specifications`.
+- Branche de référence : `main`.
 - Base historique de l’audit : `d589ae1`
   (`Security: store OpenAI key in OS vault`), complétée par les phases 3 à 5
   et la réorganisation technique de la phase 6.1.
@@ -34,7 +34,7 @@ valider avant une diffusion.
 | Streaming | Non implémenté | aucune surface inactive conservée |
 | Commandes slash locales | Fonctionnel | aide, état, agents et paramètres sans appel provider |
 | `/cmd` utilisateur | Fonctionnel | exécution directe sans permission agent |
-| AEL — Agent d’Exécution Locale | Fonctionnel | profil terminal non interactif, commande exacte ou générée depuis un objectif |
+| AEL — Agent d’Exécution Locale | Fonctionnel | profil terminal non interactif et création structurée de fichiers avec permission ponctuelle |
 | ACP — Agent de Cadrage et de Planification | Fonctionnel | plan textuel structuré, étape atomique |
 | Permissions AEL | Durci avec limites | lectures sûres sans prompt, syntaxe restrictive, pas un sandbox |
 | Saisie interactive | Partielle | heuristique stdout ; timeout configurable suspendu pendant la saisie |
@@ -44,7 +44,7 @@ valider avant une diffusion.
 | Historique agent | Fonctionnel | stockage et vue |
 | Providers alternatifs | Catalogue planifié | visibles comme « à venir », non sélectionnables et refusés par le main |
 | Internationalisation | Partielle | écran de boot seulement |
-| Tests automatisés | Renforcés | 285 réussites dans 42 fichiers sous Node 22.22.2 et 24.18.0 |
+| Tests automatisés | Renforcés | 337 cas dans 47 fichiers ; voir les validations ARI et AEL pour les runtimes testés |
 | Packaging Windows x64 | Vérifié | `npm.cmd run package` réussi |
 
 ## Agents actuels
@@ -76,6 +76,15 @@ L’AEL est activé par défaut. Il peut :
 - émettre progression et demande de saisie ;
 - demander une permission ;
 - conserver historique et conversation interne.
+
+Le correctif du 30 octobre 2026 ajoute `write-file` à AEL : Nova fournit une
+cible `desktop` ou `workspace`, un nom simple et le contenu UTF-8 exact
+(128 Kio maximum). Le main résout le Bureau via Electron, affiche le chemin
+et le contenu pour une permission ponctuelle, puis crée et relit le fichier
+sans shell. Les fichiers existants, sous-dossiers et données internes sont
+refusés. Le code créé n'est pas exécuté. Un objectif transmis par ACP peut
+aboutir à la même action. Voir [la validation](validation/AEL_FILE_WRITE.md).
+L'utilisateur a confirmé le bon fonctionnement du correctif le 30 octobre 2026.
 
 Sous Windows, le runtime communiqué aux agents est désormais le même
 `cmd.exe` que celui réellement utilisé. Les commandes générées ne doivent plus
@@ -131,7 +140,7 @@ Le package vérifié est `win32-x64`.
 Le démarrage de développement a également atteint le lancement de
 l’application et du serveur renderer sur `http://localhost:9000`.
 
-La suite comprend 285 cas répartis dans 42 fichiers. Elle couvre la policy
+La suite comprend 337 cas répartis dans 47 fichiers. Elle couvre la policy
 AEL, les parsers OpenAI/ACP, les commandes slash, les handoffs
 assistant-agent, la conservation des traces, les messages de tâche agent, le
 formatage de la page AEL, les stockages chat/agents, les frontières IPC,
@@ -153,7 +162,8 @@ Non vérifié :
   est exécuté et le paquet de production est inspecté ;
 - macOS et Linux ;
 - comportement avec un vrai appel OpenAI pendant l’audit ;
-- parcours Electron end-to-end réels.
+- autres parcours Electron réels ; le correctif de création de fichier AEL
+  a reçu une validation utilisateur le 30 octobre 2026.
 
 L’audit initial signalait 57 vulnérabilités dans l’arbre complet, dont
 2 critiques, et aucune dans les dépendances de production. Après mises à jour

@@ -2,7 +2,9 @@ import { PermissionDecision } from "../../shared/ai.types";
 import { ChatMessage } from "../../shared/chat.types";
 import { createPermissionRequestSystemMessage, createPermissionResolutionSystemMessage } from "./ai.message-factory";
 import { Emit } from "./ai.orchestrator.types";
-import { clearPendingPermissionRequest, setPendingPermissionRequest } from "./ai.turn-registry";
+import { clearPendingPermissionRequest, setPendingPermissionRequest, throwIfTurnStopped } from "./ai.turn-registry";
+import { FileWritePreview } from "../../shared/ael-file.types";
+import { createFileWritePermissionMessage, createSystemMessage } from "./ai.message-factory.system";
 
 type InternalPermissionDecision = PermissionDecision | "cancel";
 
@@ -12,6 +14,7 @@ type PendingPermissionRequest = {
   requestId: string;
   resolve: (decision: InternalPermissionDecision) => void;
   turnId: string;
+  oneTimeOnly: boolean;
 };
 
 const pendingPermissionRequests = new Map<string, PendingPermissionRequest>();
@@ -23,31 +26,36 @@ export async function requestAELPermission(
   emit: Emit,
   turnId: string,
   summary?: string,
+  fileWritePreview?: FileWritePreview,
 ): Promise<{ decision: InternalPermissionDecision; requestMessage: ChatMessage }> {
   if (activeConversationRequests.has(conversationId)) {
     throw new Error("Une demande de permission est deja en attente pour cette conversation.");
   }
 
+  throwIfTurnStopped(turnId);
   const requestId = crypto.randomUUID();
-  const requestMessage = createPermissionRequestSystemMessage(command, requestId, summary);
-
-  emit({
-    conversationId,
-    messages: [requestMessage],
-    type: "append-messages",
-  });
-
-  const decision = await new Promise<InternalPermissionDecision>((resolve) => {
+  const requestMessage = fileWritePreview
+    ? createFileWritePermissionMessage(fileWritePreview, requestId)
+    : createPermissionRequestSystemMessage(command, requestId, summary);
+  const decisionPromise = new Promise<InternalPermissionDecision>((resolve) => {
     pendingPermissionRequests.set(requestId, {
       conversationId,
       messageId: requestMessage.id,
       requestId,
       resolve,
       turnId,
+      oneTimeOnly: Boolean(fileWritePreview),
     });
     activeConversationRequests.set(conversationId, requestId);
     setPendingPermissionRequest(turnId, requestId);
   });
+  try {
+    emit({ conversationId, messages: [requestMessage], type: "append-messages" });
+  } catch (error) {
+    cancelPermissionRequest(requestId);
+    throw error;
+  }
+  const decision = await decisionPromise;
 
   emit({
     conversationId,
@@ -55,7 +63,9 @@ export async function requestAELPermission(
     type: "remove-message",
   });
   if (decision !== "cancel") {
-    const resolutionMessage = createPermissionResolutionSystemMessage(decision, command, summary);
+    const resolutionMessage = fileWritePreview
+      ? { ...createSystemMessage(`${decision === "allow" ? "Creation autorisee une fois" : "Creation refusee"} : ${fileWritePreview.path}`), status: "idle" as const }
+      : createPermissionResolutionSystemMessage(decision, command, summary);
     emit({
       conversationId,
       messages: [resolutionMessage],
@@ -92,6 +102,7 @@ function settlePermissionRequest(
 ): boolean {
   const pendingRequest = pendingPermissionRequests.get(requestId);
   if (!pendingRequest) return false;
+  if (pendingRequest.oneTimeOnly && decision !== "cancel" && decision !== "allow" && decision !== "deny") return false;
   pendingPermissionRequests.delete(requestId);
   if (activeConversationRequests.get(pendingRequest.conversationId) === requestId) {
     activeConversationRequests.delete(pendingRequest.conversationId);

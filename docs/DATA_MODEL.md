@@ -22,6 +22,8 @@ Champs structurants optionnels :
   `success`, `partial-success`, `error`, etc.) ;
 - `result` : résultat détaillé, souvent repliable ;
 - `commandId` et champs `input*` : commande locale interactive ;
+- `fileWritePreview` : chemin réel, contenu exact, taille UTF-8 et SHA-256
+  pour une permission de création ; cet aperçu n'autorise aucune écriture ;
 - `actions` / `actionType` : actions système, notamment permissions ;
 - `visibility` : `public` ou `internal`, contrat d’affichage indépendant de
   l’expéditeur et du destinataire ;
@@ -33,6 +35,21 @@ persistance et au chargement. Pour les anciens messages sans `visibility`, le
 renderer applique une règle déterministe : messages agent et échanges vers
 assistant internes, messages utilisateur, réponses finales, permissions,
 saisies et AEL vers utilisateur publics.
+
+## Création de fichiers AEL
+
+Le contrat provider de création de fichier est distinct d'une commande :
+
+```json
+{"from":"assistant","to":"agent","agentId":"agent-ael","action":"write-file","target":{"directory":"desktop","name":"coucou.py"},"content":"print(\"coucou\")\n","overwrite":false}
+```
+
+`directory` accepte `desktop` et `workspace`, résolus par le main. Le nom
+est un seul composant, sans chemin absolu, traversée, flux NTFS ni nom de
+périphérique Windows. Le contenu reste inchangé et limité à 128 Kio UTF-8.
+Les champs inconnus et `overwrite:true` sont refusés. L'historique agent
+porte `operation: "write-file"` ; les anciennes entrées shell restent valides.
+La taille et l'empreinte d'un aperçu entrant sont validées à la frontière IPC.
 
 ## Conversations
 

@@ -106,13 +106,25 @@ tour.
 
 ## 4. Handoff vers l’AEL
 
-L’AEL reçoit l’un des deux formats :
+L’AEL reçoit l'un des trois formats :
 
 - commande exacte, mode `command` ;
-- objectif, généralement préfixé `GOAL:`, mode `goal`.
+- objectif, généralement préfixé `GOAL:`, mode `goal` ;
+- création de fichier structurée, mode `write-file`.
 
 Pour un objectif, `generateAELAgentCommand` effectue un appel OpenAI dédié
-et exige uniquement une commande shell en texte brut.
+et exige une commande shell en texte brut ou, pour une création de fichier,
+le contrat JSON `write-file`.
+
+Une création peut aller directement de Nova à AEL sans appel provider
+supplémentaire. Le main valide le contrat fermé, résout le dossier réel et
+refuse une cible existante ou interne. La permission affiche le contenu
+intégral et propose uniquement « Créer ce fichier » ou « Refuser ». Aucune
+règle shell mémorisée n'est consultée ni créée. Après accord, le main publie
+le nouveau fichier sans remplacement et vérifie les octets relus. Le résultat
+remonte à Nova le chemin, la taille et le SHA-256 vérifiés. Un arrêt avant
+publication annule ; après publication, le fichier conservé est signalé.
+La création de code ne déclenche jamais son exécution.
 
 La commande passe ensuite dans :
 

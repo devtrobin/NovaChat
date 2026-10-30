@@ -38,6 +38,10 @@ const settings: AppSettings = {
 };
 
 describe("assistant handoff resolution", () => {
+  it("routes file content directly to AEL without shell normalization", () => {
+    const file = { action: "write-file" as const, target: { directory: "desktop" as const, name: "coucou.py" }, content: '\n  print("coucou")\n', overwrite: false as const };
+    expect(resolveAgentHandoff({ apiRecords: [], providerResponse: { ...file, from: "assistant", to: "agent", agentId: "agent-ael" } })).toMatchObject({ agentId: "agent-ael", mode: "write-file", fileOperation: file });
+  });
   it("turns an explicit AEL goal into goal mode", () => {
     expect(resolveAgentHandoff({
       apiRecords: [],

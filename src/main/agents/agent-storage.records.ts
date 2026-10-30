@@ -35,9 +35,10 @@ export function createAssistantToAgentMessage(
   agentId: AgentId,
   assistantRequest: string,
   command: string,
+  operation?: "write-file",
 ): ChatMessage {
   const createdAt = new Date().toISOString();
-  if (agentId !== "agent-ael") {
+  if (agentId !== "agent-ael" || operation === "write-file") {
     return {
       agentId,
       apiRequests: [],
@@ -86,9 +87,10 @@ export function createAgentResultMessage(
   output: string,
   status: AgentExchangeStatus,
   apiRequests: ChatMessage["apiRequests"] = [],
+  operation?: "write-file",
 ): ChatMessage {
   const createdAt = new Date().toISOString();
-  if (agentId !== "agent-ael") {
+  if (agentId !== "agent-ael" || operation === "write-file") {
     return {
       agentId,
       apiRequests: [...(apiRequests ?? [])],

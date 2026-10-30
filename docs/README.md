@@ -25,6 +25,11 @@ sessions restent à exécuter en 6.2 ; ARI
 n’est pas livré. ACA attend sa validation complète en 6.3. Les autres nouvelles
 capacités restent reportées en phase 7.
 
+Le correctif AEL du 30 octobre ajoute une création de fichier structurée avec
+permission ponctuelle et relecture, sans shell ni exécution du code produit.
+Voir [sa validation et ses limites](validation/AEL_FILE_WRITE.md). Le travail
+ARI reste ordonné selon les 17 tâches approuvées.
+
 ## Parcours de lecture
 
 Pour reprendre rapidement le projet :

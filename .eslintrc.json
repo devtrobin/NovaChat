@@ -23,7 +23,7 @@
       }
     },
     {
-      "files": ["scripts/ari/*.cjs", "tests/electron/ari/canary.cjs"],
+      "files": ["scripts/ari/*.cjs", "tests/electron/ari/canary.cjs", "tests/electron/ael/*.cjs"],
       "rules": {
         "@typescript-eslint/no-require-imports": "off"
       }

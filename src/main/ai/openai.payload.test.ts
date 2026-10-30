@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { AGENT_CONTEXT_SCHEMA_VERSION } from "../../shared/agent.types";
+import { parseProviderResponse } from "./openai.parser";
+import { parseAELWriteFileOperation } from "../validation/ael-file.validation";
 import {
   buildAELAgentInput,
   buildGenericAgentInput,
@@ -20,6 +22,15 @@ const context = {
 };
 
 describe("OpenAI payload builders", () => {
+  it("provides usable file creation examples for Nova and the ACP goal fallback", () => {
+    const nova = buildInput([], ["agent-ael"], { runtimeContext: runtime })[0].content[0].text;
+    const ael = buildAELAgentInput(context, runtime, "Creer coucou.py sur le Bureau", "Creer un programme")[0].content[0].text;
+    const novaExample = nova.match(/structured action: (\{.*?\})\. directory/)?.[1];
+    const aelExample = ael.match(/strict JSON object: (\{.*?\})\. directory/)?.[1];
+    expect(parseProviderResponse(novaExample ?? "")).toMatchObject({ action: "write-file", content: 'print("coucou")\n' });
+    expect(parseAELWriteFileOperation(JSON.parse(aelExample ?? "null"))).toMatchObject({ action: "write-file", content: 'print("coucou")\n' });
+    expect(buildInput([], [], { runtimeContext: runtime })[0].content[0].text).not.toContain('"action":"write-file"');
+  });
   it("keeps assistant messages structured and truncates oversized command results", () => {
     const payload = buildInput([{
       content: "Resultat",

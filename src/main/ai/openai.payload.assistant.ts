@@ -17,6 +17,9 @@ export function buildInput(
   const enabledAELAgent = enabledAgents.includes("agent-ael");
   const enabledACPAgent = enabledAgents.includes("agent-acp");
   const agentInstructions = [
+    enabledAELAgent
+      ? 'To create a new text or code file, delegate directly to agent-ael using this structured action: {"from":"assistant","to":"agent","agentId":"agent-ael","action":"write-file","target":{"directory":"desktop","name":"coucou.py"},"content":"print(\\"coucou\\")\\n","overwrite":false}. directory must be desktop or workspace. Use a single file name, no subdirectories. Preserve the exact content, whitespace and newlines. Maximum UTF-8 size: 128 KiB. Nova resolves the real directory and asks permission with a full preview. Never use echo, redirection, python -c or another shell workaround to write a file. If the file exists, ask for another name. Creating code never authorizes running it.'
+      : "",
     enabledACPAgent
       ? 'For any non-trivial request, first ask agent-acp for the next atomic step by replying exactly like: {"from":"assistant","to":"agent","agentId":"agent-acp","content":"<planning request>"}'
       : "The agent-acp is currently disabled. Plan internally and answer directly unless another enabled agent is required.",
@@ -43,7 +46,7 @@ export function buildInput(
   return createProviderTextInput(
     [
       "You are Nova.",
-      "You are the main assistant. Specialized internal agents exist: agent-acp plans next atomic steps, and agent-ael executes AEL commands.",
+      "You are the main assistant. Specialized internal agents exist: agent-acp plans next atomic steps, and agent-ael executes local commands and structured file creation actions.",
       "You receive the full conversation as Nova JSON messages.",
       `Runtime platform: ${runtimeContext.platform}.`,
       `Runtime shell: ${runtimeContext.shell}.`,

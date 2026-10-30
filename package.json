@@ -11,9 +11,10 @@
     "publish": "electron-forge publish",
     "check": "npm test && npm run typecheck && npm run lint",
     "ci": "npm run check && npm run package",
-    "lint": "eslint --ext .ts,.tsx src tests *.ts && eslint \"scripts/ari/*.cjs\" tests/electron/ari/canary.cjs",
+    "lint": "eslint --ext .ts,.tsx src tests *.ts && eslint \"scripts/ari/*.cjs\" tests/electron/ari/canary.cjs tests/electron/ael/smoke.cjs",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:ael-ui": "electron tests/electron/ael/smoke.cjs",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.build.json --noEmit && tsc -p tests/electron/ari/tsconfig.json --noEmit",
     "test:ari-runtime": "node scripts/ari/qualify-runtime.cjs"
   },

@@ -23,6 +23,20 @@ afterEach(async () => {
 });
 
 describe("agent storage", () => {
+  it("persists file creation as an agent action instead of a terminal command", async () => {
+    const rootDirectory = await createTemporaryDirectory();
+    await recordAgentCommandExchange({
+      agentId: "agent-ael", operation: "write-file", assistantRequest: "Creer coucou.py", command: "Creer desktop/coucou.py",
+      result: { output: "Fichier cree et contenu verifie : coucou.py", status: "success" }, rootDirectory,
+      triggerMessageId: "trigger", userAssistantConversationId: "conversation", userPrompt: "Creer un programme",
+    });
+    const workspace = await loadAgentWorkspace(rootDirectory, "agent-ael");
+    expect(workspace.history[0]).toMatchObject({ operation: "write-file", status: "success" });
+    expect(workspace.conversations.conversations[0].messages).toMatchObject([
+      { from: "assistant", to: "agent", agentId: "agent-ael" },
+      { from: "agent", to: "assistant", agentId: "agent-ael", content: "Fichier cree et contenu verifie : coucou.py" },
+    ]);
+  });
   it("initializes a complete AEL workspace", async () => {
     const rootDirectory = await createTemporaryDirectory();
     const workspace = await loadAgentWorkspace(rootDirectory, "agent-ael");

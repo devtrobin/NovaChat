@@ -7,6 +7,13 @@ import {
 } from "./openai.parser";
 
 describe("OpenAI response parser", () => {
+  it.each(['\n  print("coucou")\n', ""])("parses structured creation without trimming content", (content) => {
+    const response = { from: "assistant", to: "agent", agentId: "agent-ael", action: "write-file", target: { directory: "desktop", name: "coucou.py" }, content, overwrite: false };
+    expect(parseProviderResponse(JSON.stringify(response))).toEqual(response);
+    for (const invalid of [{ ...response, agentId: "agent-acp" }, { ...response, overwrite: true }, { ...response, path: "C:\\x" }]) {
+      expect(parseProviderResponse(JSON.stringify(invalid))).toBeNull();
+    }
+  });
   it("extracts and joins text output items", () => {
     expect(extractText({
       output: [

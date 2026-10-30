@@ -1,6 +1,7 @@
 import { ProviderResponse } from "./openai.types";
 import { AgentId } from "../../shared/agent.types";
 import { SYSTEM_AGENT_IDS } from "../../shared/system-agent.registry";
+import { parseAELWriteFileOperation } from "../validation/ael-file.validation";
 
 export function extractText(data: { output?: Array<{ content?: Array<{ text?: string; type?: string }> }> }): string {
   return data.output?.flatMap((item) => item.content ?? [])
@@ -36,6 +37,16 @@ function parseProviderResponseObject(value: string): ProviderResponse | null {
     }
 
     const normalizedAgentId = normalizeAgentId((maybeResponse as { agentId?: unknown }).agentId);
+    if ("action" in maybeResponse) {
+      if (maybeResponse.to !== "agent" || normalizedAgentId !== "agent-ael") return null;
+      const operation = { ...(parsed as Record<string, unknown>) };
+      delete operation.from;
+      delete operation.to;
+      delete operation.agentId;
+      try {
+        return { ...parseAELWriteFileOperation(operation), agentId: "agent-ael", from: "assistant", to: "agent" };
+      } catch { return null; }
+    }
     if (
       maybeResponse.to === "agent"
       && normalizedAgentId

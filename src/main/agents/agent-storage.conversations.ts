@@ -24,6 +24,7 @@ import { runAgentStorageOperation } from "./agent-storage.queue";
 import { ensureAgentWorkspaceUnlocked } from "./agent-storage.workspace";
 
 type RecordAgentCommandExchangeArgs = {
+  operation?: "write-file";
   agentId: AgentId;
   agentConversationId?: string | null;
   apiTraceSettings?: ApiTraceSettings;
@@ -48,6 +49,7 @@ export async function recordAgentCommandExchange(
 }
 
 async function recordAgentCommandExchangeUnlocked({
+  operation,
   agentId,
   agentConversationId = null,
   apiTraceSettings,
@@ -64,13 +66,14 @@ async function recordAgentCommandExchangeUnlocked({
   if (workspace.storageRecovery) {
     throw new Error("L'espace agent doit etre acquitte avant une nouvelle ecriture.");
   }
-  const assistantMessage = createAssistantToAgentMessage(agentId, assistantRequest, command);
+  const assistantMessage = createAssistantToAgentMessage(agentId, assistantRequest, command, operation);
   const resultMessage = createAgentResultMessage(
     agentId,
     command,
     result.output,
     result.status,
     apiRequests,
+    operation,
   );
   const existingConversation = agentConversationId
     ? workspace.conversations.conversations.find((conversation) => conversation.id === agentConversationId) ?? null
@@ -89,6 +92,7 @@ async function recordAgentCommandExchangeUnlocked({
   );
 
   const nextHistoryEntry: AgentHistoryEntry = {
+    ...(operation ? { operation } : {}),
     agentConversationId: nextConversation.id,
     assistantRequest,
     at: resultMessage.createdAt,
