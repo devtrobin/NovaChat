@@ -1,7 +1,6 @@
 import type { Configuration } from 'webpack';
 
 import { rules as sharedRules } from './webpack.rules';
-import { plugins } from './webpack.plugins';
 
 export const mainConfig: Configuration = {
   /**
@@ -13,7 +12,6 @@ export const mainConfig: Configuration = {
   module: {
     rules: [...sharedRules],
   },
-  plugins,
   resolve: {
     extensions: ['.js', '.ts', '.jsx', '.tsx', '.css', '.json'],
   },

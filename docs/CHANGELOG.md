@@ -3,6 +3,11 @@
 ## Unreleased
 
 ### Added
+- qualification 6.2.1 Windows x64 : harnais Electron distinct pour DOM/PDF,
+  ESM/CJS, N-API, fuses/ASAR et canari de chiffrement 39 vers 44 ; quatre tests
+  de packaging ajoutés, soit 285 tests dans 42 fichiers
+- copie des ressources runtime verrouillées et matrice CI Node 22.22.2/24.18.0
+  avec audits et test du harnais packagé
 - registre partagé `src/shared/system-agent.registry.ts` pour les identités,
   métadonnées, états par défaut et contextes ACP/AEL
 - tests du registre partagé et de compatibilité des conversations historiques ;
@@ -47,6 +52,10 @@
 - traces `message.json`, `log.json`, `apis.json` par message
 
 ### Changed
+- Electron 44.10.0, Forge 8.0.1 et Packager 20.3.0 qualifiés en 6.2.1 ; entrée
+  `.webpack/main/index.cjs`, contrôle TypeScript Webpack direct et résolveur ESM
+  du lint limité aux configurations ; retrait des overrides `tar`, `tmp` et
+  `webpack-dev-server`, maintien justifié de `uuid`
 - phase 6.1 implémentée : renommage intégral des IDs, modules, types, prompts,
   pages, classes CSS, tests et documentation vers ACP/AEL ; clôture validée par
   le test manuel commun et la suppression confirmée des anciens dossiers locaux

@@ -2,12 +2,20 @@
 
 ## Statut
 
-Cadrage fonctionnel complet. Les décisions recensées sont confirmées. La
-[spécification technique ARI](ARI_SPECIFICATION_TECHNIQUE.md) formalise désormais
-le pipeline de recherche, les scrapers, les documents, les dépendances et les
-frontières de sécurité, avec plusieurs choix techniques restant à valider. Les
-deux cahiers doivent être relus dans leur ensemble, déclarés validés puis
-découpés en tâches avant toute implémentation.
+Cadrage fonctionnel relu et consolidé le **29 octobre 2026**. L’utilisateur a
+confirmé explicitement le maintien du scraper Google avec une exception limitée
+à son `robots.txt` pour la page de résultats. Les autres arbitrages techniques
+ont été confiés à l’agent et sont consignés dans la
+[spécification technique ARI](ARI_SPECIFICATION_TECHNIQUE.md).
+
+La préparation documentaire est terminée ; le
+[découpage de la phase 6.2](../NEXT_STEPS.md#découpage-de-la-phase-62) a été
+approuvé par l’utilisateur le 29 octobre 2026, avec demande de continuer.
+La qualification du runtime et des dépendances en 6.2.1 est réussie le
+30 octobre 2026 ; voir [les preuves](../validation/ARI_RUNTIME_6_2_1.md).
+Le service de recherche ARI reste à implémenter ; la phase 6.2 n’est pas close.
+La qualification des bibliothèques ne démontre pas encore les garanties réseau
+et sessions des prochaines portes de validation.
 
 ## Position dans la feuille de route
 
@@ -50,8 +58,9 @@ l’agent qui l’a sollicité.
   ou, par défaut, après dix sites candidats examinés.
 - La découverte Internet n’utilisera pas l’outil `web_search` d’OpenAI ni une
   API de recherche hébergée.
-- ARI interrogera Google avec un scraper local, extraira les dix premiers sites
-  candidats du résultat, puis scrapera ces sites pour chercher l’information.
+- ARI interrogera Google avec un scraper local, dédupliquera les résultats
+  organiques puis retiendra au plus dix sites candidats, dans leur ordre
+  d’apparition, pour y chercher l’information.
 - Si Google ou un site cible présente un captcha, ARI ne tentera jamais de le
   résoudre : il classera la tentative comme `captcha-required` et passera à la
   suite lorsqu’un autre candidat reste disponible.
@@ -60,8 +69,10 @@ l’agent qui l’a sollicité.
 - Une source officielle peut suffire à établir une donnée. À défaut, ARI devra
   obtenir trois sources indépendantes concordantes, sans compter plusieurs
   reprises d’un même contenu comme des confirmations distinctes.
-- Les recherches, lectures publiques et ajouts structurels de credentials sont
-  autorisés par défaut lorsque ARI est actif.
+- Les recherches et lectures publiques sont autorisées lorsque ARI est actif.
+  L’ajout structurel d’un credential ne demande pas de permission supplémentaire
+  après le choix explicite du site par l’utilisateur ; ARI ne crée pas d’entrée
+  spontanément pendant la découverte.
 - La recherche Google utilisera une session éphémère sans compte, cookies
   persistants ou SafeSearch.
 
@@ -159,27 +170,38 @@ devra au minimum pouvoir décrire :
 - l’état de configuration du secret ;
 - l’activation ou la désactivation de l’entrée.
 
-Exemple de représentation visible après sauvegarde :
+Exemple de vue visible expurgée après sauvegarde (le profil complet, ses règles
+de lecture et les dates sont omis ici pour la lisibilité ; ils restent requis
+par le schéma technique) :
 
 ```json
 [
   {
     "id": "documentation-example",
+    "label": "Documentation Example",
     "siteUrl": "https://documentation.example",
     "loginUrl": "https://documentation.example/login",
+    "readOrigins": ["https://documentation.example"],
+    "authOrigins": ["https://documentation.example"],
+    "resourceOrigins": [],
     "authentication": {
       "type": "password",
-      "username": "utilisateur@example.com",
-      "password": {
-        "credentialRef": "ari/documentation-example/password",
-        "status": "configured"
-      }
+      "username": "utilisateur@example.com"
     },
+    "credentialRef": "credential-c4c3ec21-1239-4958-a48a-04598a34698d",
+    "secretStatus": "configured",
+    "sessionStatus": "configured",
+    "profileVersion": 1,
     "allowedAgentIds": ["nova"],
     "enabled": true
   }
 ]
 ```
+
+L’exemple représente une entrée déjà configurée et activée par l’utilisateur.
+Une nouvelle entrée structurelle est désactivée, sans secret, sans session et
+sans droit de partage implicite avec un autre agent. Nova est le demandeur
+initial par défaut uniquement pour une création depuis sa conversation.
 
 Le mot de passe ne devra pas rester dans ce JSON après sa sauvegarde. Le
 processus `main` devra l’extraire immédiatement, le chiffrer avec le coffre du
@@ -189,10 +211,10 @@ extraction.
 
 ### Stratégie public d’abord
 
-ARI commencera par transformer l’objectif en requête Google. Un scraper local
-contrôlé récupérera les premiers résultats utilisables et constituera une file
-de dix sites candidats. ARI visitera ensuite ces candidats dans l’ordre du
-résultat de recherche et tentera d’en extraire le contenu principal.
+Sans URL directe, ARI commencera par transformer l’objectif en requête Google.
+Un scraper local contrôlé récupérera les premiers résultats utilisables et
+constituera une file d’au plus dix sites distincts. ARI les visitera dans
+l’ordre du résultat de recherche et tentera d’en extraire le contenu principal.
 
 Si la demande contient une URL explicite, ARI la place en tête de la file sans
 effectuer d’abord une recherche Google. Lorsque cette URL suffit à établir la
@@ -219,11 +241,11 @@ conserver son URL et la raison du blocage, puis passer immédiatement au site
 suivant. Un captcha ne déclenchera ni tentative de résolution, ni fenêtre
 interactive, ni demande de credential.
 
-La limite initiale proposée est de **dix sites candidats distincts par cycle de
+La limite confirmée est de **dix sites candidats distincts par cycle de
 recherche**. Un site inaccessible, non pertinent ou nécessitant des credentials
 compte dans cette limite. Plusieurs pages consultées sur un même domaine
-restent une seule tentative de site, sous réserve d’une future limite interne
-de pages et de temps.
+restent une seule tentative de site, dans les plafonds confirmés de dix pages
+HTML par site, trente au total et deux minutes actives par cycle.
 
 ARI s’arrête avant la dixième tentative dès qu’il dispose d’une réponse
 suffisante. À l’inverse, atteindre la limite ne doit jamais produire une
@@ -305,15 +327,11 @@ saisira toujours lui-même le secret dans l’écran Credentials.
 
 ## Ordre d’implémentation prévu
 
-1. registre et routage permettant plusieurs agents système ;
-2. canal de recherche Internet contrôlé ;
-3. ARI, ses contrats de sortie et ses tests ;
-4. intégration de ses résultats dans Nova et dans le routage partagé des
-   agents ;
-5. délégation ACA vers ARI lors de la phase 6.3.
-
-Cet ordre sera remplacé par un découpage détaillé après validation complète du
-cahier des charges.
+Le [découpage détaillé](../NEXT_STEPS.md#découpage-de-la-phase-62) remplace
+l’ordre indicatif initial : runtime maintenu, contrats, réseau contrôlé,
+preuve de confinement Electron, extraction, Credentials et sessions, recherche,
+persistance, intégration et validation. La délégation ACA vers ARI reste en 6.3.
+Le découpage a reçu l’approbation de l’utilisateur le 29 octobre 2026.
 
 ## Décisions confirmées issues des questions initiales
 
@@ -507,9 +525,10 @@ autour du même site.
 
 Les règles suivantes sont confirmées :
 
-1. **Nature des résultats.** Retenir les dix premiers résultats organiques,
-   ignorer publicités, carrousels, extraits sans destination et modules Google,
-   puis dédupliquer par domaine.
+1. **Nature des résultats.** Ignorer publicités, carrousels, extraits sans
+   destination et modules Google ; dédupliquer les résultats organiques par
+   site puis retenir les dix premiers sites distincts de la réponse reçue.
+   Ne pas paginer pour remplir une file plus courte.
 2. **Captcha Google.** Si Google lui-même présente un captcha, arrêter le cycle
    avec l’état `blocked` et un diagnostic clair, sans basculer implicitement
    vers un autre moteur.
@@ -518,8 +537,12 @@ Les règles suivantes sont confirmées :
    session Electron isolée, sans accès Node, avec domaines et navigation
    bornés.
 4. **Règles des sites.** Respecter `robots.txt`, les statuts `403`/`429` et les
-   interdictions techniques explicites. Un refus est journalisé puis ARI passe
-   au candidat suivant.
+   interdictions techniques explicites des sites cibles. L’utilisateur a validé
+   le 29 octobre 2026 une seule exception : l’interdiction de `robots.txt` visant
+   la page de résultats Google ne bloque pas sa requête de découverte. Cette
+   exception ne couvre ni les autres services Google, ni les sites cibles, ni
+   les captchas, refus HTTP ou pages de challenge. Aucun changement d’identité,
+   rotation de proxy ou autre contournement n’est autorisé.
 5. **Reformulation.** Limiter un cycle à une requête Google. Si les dix
    candidats ne suffisent pas, retourner `partial` ou `not-found` et proposer
    un nouveau cycle avec une requête reformulée.
@@ -551,12 +574,13 @@ restent disponibles.
 
 ### 3. Autorisation des recherches réseau
 
-Activer ARI dans les paramètres constitue une autorisation persistante pour les
-recherches, lectures publiques et création des entrées structurelles de
-credentials. Une confirmation ne sera pas demandée à chaque requête ;
-l’interface affichera simplement que la recherche est en cours. L’utilisateur
-reste la seule personne qui saisit le secret dans l’écran Credentials. Toute
-extension future capable de modifier un site conservera des règles séparées.
+Activer ARI constitue une autorisation persistante pour les recherches et
+lectures publiques. Après le choix explicite d’un site par l’utilisateur, ARI
+peut créer son entrée structurelle sans confirmation supplémentaire. Aucun
+secret, changement de domaines ou élargissement d’ACL n’est ainsi autorisé.
+L’utilisateur reste seul à saisir le secret et à activer ou partager un compte.
+Les requêtes publiques ordinaires montrent une progression sans permission à
+chaque page. Toute extension capable de modifier un site aura des règles séparées.
 
 ### 4. Confidentialité et personnalisation Google
 
@@ -621,9 +645,41 @@ La limite est fixée à dix pages maximum sur un même site et trente pages HTML
 au total par cycle. ARI s’arrêtera avant dès que le niveau de preuve requis est
 atteint.
 
+## Précisions retenues après la revue du 29 octobre 2026
+
+- La lecture authentifiée exige un profil explicite de connexion et de lecture.
+  Les ressources et actions non classifiables sont refusées ; la première
+  version ne promet pas de fonctionner sur tout site. Une méthode HTTP GET ne
+  suffit pas à prouver l’absence de mutation. L’heuristique de soumission de
+  formulaire est écartée.
+- MFA/OAuth/SSO restent manuels. Les domaines d’identité et les destinations de
+  lecture sont déclarés séparément. Un captcha interrompt aussi ce parcours.
+- L’expiration ou la révocation locale d’une session interrompt ses opérations.
+  La révocation locale ne garantit pas une déconnexion distante ; cette limite
+  est affichée sans envoyer automatiquement un formulaire métier.
+- Les sessions éventuellement conservées sont chiffrées séparément de
+  l’historique de recherche. Une méthode de session non prise en charge est
+  signalée ; aucun stockage Web complet n’est exporté implicitement.
+- Les proxies système/PAC ne sont pas pris en charge initialement. Si un proxy
+  est requis ou détecté, ARI retourne `proxy-unsupported` sans tenter une sortie
+  directe de secours. Le proxy interne de confinement n’est pas un proxy
+  utilisateur ni un accès générique offert aux agents.
+- Les réglages peuvent réduire les plafonds initiaux. Leur augmentation au-delà
+  des maxima du cahier technique exige une nouvelle revue.
+- Au-delà de 100 pages d’un PDF, seules 100 pages au plus sont analysées, avec
+  avertissement de couverture partielle. Au-delà de 20 Mo, le transfert est
+  arrêté. Un PDF chiffré, protégé ou contenant un exécutable embarqué est refusé.
+- Si Google se bloque après une première lecture utile, le statut de cycle reste
+  `blocked` conformément à la règle Google ; les sources déjà obtenues sont
+  conservées dans le résultat et leur utilité partielle est expliquée.
+- Les réponses publiques conservent leur propre instantané compact de citations
+  afin que la purge d’une tâche ARI ne casse pas leurs références.
+
 ## Méthode de travail
 
-Les prochains scénarios, décisions et morceaux de code concernant ARI devront
-être consolidés dans ce fichier. Les décisions confirmées, propositions et
-éventuelles nouvelles questions resteront séparées jusqu’à validation finale
-du cahier des charges.
+Les décisions techniques retenues par délégation sont détaillées dans le cahier
+technique. La preuve de leurs garanties appartient aux tâches de 6.2 ; elle n’est
+pas remplacée par leur validation documentaire. Tout échec d’un contrôle de
+sécurité bloque l’activation concernée et exige un nouvel arbitrage si le contrat
+ne peut pas être tenu. ACA, le code ARI et les changements de dépendances restent
+hors de cette préparation documentaire.

@@ -14,9 +14,16 @@ L’assainissement du code est terminé. Le renommage technique d’ACP et d’A
 leur registre partagé, les tests, TypeScript, ESLint et le packaging de la
 phase 6.1 sont validés. Les anciens dossiers locaux ont été supprimés après
 confirmation et le test manuel ACP/AEL a réussi : la phase 6.1 est close. La
-relecture conjointe des cahiers fonctionnel et technique ARI, puis son découpage,
-constituent la prochaine étape en 6.2, avant la création automatique d’agents
-avec ACA en 6.3. Les autres nouvelles capacités sont reportées en phase 7.
+préparation d’ARI a été consolidée le 29 octobre 2026 : cahiers relus,
+arbitrages techniques retenus et 17 tâches décrites dans `NEXT_STEPS.md`.
+L’utilisateur a approuvé ce découpage le même jour. La qualification de 6.2.1
+est réussie le 30 octobre 2026 : Electron 44, Forge 8, Packager 20, audits,
+tests Node 22/24 et harnais DOM/PDF packagé avec canari chiffré. Les preuves sont
+consignées dans [le dossier de qualification](validation/ARI_RUNTIME_6_2_1.md).
+La prochaine tâche est 6.2.2, contrats et délégations. Les preuves réseau et
+sessions restent à exécuter en 6.2 ; ARI
+n’est pas livré. ACA attend sa validation complète en 6.3. Les autres nouvelles
+capacités restent reportées en phase 7.
 
 ## Parcours de lecture
 

@@ -10,10 +10,14 @@ import { FuseV1Options, FuseVersion } from '@electron/fuses';
 
 import { mainConfig } from './webpack.main.config';
 import { rendererConfig } from './webpack.renderer.config';
+import { copyRuntimeDependencies } from './forge.runtime-assets';
 
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
+    afterCopy: [
+      async ({ buildPath }) => copyRuntimeDependencies(buildPath),
+    ],
   },
   rebuildConfig: {},
   makers: [

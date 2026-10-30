@@ -30,6 +30,15 @@ Le packaging active `asar` et plusieurs fuses Electron : désactivation de
 d’inspection, chiffrement des cookies, validation d’intégrité de l’ASAR et
 chargement limité à l’ASAR.
 
+Depuis 6.2.1, le runtime qualifié Windows x64 est Electron 44.10.0 avec Node
+24.22.1. Forge 8 émet le main et le preload en `.cjs`. Après la copie Webpack,
+`forge.runtime-assets.ts` conserve l’arbre runtime verrouillé dans l’ASAR pour
+les imports ESM et ressources relatives PDF ; le plugin natif décompacte les
+modules N-API. Les six fuses existants sont conservés. Le
+[harnais de qualification](../tests/electron/ari/README.md) est une application
+distincte, absente du paquet de production ; voir
+[les résultats](validation/ARI_RUNTIME_6_2_1.md). Le service ARI reste à construire.
+
 ### Fenêtres et navigations futures
 
 La fenêtre principale fixe explicitement `contextIsolation`, `sandbox`,
@@ -319,6 +328,25 @@ dans l’UI et refusés par la validation main jusqu’à disposer d’un transp
 d’une validation complets.
 
 ## Contrats transversaux
+
+### Extension ARI préparée, non implémentée
+
+Au 29 octobre 2026, les cahiers ARI et les arbitrages D01 à D10 sont consolidés.
+Les [17 tâches de 6.2](NEXT_STEPS.md#découpage-de-la-phase-62) ont été approuvées
+par l’utilisateur le même jour ; la qualification de 6.2.1 est réussie le
+30 octobre et la prochaine tâche est 6.2.2.
+L’architecture actuelle décrite ci-dessus reste
+ACP/AEL ; aucun réseau ARI ni nouveau coffre n’est encore branché.
+
+La cible ajoute un transport public `undici` privé au main, des parseurs sans
+réseau implicite, puis des partitions Chromium distinctes derrière un proxy
+interne épinglé et une interception contrôlée. Cette composition est une cible
+à prouver en 6.2.5, pas une garantie déduite des options BrowserWindow.
+Les profils de lecture et les ACL sont vérifiés pour le demandeur effectif.
+Credentials est global sous `src/main/credentials/`, jamais manipulé par AEL.
+Les contrats, citations et résultats restent structurés ; le renderer ne reçoit
+aucun accès générique au réseau, aux cookies, aux fenêtres ou au coffre.
+La mise à niveau du runtime est prévue en 6.2.1 et n’est pas réalisée ici.
 
 ### Types
 

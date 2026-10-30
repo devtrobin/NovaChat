@@ -25,16 +25,27 @@ Les anciens identifiants encore présents dans des messages de conversation
 sont normalisés vers ACP/AEL à la frontière IPC afin de ne pas bloquer une
 sauvegarde ; cette tolérance ne s’applique pas aux opérations, settings ou
 espaces de stockage des agents.
-La prochaine étape est la relecture conjointe du cahier fonctionnel et de la
-spécification technique ARI, la résolution des choix techniques listés, puis le
-découpage en tâches de la phase 6.2. ARI doit être validé avant ACA, en
-préservant les contrats de sécurité, données, visibilité et validation.
+Le 29 octobre 2026, les cahiers ARI ont été relus, les arbitrages techniques
+ont été arrêtés par délégation et 17 tâches ont été préparées dans
+`docs/NEXT_STEPS.md`. L’utilisateur a explicitement confirmé le maintien du
+scraper Google avec une exception robots limitée à sa page de résultats.
+L’utilisateur a approuvé ce découpage le 29 octobre 2026 et demandé de continuer.
+La qualification de 6.2.1 est réussie le 30 octobre 2026 : Electron 44.10.0,
+Forge 8.0.1 et Packager 20.3.0, tests, audits, contrôles Node 22/24 et harnais
+DOM/PDF packagé avec canari chiffré 39 vers 44. Les majeures de construction ont
+reçu un accord explicite. La prochaine tâche est 6.2.2, contrats et délégations.
+Voir `docs/NEXT_STEPS.md`. Ne pas redemander l’accord sur le découpage. ARI doit être
+livré et validé avant ACA en préservant sécurité, données, visibilité et validation.
 ARI est une capacité de recherche transversale accessible à Nova et à tout
 agent autorisé ; il ne doit pas être conçu comme un composant réservé à ACA.
-Le cadrage fonctionnel d’ARI ne contient plus de question ouverte, mais son
-cahier technique n’est pas encore validé. ACA possède aussi un cahier technique
-initial ; sa frontière d’exécution du code généré reste bloquante. Les réponses
-ACA restent à relire avec l’utilisateur avant le découpage de la phase 6.3.
+Les décisions D01 à D10 du cahier technique ARI sont retenues pour conception.
+La qualification de 6.2.1 prouve la compatibilité du runtime testé ; le
+confinement réseau et les sessions restent à démontrer. Les portes 6.2.5 et 6.2.10
+bloquent l’activation du rendu distant et des comptes tant que leurs garanties ne sont
+pas démontrées. Seul le harnais de qualification ARI est présent ; aucun service
+de recherche n’est activé. ACA possède aussi un cahier
+technique initial ; sa frontière d’exécution du code généré reste bloquante.
+Ses réponses restent à relire avant le découpage de la phase 6.3.
 
 ## Invariants d’architecture
 

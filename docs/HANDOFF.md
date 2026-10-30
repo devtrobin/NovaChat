@@ -32,14 +32,23 @@ denses séparés.
 Pour un flux précis, consulter [WORKFLOWS.md](WORKFLOWS.md). Pour les fichiers
 et contrats, consulter [DATA_MODEL.md](DATA_MODEL.md).
 
-## Prochaine décision
+## Prochaine étape
 
 La phase 6.1 est close : réorganisation technique ACP/AEL, validation
 automatisée, packaging, suppression confirmée des trois dossiers obsolètes et
-test manuel commun ont réussi. Relire maintenant le cadrage complet d’ARI en
-phase 6.2 avec sa
-[spécification technique](agents_specification/ARI_SPECIFICATION_TECHNIQUE.md),
-résoudre les choix listés puis le découper en tâches vérifiables. Relire ensuite
+test manuel commun ont réussi. La préparation d’ARI a été consolidée le
+29 octobre 2026 : cahiers relus, arbitrages techniques arrêtés par délégation,
+exception robots limitée à la page de résultats Google explicitement confirmée
+par l’utilisateur. Les [17 tâches de 6.2](NEXT_STEPS.md#découpage-de-la-phase-62)
+ont été approuvées le même jour, avec demande de continuer. La qualification
+de 6.2.1 est réussie le 30 octobre : Electron 44, Forge 8 et Packager 20,
+audits à zéro, 285 tests, typage, lint, packaging Windows, contrôles Node 22/24,
+harnais DOM/PDF/N-API dans l’ASAR et canari chiffré 39 vers 44. Consulter
+[les preuves](validation/ARI_RUNTIME_6_2_1.md). La prochaine tâche est 6.2.2,
+contrats et provenance des délégations, sans redemander l’accord sur le découpage. La
+[spécification technique](agents_specification/ARI_SPECIFICATION_TECHNIQUE.md)
+décrit les portes réseau et sessions à prouver pendant l’implémentation ;
+la recherche ARI n’est pas encore livrée. Relire ensuite
 les cahiers [fonctionnel ACA](agents_specification/ACA_SPECIFICATION.md) et
 [technique ACA](agents_specification/ACA_SPECIFICATION_TECHNIQUE.md) avant le
 découpage de la phase 6.3. ARI doit être implémenté et validé avant ACA, mais
@@ -104,8 +113,11 @@ journaliser.
 
 ## Phrase de reprise
 
-> Reprendre NovaChat après la clôture de la phase 6.1 : relire les cahiers
-> fonctionnel et technique ARI, résoudre leurs choix puis découper la phase 6.2.
+> Reprendre NovaChat après la préparation documentaire ARI du 29 octobre 2026 :
+> lire les cahiers consolidés et les 17 tâches de 6.2 dans NEXT_STEPS.md.
+> L’approbation des 17 tâches est acquise. Reprendre 6.2.1 en rétablissant l’accès
+> autorisé aux paquets npm, sans contourner la revue automatique indisponible.
+> Les choix sont arrêtés, leurs garanties restent à prouver dans le package réel.
 > Relire ensuite les deux cahiers ACA avant le découpage de la phase 6.3.
 > Préserver les frontières main/preload/renderer et garder la validation de
 > distribution comme dernière tâche absolue.

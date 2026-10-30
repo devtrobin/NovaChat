@@ -12,5 +12,21 @@
     "plugin:import/electron",
     "plugin:import/typescript"
   ],
-  "parser": "@typescript-eslint/parser"
+  "parser": "@typescript-eslint/parser",
+  "overrides": [
+    {
+      "files": ["forge*.ts", "webpack*.ts"],
+      "settings": {
+        "import/resolver": {
+          "typescript": { "project": "tsconfig.build.json" }
+        }
+      }
+    },
+    {
+      "files": ["scripts/ari/*.cjs", "tests/electron/ari/canary.cjs"],
+      "rules": {
+        "@typescript-eslint/no-require-imports": "off"
+      }
+    }
+  ]
 }

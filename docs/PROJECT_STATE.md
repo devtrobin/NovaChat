@@ -44,7 +44,7 @@ valider avant une diffusion.
 | Historique agent | Fonctionnel | stockage et vue |
 | Providers alternatifs | Catalogue planifié | visibles comme « à venir », non sélectionnables et refusés par le main |
 | Internationalisation | Partielle | écran de boot seulement |
-| Tests automatisés | Renforcés | 281 réussites dans 41 fichiers, aucun échec attendu |
+| Tests automatisés | Renforcés | 285 réussites dans 42 fichiers sous Node 22.22.2 et 24.18.0 |
 | Packaging Windows x64 | Vérifié | `npm.cmd run package` réussi |
 
 ## Agents actuels
@@ -117,19 +117,21 @@ Réussites :
 ```text
 npm.cmd test
 npm.cmd exec tsc -- --noEmit
+npm.cmd run typecheck
 npm.cmd run lint
 npm.cmd run package
 npm.cmd run check
 npm.cmd run ci
 npm.cmd audit
 npm.cmd audit --omit=dev
+npm.cmd run test:ari-runtime
 ```
 
 Le package vérifié est `win32-x64`.
 Le démarrage de développement a également atteint le lancement de
 l’application et du serveur renderer sur `http://localhost:9000`.
 
-La suite comprend 281 cas répartis dans 41 fichiers. Elle couvre la policy
+La suite comprend 285 cas répartis dans 42 fichiers. Elle couvre la policy
 AEL, les parsers OpenAI/ACP, les commandes slash, les handoffs
 assistant-agent, la conservation des traces, les messages de tâche agent, le
 formatage de la page AEL, les stockages chat/agents, les frontières IPC,
@@ -139,12 +141,16 @@ migrations `userData`, le registre ACP/AEL et le coffre de secrets. Elle couvre 
 aussi les permissions asynchrones, l’arrêt des tours, la reprise des queues,
 le timeout OpenAI, la sécurité de la fenêtre, la visibilité structurée et des
 composants React critiques. La matrice AEL comporte 119 cas et tous les
-anciens contournements connus sont des tests de régression normaux.
+anciens contournements connus sont des tests de régression normaux. Les quatre
+cas ajoutés en 6.2.1 vérifient la copie des ressources runtime et les chemins du
+package. Un harnais Electron distinct qualifie DOM/PDF, N-API, fuses et canari
+chiffré entre Electron 39 et 44 en développement et dans un ASAR de test.
 
 Non vérifié :
 
 - installateur `make` ;
-- lancement du binaire packagé ;
+- parcours applicatif du binaire de production ; le harnais packagé distinct
+  est exécuté et le paquet de production est inspecté ;
 - macOS et Linux ;
 - comportement avec un vrai appel OpenAI pendant l’audit ;
 - parcours Electron end-to-end réels.
@@ -154,11 +160,12 @@ L’audit initial signalait 57 vulnérabilités dans l’arbre complet, dont
 ciblées et résolutions transitives, les audits complet et production
 signalent tous les deux 0 vulnérabilité.
 
-Les résolutions `tar`, `tmp`, `uuid` et `webpack-dev-server` de `package.json`
-compensent des contraintes amont trop anciennes d’Electron Forge 7. Elles ont
-été validées par les tests, le typage, le lint, un démarrage de développement
-et le packaging Windows x64. Elles doivent être réévaluées lors de chaque mise
-à jour d’Electron Forge.
+Le 30 octobre 2026, la qualification de 6.2.1 met à jour Electron vers 44.10.0,
+Forge vers 8.0.1 et Packager vers 20.3.0. Les overrides historiques ont été
+réévalués séparément : seul `uuid: 11.1.1` reste nécessaire à SockJS. Les audits
+complet et production sont à zéro. Le [rapport](validation/ARI_RUNTIME_6_2_1.md)
+consigne versions, licences, taille, limites et preuves. Les contrôles doivent
+être rejoués à chaque évolution de l’arbre.
 
 ## Écarts avec l’ancienne documentation
 
@@ -191,10 +198,17 @@ TypeScript strict, erreurs asynchrones contrôlées et modules denses découpés
 
 La réorganisation technique d’ACP et d’AEL en phase 6.1 est close : validation
 automatisée, packaging, nettoyage local confirmé et test manuel commun ont
-réussi. La prochaine étape est la relecture finale puis le découpage d’ARI en
-phase 6.2. Le cahier fonctionnel ARI est complet et une spécification technique
-détaille désormais le scraping Google, les documents, le réseau et les
-credentials ; ses choix techniques restent à valider avant le découpage. ACA
-possède aussi un cahier technique initial, dont le runtime du code généré reste
-bloquant. ARI demeure un service transversal et doit être validé avant ACA. La
-validation finale des installateurs reste la toute dernière tâche absolue.
+réussi. La préparation d’ARI a été consolidée le 29 octobre 2026 : les cahiers
+ont été relus, D01 (exception robots pour la seule page de résultats Google)
+confirmée par l’utilisateur, les choix techniques D02 à D10 arrêtés par
+délégation et 17 tâches préparées dans `NEXT_STEPS.md`. L’utilisateur a approuvé
+ce découpage le même jour puis demandé de continuer. La qualification de 6.2.1
+est réussie le 30 octobre : audits, 285 tests, typage, lint, packaging Windows,
+contrôles Node 22/24 et harnais DOM/PDF packagé avec canari 39 vers 44. Les
+majeures Forge 8/Packager 20 sont approuvées ; voir
+[le dossier de qualification](validation/ARI_RUNTIME_6_2_1.md).
+La prochaine tâche est 6.2.2, contrats et provenance des délégations.
+ARI n’est pas livré ; les preuves réseau et sessions restent à faire.
+L’accord sur le découpage reste acquis à la reprise. ACA garde son cahier technique
+initial et son runtime généré bloquant. ARI demeure transversal et doit être
+validé avant ACA. Les installateurs restent la toute dernière tâche absolue.

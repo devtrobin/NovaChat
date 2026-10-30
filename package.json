@@ -3,17 +3,19 @@
   "productName": "nova-chat",
   "version": "1.0.0",
   "description": "Assistant desktop Electron avec chat, orchestration ACP/AEL et exécution locale contrôlée.",
-  "main": ".webpack/main",
+  "main": ".webpack/main/index.cjs",
   "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make",
     "publish": "electron-forge publish",
-    "check": "npm test && npm exec tsc -- --noEmit && npm run lint",
+    "check": "npm test && npm run typecheck && npm run lint",
     "ci": "npm run check && npm run package",
-    "lint": "eslint --ext .ts,.tsx .",
+    "lint": "eslint --ext .ts,.tsx src tests *.ts && eslint \"scripts/ari/*.cjs\" tests/electron/ari/canary.cjs",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.build.json --noEmit && tsc -p tests/electron/ari/tsconfig.json --noEmit",
+    "test:ari-runtime": "node scripts/ari/qualify-runtime.cjs"
   },
   "keywords": [],
   "author": {
@@ -21,47 +23,59 @@
     "email": "thomas.robin94@hotmail.fr"
   },
   "engines": {
-    "node": "^20.0.0 || ^22.0.0 || >=24.0.0"
+    "node": "^22.22.2 || ^24.18.0"
   },
   "license": "MIT",
   "devDependencies": {
-    "@electron-forge/cli": "^7.11.2",
-    "@electron-forge/maker-deb": "^7.11.2",
-    "@electron-forge/maker-rpm": "^7.11.2",
-    "@electron-forge/maker-squirrel": "^7.11.2",
-    "@electron-forge/maker-zip": "^7.11.2",
-    "@electron-forge/plugin-auto-unpack-natives": "^7.11.2",
-    "@electron-forge/plugin-fuses": "^7.11.2",
-    "@electron-forge/plugin-webpack": "^7.11.2",
-    "@electron/fuses": "^1.8.0",
+    "@electron-forge/cli": "8.0.1",
+    "@electron-forge/maker-deb": "8.0.1",
+    "@electron-forge/maker-rpm": "8.0.1",
+    "@electron-forge/maker-squirrel": "8.0.1",
+    "@electron-forge/maker-zip": "8.0.1",
+    "@electron-forge/plugin-auto-unpack-natives": "8.0.1",
+    "@electron-forge/plugin-fuses": "8.0.1",
+    "@electron-forge/plugin-webpack": "8.0.1",
+    "@electron/asar": "4.3.1",
+    "@electron/fuses": "2.1.3",
+    "@electron/packager": "20.3.0",
+    "@types/jsdom": "30.0.0",
+    "@types/node": "24.19.2",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
-    "@typescript-eslint/eslint-plugin": "^5.62.0",
-    "@typescript-eslint/parser": "^5.62.0",
+    "@typescript-eslint/eslint-plugin": "8.72.1",
+    "@typescript-eslint/parser": "8.72.1",
     "@vercel/webpack-asset-relocator-loader": "^1.7.3",
     "css-loader": "^6.11.0",
-    "electron": "39.8.10",
+    "electron": "44.10.0",
     "eslint": "^8.57.1",
+    "eslint-import-resolver-typescript": "4.4.5",
     "eslint-plugin-import": "^2.32.0",
-    "fork-ts-checker-webpack-plugin": "^7.3.0",
     "node-loader": "^2.1.0",
     "style-loader": "^3.3.4",
     "ts-loader": "^9.5.4",
     "typescript": "^5.9.3",
-    "vitest": "^4.1.10",
+    "vitest": "^4.1.12",
+    "webpack": "5.104.1",
     "yaml": "^2.9.0"
   },
   "dependencies": {
+    "@mozilla/readability": "0.6.0",
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1",
+    "cheerio": "1.2.0",
     "electron-squirrel-startup": "^1.0.1",
     "i18next": "^23.10.1",
+    "iconv-lite": "0.7.3",
+    "jsdom": "30.1.3",
+    "pdfjs-dist": "6.4.299",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
-    "react-i18next": "^15.4.2"
+    "react-i18next": "^15.4.2",
+    "robots-parser": "3.0.1",
+    "tldts": "7.4.19",
+    "undici": "7.30.1"
   },
   "overrides": {
-    "tar": "7.5.16",
-    "tmp": "0.2.7",
-    "uuid": "11.1.1",
-    "webpack-dev-server": "5.2.5"
+    "uuid": "11.1.1"
   }
 }

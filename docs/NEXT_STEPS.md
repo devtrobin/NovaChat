@@ -279,10 +279,11 @@ commencer ARI.
 7. ~~**6.1.7 — Valider**~~ : 281 tests dans 41 fichiers, TypeScript, ESLint et
    le packaging Windows x64 passent. Le test manuel commun ACP/AEL a réussi.
 
-État au 27 août 2026 : phase 6.1 close. Aucune fonctionnalité nouvelle n’a été
-ajoutée et la policy terminal n’a pas été assouplie. La prochaine étape est la
-relecture conjointe des cahiers fonctionnel et technique ARI, la résolution des
-choix techniques puis le découpage en tâches de la phase 6.2.
+État de la phase 6.1 : close, sans fonctionnalité nouvelle ni assouplissement de
+la policy terminal. Le 29 octobre 2026, les cahiers ARI ont été relus et les
+arbitrages ont été arrêtés. L’utilisateur a approuvé le découpage ci-dessous
+le même jour et demandé de continuer. La réalisation ordonnée est autorisée ;
+la préparation documentaire n’implémente aucune capacité.
 
 ### Phase 6.2 — ARI — Agent de Recherche Internet
 
@@ -296,19 +297,276 @@ Documents de référence :
 - [Cahier fonctionnel ARI](agents_specification/ARI_SPECIFICATION.md) ;
 - [Spécification technique ARI](agents_specification/ARI_SPECIFICATION_TECHNIQUE.md).
 
-ARI est une capacité transversale utilisable par Nova, les autres agents
-système et les agents spécialisés autorisés. Il doit être étudié, découpé,
-implémenté et validé avant ACA ; ACA sera l’un de ses consommateurs pour la
-création de connecteurs, mais ARI ne lui est pas réservé.
+**Découpage approuvé le 29 octobre 2026 ; qualification de 6.2.1 réussie le
+30 octobre avec Electron 44, Forge 8 et Packager 20. Prochaine tâche : 6.2.2.** Les choix
+techniques D01 à D10 sont consignés dans
+le cahier technique. D01 a été explicitement confirmé par l’utilisateur ; les
+autres arbitrages ont été effectués par délégation. Aucune approbation du code,
+des preuves ou du packaging ARI n’est sous-entendue.
 
-La sous-phase inclura un écran Credentials générique, un registre JSON expurgé
-des secrets et un stockage chiffré dans le coffre système. La décision retient
-un `CredentialsService` dédié dans le process `main`, sans passage par AEL,
-ainsi que des sessions authentifiées strictement limitées à la lecture. ARI
-appliquera une stratégie « public d’abord » : poursuivre sur
-d’autres sources lorsqu’un site demande un compte, recenser les sites bloqués
-et arrêter le cycle après dix sites candidats par défaut si aucune réponse
-suffisante n’a été trouvée.
+ARI reste transversal pour Nova et les agents autorisés, indépendant d’ACA.
+Le périmètre comprend recherche Google, extraction HTML/texte/JSON/PDF, rendu
+JavaScript contrôlé, Credentials global et sessions de lecture, résultat typé,
+citations, annulation et rétention. Une livraison publique seule ne clôt pas
+6.2. ACA attend la validation complète d’ARI.
+
+#### Découpage de la phase 6.2
+
+L’ordre numéroté est l’ordre de réalisation et de revue. Les dépendances
+indiquent les prérequis techniques minimaux ; elles n’autorisent pas de sauter
+une porte de validation. Les chemins source des tâches non réalisées restent
+des cibles futures. Chaque tâche s’arrête sur ses
+critères de sortie ; tout échec de garantie impose une correction ou un nouvel
+arbitrage, jamais un contournement silencieux.
+
+##### 6.2.1 — Qualifier le runtime et les dépendances
+
+- **Dépendances :** approbation acquise le 29 octobre 2026.
+- **État :** terminée le 30 octobre 2026. Electron 44.10.0, Forge 8.0.1,
+  Packager 20.3.0 et paquets D05 sont verrouillés. L’utilisateur a approuvé les
+  majeures de construction. CI Node 24, contrôles Node 22, 285 tests, typage,
+  lint, audits à zéro et packaging Windows x64 passent. Le harnais DOM/PDF/N-API
+  réussit en développement et dans l’ASAR avec canari chiffré 39 vers 44 ; les
+  fuses, assets et l’absence du harnais en production sont vérifiés. Voir
+  [le dossier de preuves](validation/ARI_RUNTIME_6_2_1.md). ARI reste inactif.
+- **Périmètre/fichiers :** `package.json`, `package-lock.json`,
+  `.github/workflows/ci.yml`, `forge.config.ts`, configurations Webpack et
+  `tests/electron/ari/` (harnais isolé, absent de l’application de production).
+- **Sortie :** qualifier Electron 44.10.0 maintenu à la date de préparation,
+  moteurs `^22.22.2 || ^24.18.0`, CI Node 24.18.0 et contrôle sous 22.22.2 ;
+  verrouiller les paquets D05 après manifestes/licences/transitives/audits.
+  Vérifier ESM/CJS, worker et ressources PDF, dépendances natives optionnelles,
+  fuses/ASAR et taille du bundle. Aucun changement de majeure de repli sans
+  arbitrage. Garder ARI inactif.
+- **Tests :** suite existante, typage, lint, audits complet/production et
+  packaging ; smoke DOM/PDF dans le package de test ; canari chiffré temporaire
+  pour vérifier la compatibilité du coffre, sans lire le coffre OpenAI réel.
+  Pas d’installateur `make` ni de migration des données de l’utilisateur.
+
+##### 6.2.2 — Fermer les contrats et la provenance des délégations
+
+- **Dépendances :** 6.2.1.
+- **Périmètre/fichiers :** `src/shared/ari.types.ts`, `credentials.types.ts`,
+  `agent-delegation.types.ts`, `src/main/validation/`,
+  `src/main/ai/ai.turn-registry.ts` et module de délégation dédié.
+- **Sortie :** schémas v1 fermés requête/résultat/source/affirmation/budgets,
+  identités produites par le main, rattachement parent/enfant, profondeur 2,
+  enfant unique et refus des boucles ; aucun champ privilégié issu du modèle.
+  Distinguer statuts de tâche, de recherche et de message. Pas d’activation ARI.
+- **Tests :** champs inconnus/tailles invalides, demandeur absent ou usurpé,
+  droits Nova différents du demandeur, enfant orphelin, boucle, dépassement de
+  profondeur, arrêt du parent et non-réinitialisation des budgets.
+
+##### 6.2.3 — Construire le client HTTP public et la policy de destination
+
+- **Dépendances :** 6.2.1, 6.2.2.
+- **Périmètre/fichiers :** `src/main/ari/ari.safe-http.ts`, modules URL/DNS/
+  connexion/budgets du même domaine, fixtures et doubles de transport locaux.
+- **Sortie :** IP publique épinglée à chaque socket, TLS conservant le nom
+  d’origine, redirections manuelles, refus proxy utilisateur/PAC, pas de cookie
+  ou header sensible public, streaming/décompression/délais/abort bornés.
+- **Tests :** IPv4/IPv6 et formes mappées, DNS mixte et rebinding, reconnexion,
+  pool, metadata cloud, userinfo, ports, redirection privée, TLS invalide,
+  absence de connexion interdite, bombes de compression, corps sans longueur,
+  arrêt et proxy indisponible sans sortie directe.
+
+##### 6.2.4 — Appliquer robots et les règles d’accès aux sites
+
+- **Dépendances :** 6.2.2, 6.2.3.
+- **Périmètre/fichiers :** `src/main/ari/ari.robots.ts`, policy des sites et
+  fixtures robots HTTP.
+- **Sortie :** robots avant première page/PDF, cache par origine et cycle,
+  user-agent `NovaChatARI`, politiques de statut/erreur et crawl-delay fixées ;
+  exception D01 réservée au GET de résultats Google.
+- **Tests :** allow/disallow, groupes UA, encodage, redirections robots,
+  `404`/`410`, `401`/`403`/`429`, timeout/5xx/indéterminé, arrêt, plafond ;
+  autres services Google et sites cibles non exemptés.
+
+##### 6.2.5 — Prouver le confinement réseau Chromium
+
+- **Dépendances :** 6.2.1 à 6.2.4.
+- **Périmètre/fichiers :** `src/main/ari/ari.egress.ts`,
+  `ari.rendered-page.ts`, `tests/electron/ari/`, configuration du package de test.
+- **Sortie :** proxy HTTP/CONNECT privé épinglé, aucun DIRECT/bypass ;
+  interception de partition contrôlant méthodes, redirections et volumes
+  décompressés, conservation CORS/CSP/cookies ; permissions, protocoles et
+  canaux alternatifs refusés. Preuve écrite avec résultats dev et packagés,
+  uniquement sur serveurs de test et userData temporaire.
+- **Tests :** TLS dans le tunnel, cookies HttpOnly/Set-Cookie, domaines refusés,
+  double résolution, proxy coupé, worker/service worker/iframe/WebSocket/
+  WebRTC/QUIC/préchargement, gzip, cache et requêtes après arrêt ; aucun accès
+  aux IPC Nova depuis une page distante.
+- **Porte bloquante :** si la composition ne tient pas ses garanties, arrêter
+  avant rendu distant et authentification, demander un nouvel arbitrage. Un
+  simple filtre `webRequest` ou un tunnel CONNECT seul ne valide pas cette tâche.
+
+##### 6.2.6 — Extraire HTML, texte et JSON sans réseau implicite
+
+- **Dépendances :** 6.2.1, 6.2.2, 6.2.3.
+- **Périmètre/fichiers :** `src/main/ari/ari.extract-html.ts`, `ari.content.ts`,
+  point d’entrée de parsing isolé et sa configuration Webpack.
+- **Sortie :** Cheerio/jsdom/Readability sans scripts/ressources, encodages,
+  sections/tableaux/liens et métadonnées normalisés, repli textuel conservateur,
+  limites DOM/JSON/texte/temps/mémoire et arrêt du processus de parsing.
+- **Tests :** documentation technique, article, page vide, charset, liens
+  relatifs/canonical hostile, JSON profond, HTML volumineux, script et formulaire
+  injectés, absence de fetch implicite et canaris secrets expurgés.
+
+##### 6.2.7 — Extraire les PDF texte
+
+- **Dépendances :** 6.2.1, 6.2.2, 6.2.3, 6.2.6.
+- **Périmètre/fichiers :** `src/main/ari/ari.extract-pdf.ts`, processus de
+  parsing, assets PDF locaux et fixtures PDF synthétiques.
+- **Sortie :** octets fournis à PDF.js, sections et pages sourçables, 20 Mo,
+  100 pages analysées et couverture partielle explicite ; refus chiffrement,
+  mot de passe, exécutable embarqué et absence de texte ; aucun OCR/viewer.
+- **Tests :** documents texte/multipages, 101 pages, dépassement streaming,
+  fichier chiffré, pièce jointe dangereuse, scan, contenu malformé, timeout,
+  mémoire et arrêt ; smoke dans le package sans ressource réseau auxiliaire.
+
+##### 6.2.8 — Construire la découverte Google
+
+- **Dépendances :** 6.2.2, 6.2.3, 6.2.4, 6.2.6.
+- **Périmètre/fichiers :** `src/main/ari/ari.query.ts`, `ari.google-scraper.ts`,
+  fixtures SERP versionnées et jar éphémère borné.
+- **Sortie :** objectif minimal expurgé, langue/région/SafeSearch demandé,
+  une requête sans compte ; sélection organique, déduplication avant plafond,
+  ordre préservé, URL directe comptée, aucun retry/pagination/moteur de secours.
+- **Tests :** publicités/carrousels, 10 sites distincts ou file plus courte,
+  doublons et suffixes privés, URL signée, captcha, consentement, `403`/`429`,
+  HTML inconnu => `blocked`, Google exigeant JS, cookies non réutilisés,
+  requête contenant un secret => refus. Essai réel uniquement optionnel/manuel.
+
+##### 6.2.9 — Créer le registre Credentials et le coffre global
+
+- **Dépendances :** 6.2.1, 6.2.2.
+- **Périmètre/fichiers :** `src/main/credentials/credentials.service.ts`,
+  schéma/profils/stockage dédiés, adaptateur de chiffrement et validation IPC.
+- **Sortie :** registre global versionné expurgé, références opaques,
+  domaines/profils/ACL stricts ; création structurelle après choix utilisateur,
+  commande de secret séparée, vérification de relecture et refus coffre faible.
+  Aucun accès AEL ni modification du coffre OpenAI existant.
+- **Tests :** mot de passe avec espaces conservé exactement, sorties publiques
+  sans secret, schémas fermés, origine trompeuse/wildcard, injection de chemin,
+  collision/récupération/concurrence et coffre indisponible ; backup chiffré.
+
+##### 6.2.10 — Gérer connexion, lecture et révocation des sessions
+
+- **Dépendances :** 6.2.4, 6.2.5, 6.2.9.
+- **Périmètre/fichiers :** `src/main/credentials/authenticated-session.broker.ts`,
+  profils de lecture/connexion, snapshots et fenêtres pilotées par le main.
+- **Sortie :** lease selon demandeur réel, séparation connexion/lecture,
+  injection dans le seul formulaire déclaré, MFA/OAuth/SSO manuels sans captcha,
+  snapshots chiffrés par entrée, expiration et génération de révocation.
+  Toute route inconnue refuse ; aucun compte utilisateur réel pour qualifier.
+- **Tests :** deux comptes même domaine, ACL non héritée de Nova/ARI, lecture
+  GET mutante refusée par profil, POST métier, domaine SSO non documentaire,
+  captcha, session expirée/non restaurable, arrêt pendant attente et révocation
+  pendant fetch/export/écriture ; aucun backup ne ressuscite la session.
+
+##### 6.2.11 — Produire les faits, regroupements et citations vérifiables
+
+- **Dépendances :** 6.2.2, 6.2.6, 6.2.7.
+- **Périmètre/fichiers :** `src/main/ari/ari.sources.ts`, chunker,
+  `src/main/ai/openai.ari.*`, schémas de réponses provider et policy de traces.
+- **Sortie :** appels sans outils d’action ni traces brutes, fragments bornés,
+  faits/inférences distincts, références collectées existantes, source officielle
+  compétente ou trois confirmations admissibles ; incertitude => partiel.
+- **Tests :** faux ID/page, injection de prompt, source officielle hors sujet,
+  copies/propriétaires communs, neutralité inconnue, contradictions, refus/JSON
+  provider invalide, quotas, arrêt et absence de canaris dans traces/erreurs.
+
+##### 6.2.12 — Orchestrer un cycle ARI complet et annulable
+
+- **Dépendances :** 6.2.3 à 6.2.11.
+- **Périmètre/fichiers :** `src/main/ari/ari.orchestrator.ts`, file candidats,
+  budgets et transitions ; adaptateur de résultat métier.
+- **Sortie :** public d’abord, URL directe avant Google, arrêt anticipé sur
+  preuve suffisante, candidats comptés même bloqués, fenêtres/statique/session
+  dans le même budget, 20 s réservées à la finalisation ; aucun reset de budget.
+- **Tests :** scénarios found/partial/not-found/blocked/cancelled/error,
+  captcha Google après URL utile, credential manquant sans interruption globale,
+  tous plafonds et annulation à chaque transition ; synthèse déterministe si
+  le dernier appel provider échoue, aucune reconnexion après révocation.
+
+##### 6.2.13 — Persister tâches et résultats avec rétention complète
+
+- **Dépendances :** 6.2.2, 6.2.12.
+- **Périmètre/fichiers :** `src/main/ari/ari.storage.ts`, intégration aux
+  primitives `src/main/chat/` et `src/main/storage/`, sérialisation dédiée.
+- **Sortie :** fichiers par tâche, messages toujours éclatés, index compact,
+  writes atomiques et queue ; récupération explicite, 90 jours/1 000 tâches,
+  purge des copies internes et backups, interruption sans rejeu au redémarrage.
+- **Tests :** round-trip, corruption/backup/verrou, écriture concurrente,
+  1 001 tâches, 91 jours, tâche active préservée, purge sans résurrection ;
+  aucun corps brut/secret/URL signée ; conversations principales inchangées.
+
+##### 6.2.14 — Intégrer ARI au routage Nova, ACP et AEL
+
+- **Dépendances :** 6.2.2, 6.2.12, 6.2.13.
+- **Périmètre/fichiers :** registre partagé, settings/validations agents,
+  `agent-orchestrator.service.ts`, `ai.orchestrator.*`, `ai.acp.ts`, prompts et
+  résultats ACP/AEL, registre de tour.
+- **Sortie :** branche ARI explicite, activation initiale désactivée jusqu’à la
+  qualification finale, demandes de recherche via main et retour au demandeur,
+  arrêt/résultat attachés au parent ; aucun shell utilisé pour scraper ; aucun
+  code ACA, agent spécialisé ou runtime de connecteur ajouté.
+- **Tests :** Nova->ARI, ACP/AEL->ARI via Nova, retour au bon parent, agent
+  désactivé, un cycle automatique par tour, boucle, arrêt parent/enfant,
+  non-partage d’un résultat authentifié avec un autre demandeur et régressions
+  des contrats ACP/AEL, du profil terminal et de `/cmd`.
+
+##### 6.2.15 — Exposer les commandes étroites et l’écran Credentials
+
+- **Dépendances :** 6.2.9, 6.2.10, 6.2.13, 6.2.14.
+- **Périmètre/fichiers :** `src/main/ipc/credentials.handlers.ts`, handlers ARI,
+  `src/preload.ts`, déclaration `window.nova`, `src/main/validation/`,
+  `SettingsPanel` et contrôleur Credentials dédié.
+- **Sortie :** tableau JSON public validé, écriture de secret sans retour,
+  activation/partage utilisateur explicites, révoquer/effacer/reconnecter,
+  erreurs/états contrôlés ; contrôles senderFrame/fenêtre et rattachement tâche.
+- **Tests :** IPC depuis frame distante, IDs forgés, champs sensibles extra,
+  secret absent après sauvegarde et jamais en historique React, formulaire
+  refusé/chargement/erreur/révocation, action d’activation non implicite.
+
+##### 6.2.16 — Afficher ARI, ses citations et ses tentatives
+
+- **Dépendances :** 6.2.13, 6.2.14, 6.2.15.
+- **Périmètre/fichiers :** `src/renderer/pages/AgentsPage/ARIAgentPage/`,
+  `MessageItem`, composants Sources/progression, types chat, validation et
+  sérialisation des citations, handler d’ouverture d’une source validée.
+- **Sortie :** général/contexte/tâches/historique, progression compacte,
+  citations proches des faits et panneau Sources et tentatives ; instantané de
+  citation autonome, aucune navigation principale ni HTML Web injecté.
+- **Tests :** visibilité interne/publique, résultat partiel/contradictoire,
+  historique purgé mais citation publique encore lisible, URLs non HTTP(S) et
+  source inventée refusées, clic utilisateur validé côté main, arrêt et erreurs.
+
+##### 6.2.17 — Qualifier et clôturer la phase 6.2
+
+- **Dépendances :** 6.2.1 à 6.2.16, portes D10 satisfaites.
+- **Périmètre/fichiers :** tests Vitest et harnais Electron, scripts de contrôle,
+  `docs/PROJECT_STATE.md`, `ARCHITECTURE.md`, `DATA_MODEL.md`, `WORKFLOWS.md`,
+  `RISKS.md`, cahiers ARI, documentation de développement et reprise.
+- **Sortie :** toutes les capacités ARI obligatoires et consommateurs actuels
+  validés, limites réelles et versions livrées documentées ; aucun blocage réseau,
+  secret ou lecture sans profil masqué. La validation manuelle utilisateur est
+  consignée avant de déclarer ARI livré et d’ouvrir ACA.
+- **Tests :** `npm.cmd run ci` (tests, TypeScript, lint, package), audits complet
+  et production, matrice hostile D10, démarrage du package avec userData de test,
+  parcours public/PDF/JS/auth et arrêt/révocation ; régression ACP/AEL et coffre
+  via canaris. Google réel optionnel ; une page synthétique reste le test stable.
+  Pas de `make`, installation, publication ou nettoyage de données locales.
+
+#### Approbation et exécution du découpage
+
+L’utilisateur a approuvé les 17 tâches le 29 octobre 2026, puis demandé de
+continuer. Cette approbation autorise la réalisation ordonnée, pas une exception
+aux portes de sécurité. Ne pas redemander l’accord sur ce découpage à la reprise.
+La qualification de 6.2.1 est réussie. La prochaine tâche est 6.2.2, contrats
+et provenance des délégations. Le rendu et l’authentification restent fermés
+avant 6.2.5 et 6.2.10.
+ACA attend 6.2.17 et sa propre spécification validée.
 
 ### Phase 6.3 — ACA — Agent de Création Automatique
 
@@ -321,69 +579,10 @@ Documents de référence :
 - [Cahier fonctionnel ACA](agents_specification/ACA_SPECIFICATION.md) ;
 - [Spécification technique ACA](agents_specification/ACA_SPECIFICATION_TECHNIQUE.md).
 
-### Arbitrages ARI confirmés pour la reprise
-
-La prochaine session repartira des décisions confirmées suivantes :
-
-1. découverte publique par un scraper Google local, sans outil de recherche
-   OpenAI, puis extraction des dix premiers sites organiques retenus ;
-2. scraping public ou authentifié par des composants contrôlés dans le `main`,
-   avec assainissement du HTML avant transmission au modèle ;
-3. dix sites distincts par cycle, avec budgets séparés pour requêtes, pages,
-   temps et documents ;
-4. PDF texte pris en charge, sans OCR automatique dans la première version ;
-5. citations visibles et résultat structuré commun à tous les agents ;
-6. conservation des résultats et métadonnées pendant 90 jours et au plus
-   1 000 tâches finales, sans archive persistante du contenu intégral des
-   pages ;
-7. registre Credentials global, chiffré et partagé uniquement par autorisation
-   explicite de chaque agent demandeur, même lorsqu’ARI exécute la recherche ;
-8. API Credentials dédiée dans le `main` ; AEL ne manipule jamais le
-   registre ni les secrets ;
-9. navigation authentifiée en lecture seule, avec intervention manuelle pour
-   MFA, OAuth ou SSO et session chiffrée révocable ; tout captcha fait ignorer
-   le site sans tentative de résolution ;
-10. ACA et les agents spécialisés peuvent solliciter ARI, sans en faire un
-    connecteur privé d’ACA.
-
-Les règles du scraper Google sont confirmées : résultats organiques
-dédupliqués par domaine, arrêt si Google présente un captcha, abandon de tout
-site avec captcha, rendu JavaScript seulement dans une session Electron
-isolée, respect de `robots.txt` et des réponses `403`/`429`, et une seule
-requête Google par cycle.
-
-Les autres règles confirmées sont : URL directe examinée avant Google, lecture
-publique et création structurelle de credentials autorisées par défaut lorsque
-ARI est actif, session Google éphémère sans compte ni SafeSearch, et validation
-d’un fait par une donnée officielle ou trois sources réellement indépendantes.
-Les copies, propriétaires communs et sources politiquement ou éditorialement
-orientées ne comptent pas comme confirmations distinctes.
-
-ARI pourra suivre jusqu’à dix pages pertinentes sur un même site. La première
-version restera limitée aux contenus textuels exploitables et refusera les
-exécutables, archives, téléchargements forcés, destinations locales ou privées
-et pages malveillantes. Une source dont la neutralité ne peut pas être établie
-sera signalée `neutrality-unverified` et ne comptera pas automatiquement parmi
-les trois confirmations. Le plafond global est fixé à trente pages HTML par
-cycle.
-
-Le cadrage fonctionnel d’ARI est complet. Sa spécification technique décrit
-maintenant le pipeline Google, la récupération HTTP, l’extraction HTML/JSON/PDF,
-le rendu JavaScript isolé, les credentials, les contrats et les tests. Elle
-conserve des choix explicites à valider : dépendances, protection SSRF, schéma
-d’authentification, user-agent, délais et fragilité assumée du scraper Google.
-La prochaine étape documentaire est la relecture et la validation des deux
-cahiers ARI, puis la transformation de la phase 6.2 en tâches ordonnées et
-vérifiables.
-
-Le cahier ACA dispose également d’une première spécification technique. Son
-runtime d’exécution du TypeScript généré reste un choix de sécurité bloquant et
-sera validé séparément après ARI, avant le découpage de la phase 6.3.
-
-Chaque sous-phase commence par la rédaction et la validation de son cahier des
-charges. Elle sera ensuite découpée ici en tâches d’implémentation ordonnées.
-Aucun développement d’ARI ou d’ACA ne doit commencer avant le découpage de sa
-sous-phase respective.
+Le cahier technique ACA est une première étude. Le runtime du TypeScript généré
+reste un choix de sécurité bloquant à valider séparément après ARI. Les réponses
+fonctionnelles ACA restent à relire avec l’utilisateur avant le découpage de
+6.3. Aucun connecteur généré ni composant ACA n’est nécessaire pour livrer ARI.
 
 ## Phase 7 — Nouvelles capacités
 

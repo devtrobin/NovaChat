@@ -106,7 +106,7 @@ préservées.
 
 ## P1 — Risques de données, sécurité et cohérence produit
 
-### ARI : canal de scraping à sécuriser — bloque la phase 6.2
+### ARI : garanties réseau et sessions à démontrer — bloque l’activation en 6.2
 
 Le cahier fonctionnel impose un scraper Google local puis la lecture de pages
 et documents non fiables. Cette capacité introduira des risques SSRF, DNS
@@ -116,14 +116,36 @@ Le HTML de Google est également une dépendance fragile sans contrat stable ;
 un changement peut bloquer la découverte des sources.
 
 La [spécification technique ARI](agents_specification/ARI_SPECIFICATION_TECHNIQUE.md)
-propose un client HTTP contrôlé, des parseurs sans scripts, un rendu Electron
-éphémère, des budgets et une suite de fixtures locales. Les dépendances, la
-connexion épinglée contre SSRF, le schéma d’authentification, les délais et la
-fragilité assumée de Google restent à valider.
+arrête les choix D01 à D10 au 29 octobre 2026. L’utilisateur a confirmé
+l’exception au robots de Google pour la seule page de résultats ; les captchas,
+`403`/`429`, challenges et robots des sites cibles restent respectés. Cela ne
+résout ni la fragilité du scraper ni sa disponibilité sans moteur de repli.
 
-Action obligatoire : résoudre ces choix puis découper et tester le canal réseau
-avant d’activer ARI. Aucun contenu Web, cookie ou secret ne doit atteindre un
-contexte privilégié ou le modèle sans réduction et expurgation.
+Le [découpage](NEXT_STEPS.md#découpage-de-la-phase-62) comporte 17 tâches,
+approuvées par l’utilisateur le 29 octobre 2026. Ses portes bloquantes restent :
+
+- **6.2.1 :** porte satisfaite le 30 octobre 2026 sous Windows x64 : Electron
+  44.10.0, dépendances verrouillées, audits à zéro et harnais packagé avec
+  canari de chiffrement. Voir [les preuves](validation/ARI_RUNTIME_6_2_1.md).
+- **6.2.3/6.2.4 :** prouver le refus des destinations privées avant connexion,
+  sur chaque résolution/reconnexion/redirection, et les limites décompressées.
+- **6.2.5 :** prouver les sorties Chromium. Session isolée, DNS préalable,
+  filtre `webRequest` ou tunnel CONNECT seul sont insuffisants. Le proxy interne
+  épinglé et l’interception de partition doivent ensemble contrôler destinations,
+  méthodes et budgets, sans canal alternatif ni affaiblissement CORS/CSP/TLS.
+- **6.2.9/6.2.10 :** vérifier droits du demandeur effectif, profils de lecture,
+  snapshots chiffrés, révocation concurrente et absence de résurrection/fuite.
+  GET n’est pas une preuve universelle de lecture ; les sites inconnus refusent.
+
+Les proxies utilisateur/PAC non validés bloquent sans secours direct. Les canaux
+navigateur non prouvés sont désactivés. Si une garantie ne peut pas être tenue,
+ne pas activer la capacité ni clôturer 6.2 : revenir à l’utilisateur pour un
+nouvel arbitrage. `utilityProcess` limite crash/ressources, pas du code arbitraire.
+Les secrets, pages complètes et corps provider bruts sont exclus des traces
+ARI, indépendamment du réglage général de redaction ; la purge doit couvrir les
+copies internes et backups sans supprimer les conversations principales.
+
+Ces risques concernent la conception future : ARI n’est toujours pas implémenté.
 
 ### Couverture automatisée renforcée, E2E réel restant
 
@@ -331,10 +353,11 @@ licence MIT déclarée est matérialisée par `LICENSE`.
 
 ### Résolutions npm transitives — surveillance continue
 
-L’audit npm est revenu à zéro grâce aux mises à jour directes et à quatre
-résolutions transitives : `tar`, `tmp`, `uuid` et `webpack-dev-server`.
-Celles-ci compensent des contraintes amont d’Electron Forge 7 et peuvent
-devenir inutiles ou incompatibles lors d’une prochaine mise à jour.
+L’audit npm est à zéro après la qualification de Forge 8/Packager 20 du
+30 octobre 2026. Les quatre overrides historiques ont été réévalués séparément :
+`tar`, `tmp` et `webpack-dev-server` sont retirés ; `uuid: 11.1.1` reste nécessaire
+à SockJS. Le vérificateur TypeScript Webpack et sa dépendance sans correctif
+ont été remplacés par le contrôle direct de `ts-loader`, sans désactiver le typage.
 
 Action recommandée : à chaque mise à jour d’Electron Forge, tenter de retirer
 les résolutions une par une, puis rejouer audit, tests, démarrage et packaging.

@@ -138,9 +138,13 @@ messages historiques sont consignés dans
 ## Direction recommandée
 
 La phase 6.1 est close après le nettoyage local confirmé et le test manuel
-ACP/AEL. Relire ensemble les cahiers fonctionnel et technique ARI, résoudre les
-choix techniques puis découper 6.2 en tâches vérifiables. ACA vient seulement
-après la validation d’ARI et la validation de sa propre frontière d’exécution.
+ACP/AEL. Les cahiers ARI ont été consolidés le 29 octobre 2026 et les arbitrages
+techniques ont été arrêtés par délégation. Les
+[17 tâches de 6.2](NEXT_STEPS.md#découpage-de-la-phase-62) ont été approuvées
+par l’utilisateur le même jour ; la qualification de 6.2.1 est réussie le
+30 octobre. La prochaine tâche est 6.2.2. Les preuves de confinement restent à
+réaliser. ACA vient après ARI et la validation de sa propre
+frontière d’exécution.
 
 Un nouvel agent devra :
 
@@ -155,8 +159,9 @@ Un nouvel agent devra :
 ## Références techniques par agent
 
 Chaque agent possède un cahier fonctionnel et un compagnon technique. Les
-documents ACP/AEL décrivent l’existant ; ARI/ACA restent des conceptions à
-valider avant implémentation.
+documents ACP/AEL décrivent l’existant. La conception ARI est arrêtée pour la
+préparation de 6.2 et son découpage est approuvé, avec 6.2.1 en cours ;
+ACA reste une étude à valider séparément.
 
 | Agent | Outil principal | Spécification technique |
 | --- | --- | --- |
@@ -182,10 +187,10 @@ droits, crée la tâche cible et rattache son résultat au parent. ARI n’utili
 pas AEL pour scraper et ACA n’utilise pas AEL comme substitut à son futur
 environnement d’exécution isolé.
 
-## Contrat technique de délégation proposé
+## Contrat technique de délégation retenu pour ARI
 
-Ce contrat prépare les phases 6.2 et 6.3. Il ne décrit pas une API déjà
-disponible et ne doit pas être ajouté implicitement au socle ACP/AEL.
+Ce contrat est arrêté pour la préparation de 6.2 au 29 octobre 2026. Il ne décrit
+pas une API déjà disponible. Son extension au runtime ACA sera validée en 6.3.
 
 L’orchestrateur du `main` construira et validera une enveloppe contenant au
 minimum :
@@ -209,12 +214,16 @@ données typées de la capacité, les budgets consommés et des diagnostics
 expurgés. Le `main` le rattache au parent ; le simple retour d’un résultat ne
 peut pas créer une nouvelle tâche.
 
-La proposition initiale limite un parent à une sous-tâche active, refuse une
-destination déjà présente dans la chaîne et borne l’enfant au temps restant
-du parent. Une délégation ne remet aucun compteur à zéro. L’arrêt du parent
-annule les appels, attentes et opérations encore annulables de ses enfants.
+Le contrat retient un enfant actif par parent, une profondeur maximale de 2
+(Nova racine à 0, agent demandeur à 1, ARI à 2), aucune destination déjà présente
+et aucun enfant d’ARI. Le parent passe en `waiting-child`. Une délégation ne
+remet aucun compteur à zéro et l’enfant hérite de l’arrêt et du temps actif
+restant. Un seul cycle ARI automatique est autorisé par tour utilisateur ; une
+reprise exige une nouvelle demande explicite.
 
-La phase 6.2 devra figer le schéma exact, la profondeur, les budgets, l’état
-d’attente du parent et les tests d’annulation/reprise. La phase 6.3 devra en
-plus définir la persistance des sous-tâches sans jamais rejouer
-automatiquement un effet externe incertain après redémarrage.
+Le schéma v1, les états et budgets sont décrits par la
+[spécification technique ARI](agents_specification/ARI_SPECIFICATION_TECHNIQUE.md).
+Les tâches 6.2.2 et 6.2.14 implémenteront ces contrats et leurs tests. Un état
+actif au redémarrage devient interrompu sans rejeu réseau automatique. La phase
+6.3 complétera la persistance des effets des connecteurs sans rejouer un effet
+externe incertain. Le socle AEL et ses permissions ne sont pas étendus pour cela.

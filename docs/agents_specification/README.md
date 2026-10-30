@@ -21,7 +21,7 @@ les frontières d’[ARCHITECTURE.md](../ARCHITECTURE.md), les contrats de
 | --- | --- | --- | --- |
 | ACP | [ACP_SPECIFICATION.md](ACP_SPECIFICATION.md) | [ACP_SPECIFICATION_TECHNIQUE.md](ACP_SPECIFICATION_TECHNIQUE.md) | implémenté et validé en 6.1 |
 | AEL | [AEL_SPECIFICATION.md](AEL_SPECIFICATION.md) | [AEL_SPECIFICATION_TECHNIQUE.md](AEL_SPECIFICATION_TECHNIQUE.md) | implémenté et validé en 6.1 |
-| ARI | [ARI_SPECIFICATION.md](ARI_SPECIFICATION.md) | [ARI_SPECIFICATION_TECHNIQUE.md](ARI_SPECIFICATION_TECHNIQUE.md) | fonctionnel complet, technique à valider en 6.2 |
+| ARI | [ARI_SPECIFICATION.md](ARI_SPECIFICATION.md) | [ARI_SPECIFICATION_TECHNIQUE.md](ARI_SPECIFICATION_TECHNIQUE.md) | découpage approuvé ; 6.2.1 qualifiée le 30/10/2026 ; prochaine tâche 6.2.2, agent inactif |
 | ACA | [ACA_SPECIFICATION.md](ACA_SPECIFICATION.md) | [ACA_SPECIFICATION_TECHNIQUE.md](ACA_SPECIFICATION_TECHNIQUE.md) | études fonctionnelle et technique à valider en 6.3 |
 
 ## Ordre de validation
@@ -37,3 +37,9 @@ les frontières d’[ARCHITECTURE.md](../ARCHITECTURE.md), les contrats de
 ARI doit être implémenté et validé avant ACA. Les choix partagés de credentials,
 routage et tâches sont conçus dans ARI puis réutilisés par ACA sans rendre ARI
 dépendant du créateur d’agents.
+
+Pour ARI, la relecture et les arbitrages sont terminés par délégation technique
+de l’utilisateur, avec confirmation explicite de l’exception Google. Les
+[17 tâches de 6.2](../NEXT_STEPS.md#découpage-de-la-phase-62) ont reçu son
+approbation le même jour. La validation documentaire des choix ne vaut pas réussite des
+preuves de sécurité, compatibilité et packaging prévues pendant l’implémentation.

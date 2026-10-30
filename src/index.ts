@@ -14,6 +14,8 @@ import {
 import { getOpenAICredentialStore } from "./main/credentials/electron-credential.service";
 import { migratePlaintextOpenAIKey } from "./main/credentials/credential-migration.service";
 
+// Squirrel exposes a CommonJS startup flag, evaluated before app readiness.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 if (require("electron-squirrel-startup")) {
   app.quit();
 }
