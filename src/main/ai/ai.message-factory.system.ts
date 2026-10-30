@@ -1,5 +1,18 @@
 import { ChatMessage } from "../../shared/chat.types";
 import { createLifecycleEntry } from "./ai.orchestrator.runtime";
+import { FileWritePreview } from "../../shared/ael-file.types";
+
+export function createFileWritePermissionMessage(preview: FileWritePreview, requestId: string): ChatMessage {
+  return {
+    ...createPermissionRequestSystemMessage("", requestId),
+    actions: [
+      { id: "permission-allow", label: "Creer ce fichier", payload: { requestId } },
+      { id: "permission-deny", label: "Refuser", payload: { requestId } },
+    ],
+    content: `Creation de fichier — autorisation ponctuelle.\nNouveau fichier UTF-8 (${preview.byteLength} octets).\n${preview.path}`,
+    fileWritePreview: { ...preview },
+  };
+}
 
 export function createSystemMessage(content: string, actionLabel?: string): ChatMessage {
   return {

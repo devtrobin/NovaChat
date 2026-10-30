@@ -3,6 +3,10 @@
 ## Unreleased
 
 ### Added
+- action AEL `write-file` : création UTF-8 sur le Bureau ou dans le dossier
+  de travail, aperçu complet, permission ponctuelle, refus du remplacement,
+  publication exclusive, relecture et empreinte vérifiées ; aucun shell ni
+  lancement du code créé ; prise en charge du handoff Nova et des objectifs ACP
 - qualification 6.2.1 Windows x64 : harnais Electron distinct pour DOM/PDF,
   ESM/CJS, N-API, fuses/ASAR et canari de chiffrement 39 vers 44 ; quatre tests
   de packaging ajoutés, soit 285 tests dans 42 fichiers
@@ -52,6 +56,9 @@
 - traces `message.json`, `log.json`, `apis.json` par message
 
 ### Changed
+- sauvegardes JSON sous Windows : reprises bornées du même renommage atomique
+  sur `EPERM`, `EACCES` et `EBUSY`, après reproduction de verrouillages pendant
+  le test d'interface ; aucun effacement du fichier cible comme solution de repli
 - Electron 44.10.0, Forge 8.0.1 et Packager 20.3.0 qualifiés en 6.2.1 ; entrée
   `.webpack/main/index.cjs`, contrôle TypeScript Webpack direct et résolveur ESM
   du lint limité aux configurations ; retrait des overrides `tar`, `tmp` et

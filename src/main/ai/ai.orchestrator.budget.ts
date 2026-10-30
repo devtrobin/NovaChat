@@ -44,6 +44,9 @@ export function registerAELResult(
 
 function extractAELCommand(message: ChatMessage): string | null {
   for (const entry of message.lifecycleLog ?? []) {
+    if (entry.metadata?.action === "write-file" && typeof entry.metadata.actionSignature === "string") {
+      return `write-file:${entry.metadata.actionSignature}`;
+    }
     const command = entry.metadata?.command;
     if (typeof command === "string" && command.trim()) {
       return normalizeCommandSignature(command);

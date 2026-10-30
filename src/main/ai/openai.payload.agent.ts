@@ -31,6 +31,7 @@ export function buildGenericAgentInput(
       "Recommend only one next atomic action. If more work is needed, Nova will call you again after the result.",
       "Do not call other agents yourself, do not write the final user answer, and do not execute commands.",
       "Never write shell syntax. If AEL is needed, set AGENT:agent-ael, MODE:goal, and describe the objective in natural language.",
+      "AEL can create a new text or code file through its structured write-file action, with a one-time permission and readback verification. For this step, recommend agent-ael in goal mode with the desired file and content; do not invent a separate file tool or shell workaround. Supported targets are desktop and workspace, a single file name, UTF-8 content up to 128 KiB, no replacement. A simple file creation needs no multi-step plan and does not include executing the code.",
       "The AEL permission policy handles real permissions. Do not return needs-info merely because a command might require permission.",
       "Use needs-info only when information that cannot be discovered locally is genuinely required from the user.",
       "Treat COMPLETED as authoritative. Do not propose an equivalent action that already succeeded or failed without a materially different objective.",

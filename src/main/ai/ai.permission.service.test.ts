@@ -16,6 +16,21 @@ afterEach(() => {
 });
 
 describe("ael permission workflow", () => {
+  it("permits synchronous resolution and refuses permanent grants for a file preview", async () => {
+    vi.useFakeTimers();
+    const turnId = startTestTurn("file-permission");
+    const preview = { path: "C:\\Desktop\\coucou.py", content: 'print("coucou")\n', byteLength: 16, sha256: "test" };
+    const permission = requestAELPermission("file-permission", "write-file", (event) => {
+      if (event.type !== "append-messages") return;
+      const request = event.messages.find((message) => message.fileWritePreview);
+      if (!request) return;
+      const id = request.actions?.[0].payload?.requestId ?? "";
+      expect(resolvePermissionRequest(id, "allow-always")).toBe(false);
+      expect(resolvePermissionRequest(id, "deny-always")).toBe(false);
+      expect(resolvePermissionRequest(id, "allow")).toBe(true);
+    }, turnId, undefined, preview);
+    await expect(permission).resolves.toMatchObject({ decision: "allow" });
+  });
   it("settles an allowed request once and removes the transient resolution", async () => {
     vi.useFakeTimers();
     const events: Array<Record<string, unknown>> = [];

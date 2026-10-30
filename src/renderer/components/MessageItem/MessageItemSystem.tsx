@@ -18,7 +18,13 @@ export default function MessageItemSystem({ message, onOpenSettings, onSubmitPer
         <div className="message-item__system-copy">
           <p className="message-item__system-text">{title}</p>
           {details ? <p className="message-item__system-detail">{details}</p> : null}
-          {command ? <pre className="message-item__system-command">{command}</pre> : null}
+          {message.fileWritePreview ? (
+            <>
+              <p className="message-item__system-detail">{message.fileWritePreview.path}</p>
+              <p className="message-item__system-detail">Contenu exact (UTF-8) :</p>
+              <pre className="message-item__system-command">{message.fileWritePreview.content || "(fichier vide)"}</pre>
+            </>
+          ) : command ? <pre className="message-item__system-command">{command}</pre> : null}
         </div>
         {message.actionType === "open-settings" ? (
           <button className="message-item__system-action" onClick={onOpenSettings} type="button">

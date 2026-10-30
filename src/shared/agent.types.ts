@@ -1,22 +1,26 @@
 import { PersistedChatState, StorageRecoveryNotice } from "./chat.types";
 import { SystemAgentId } from "./system-agent.registry";
+import { AELWriteFileOperation } from "./ael-file.types";
 
 export const AGENT_CONTEXT_SCHEMA_VERSION = 3;
 
 export type AgentId = SystemAgentId;
 export type AgentConversationOrigin = "assistant" | "user";
 export type AgentPermissionDecision = "allow" | "deny";
-export type AgentTaskMode = "analysis" | "command" | "goal";
+export type AgentTaskMode = "analysis" | "command" | "goal" | "write-file";
+
+export type AgentTaskAction =
+  | { mode: "analysis" | "command" | "goal"; fileOperation?: never }
+  | { mode: "write-file"; fileOperation: AELWriteFileOperation };
 
 export type AgentTaskRequest = {
   agentId: AgentId;
-  mode: AgentTaskMode;
   request: string;
   turnId: string;
   triggerMessageId: string;
   userAssistantConversationId: string;
   userPrompt: string;
-};
+} & AgentTaskAction;
 
 export type AgentTaskResult =
   | {
@@ -59,6 +63,7 @@ export type AgentPermissionLookup = {
 };
 
 export type AgentHistoryEntry = {
+  operation?: "write-file";
   agentConversationId: string;
   assistantRequest?: string;
   at: string;

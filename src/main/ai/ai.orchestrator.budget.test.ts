@@ -24,6 +24,16 @@ function createAELMessage(command: string): ChatMessage {
 }
 
 describe("orchestration budget", () => {
+  it("counts file actions and recognizes their exact content signature separately from shell commands", () => {
+    const budget = createOrchestrationBudget();
+    const file = createAELMessage("");
+    file.lifecycleLog = [{ at: file.createdAt, event: "file-write-result", metadata: { action: "write-file", actionSignature: "content-one" } }];
+    expect(registerAELResult(budget, file).duplicateCommand).toBe(false);
+    expect(registerAELResult(budget, file).duplicateCommand).toBe(true);
+    file.lifecycleLog[0].metadata = { action: "write-file", actionSignature: "content-two" };
+    expect(registerAELResult(budget, file).duplicateCommand).toBe(false);
+    expect(budget.aelExecutions).toBe(3);
+  });
   it("detects an equivalent repeated AEL command", () => {
     const budget = createOrchestrationBudget();
 

@@ -73,7 +73,8 @@ export type PipelineStage =
   | "final-response"
   | "nova-thinking"
   | "requesting-agent"
-  | "waiting-permission";
+  | "waiting-permission"
+  | "writing-file";
 
 export function createPipelineSystemMessage(stage: PipelineStage, agentId?: AgentId): ChatMessage {
   return createSystemMessage(formatPipelineStage(stage, agentId));
@@ -85,6 +86,7 @@ function formatPipelineStage(stage: PipelineStage, agentId?: AgentId): string {
   if (stage === "agent-generating") return `Tache en cours: ${agentName} prepare une reponse...`;
   if (stage === "waiting-permission") return "Tache en cours: attente de permission utilisateur...";
   if (stage === "executing-command") return "Tache en cours: execution de la commande...";
+  if (stage === "writing-file") return "Tache en cours: creation et verification du fichier...";
   if (stage === "analyzing-agent-result") return `Tache en cours: analyse du resultat de ${agentName}...`;
   if (stage === "final-response") return "Tache en cours: generation de la reponse finale...";
   return "Tache en cours: reflexion de Nova...";

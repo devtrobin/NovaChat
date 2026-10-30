@@ -1,3 +1,5 @@
+import { FileWritePreview } from "./ael-file.types";
+
 export type MessageSender = 'user' | 'assistant' | 'agent' | 'ael' | 'system';
 export type MessageRecipient = 'user' | 'assistant' | 'agent' | 'ael';
 export type ConversationOrigin = 'assistant' | 'user';
@@ -51,6 +53,7 @@ export type ChatMessage = {
   result?: string;
   isExpandable?: boolean;
   commandId?: string;
+  fileWritePreview?: FileWritePreview;
   inputPlaceholder?: string;
   inputSecret?: boolean;
   inputRequested?: boolean;

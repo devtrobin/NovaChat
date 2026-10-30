@@ -55,6 +55,19 @@ La policy reste cependant un mécanisme UX de demande de permission :
 - `/cmd` reste une exécution explicite utilisateur qui contourne les
   permissions agent.
 
+La création structurée `write-file` ajoutée à AEL ne passe pas par cette policy
+shell. Elle exige toujours une permission ponctuelle liée au chemin réel et
+au contenu exact, refuse le remplacement et borne le contenu à 128 Kio.
+Elle protège les racines de données internes, contrôle les identités et
+vérifie les octets relus. La publication exclusive exige un système de
+fichiers prenant en charge les liens physiques ; sinon elle échoue sans
+solution de repli qui écraserait la cible. Un arrêt après publication ou une
+vérification défaillante signale le fichier déjà créé. Un temporaire dont le
+nettoyage échoue est signalé. Ces contrôles Node ne remplacent pas un sandbox
+OS contre les courses d'un autre processus local. Le module conserve le
+cycle de préparation/publication/nettoyage dans un fichier cohérent dépassant
+la cible indicative de 100 lignes, afin de garder cet invariant lisible.
+
 Actions restantes :
 
 1. ~~séparer explicitement lecture, écriture workspace, réseau,

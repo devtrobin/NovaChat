@@ -5,6 +5,7 @@ import { isLikelyShellCommand } from "../ai/ai.command-detection";
 import { registerAbortController, unregisterAbortController } from "../ai/ai.turn-registry";
 import { generateAELAgentCommand } from "../ai/openai.service";
 import { GenerateAELAgentCommandResult } from "../ai/openai.types";
+import { parseAELWriteFileOperation } from "../validation/ael-file.validation";
 
 export { isLikelyShellCommand } from "../ai/ai.command-detection";
 
@@ -23,6 +24,10 @@ export async function resolveAELAgentCommand(
   settings: RunAgentTaskArgs["settings"],
   task: RunAgentTaskArgs["task"],
 ): Promise<GenerateAELAgentCommandResult> {
+  if (task.mode === "write-file") {
+    const fileOperation = parseAELWriteFileOperation(task.fileOperation);
+    return { apiRecords: [], command: `Creer le fichier ${fileOperation.target.name}`, fileOperation };
+  }
   if (task.mode === "command" && isLikelyShellCommand(task.request)) {
     return {
       apiRecords: [],
@@ -43,6 +48,10 @@ export async function resolveAELAgentCommand(
       task.userPrompt,
       controller.signal,
     );
+    if (aelAgentReply.command.trim().startsWith("{")) {
+      const fileOperation = parseAELWriteFileOperation(JSON.parse(aelAgentReply.command));
+      return { apiRecords: aelAgentReply.apiRecords, command: `Creer le fichier ${fileOperation.target.name}`, fileOperation };
+    }
     return {
       apiRecords: aelAgentReply.apiRecords,
       command: aelAgentReply.command.trim(),

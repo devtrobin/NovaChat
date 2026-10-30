@@ -26,6 +26,7 @@ export async function runAgentTask(
     task,
     turnId,
   } = args;
+  if (task.mode === "write-file" && task.agentId !== "agent-ael") throw new Error("La creation de fichier appartient a AEL.");
   const currentAgentConversationId = await resolveAgentConversationId(settings, task, turnId);
   if (!settings.agents[task.agentId]?.enabled) {
     const aelMessage = createAgentResultMessage(
@@ -67,6 +68,7 @@ export async function runAgentTask(
         apiTraceSettings: settings.apiTrace,
         assistantRequest: task.request,
         command: task.request,
+        operation: task.mode === "write-file" ? "write-file" : undefined,
         result: {
           output: "Interrompu par l'utilisateur.",
           status: "interrupted",

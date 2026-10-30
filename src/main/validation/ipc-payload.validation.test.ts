@@ -1,4 +1,5 @@
 import path from "node:path";
+import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { ChatMessage } from "../../shared/chat.types";
 import {
@@ -59,6 +60,15 @@ function createSettings() {
 }
 
 describe("IPC payload validation", () => {
+  it("preserves a file preview as display data and rejects altered byte counts or hashes", () => {
+    const content = '\n  print("coucou")\n';
+    const message = { ...createMessage(), fileWritePreview: { path: path.resolve("coucou.py"), content, byteLength: Buffer.byteLength(content), sha256: createHash("sha256").update(content).digest("hex") } };
+    const request = { conversationId: "conversation", messages: [message], title: "File", userInput: "Creer ce fichier" };
+    expect(parseRunTurnRequest(request).messages[0].fileWritePreview).toEqual(message.fileWritePreview);
+    for (const change of [{ byteLength: 0 }, { sha256: "wrong" }]) {
+      expect(() => parseRunTurnRequest({ ...request, messages: [{ ...message, fileWritePreview: { ...message.fileWritePreview, ...change } }] })).toThrow();
+    }
+  });
   it("accepts a structurally valid chat state and turn request", () => {
     const message = createMessage();
     const chatState = {

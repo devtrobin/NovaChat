@@ -28,7 +28,9 @@ autre développement fonctionnel.
 - Policy AEL testée avec cas sûrs et cas adversariaux.
 - Parsers OpenAI et ACP testés.
 - Sérialisation, round-trip du stockage et reducers d’événements testés.
-- La suite actuelle compte 281 tests réussis, dont 119 cas de policy AEL.
+- La suite actuelle compte 337 tests réussis dans 47 fichiers, dont 119 cas
+  de policy AEL. Le correctif de création structurée est décrit dans
+  `validation/AEL_FILE_WRITE.md` ; la prochaine tâche ARI reste 6.2.2.
 
 La phase 2 est terminée. Les anciens
 `it.fails` sont désormais des tests de régression normaux.

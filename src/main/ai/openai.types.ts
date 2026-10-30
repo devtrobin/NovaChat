@@ -1,9 +1,11 @@
 import { ApiRequestRecord } from "../../shared/chat.types";
+import { AELWriteFileOperation } from "../../shared/ael-file.types";
 
 export type ProviderResponse =
   | { content: string; from: "assistant"; to: "user" }
   | { content: string; from: "assistant"; to: "ael" }
-  | { agentId: "agent-acp" | "agent-ael"; content: string; from: "assistant"; to: "agent" };
+  | { agentId: "agent-acp" | "agent-ael"; content: string; from: "assistant"; to: "agent"; action?: never }
+  | ({ agentId: "agent-ael"; from: "assistant"; to: "agent" } & AELWriteFileOperation);
 
 export type GenerateOpenAIReplyResult = {
   apiRecords: ApiRequestRecord[];
@@ -13,6 +15,7 @@ export type GenerateOpenAIReplyResult = {
 export type GenerateAELAgentCommandResult = {
   apiRecords: ApiRequestRecord[];
   command: string;
+  fileOperation?: AELWriteFileOperation;
 };
 
 export class OpenAIRequestError extends Error {

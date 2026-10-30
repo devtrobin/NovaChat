@@ -49,6 +49,13 @@ Ses réponses restent à relire avant le découpage de la phase 6.3.
 
 ## Invariants d’architecture
 
+Le correctif AEL du 30 octobre 2026 ajoute `write-file` (voir
+`docs/validation/AEL_FILE_WRITE.md`) : nouveau fichier uniquement, cible
+`desktop` ou `workspace`, nom simple, UTF-8 jusqu'à 128 Kio, permission
+ponctuelle sur le contenu exact et relecture vérifiée dans le main. Ne pas
+le remplacer par un contournement shell ni l'assimiler à une autorisation
+d'exécuter le code créé. Il ne change pas l'ordre ARI puis ACA.
+
 - Les appels provider, l’orchestration des agents et l’exécution locale restent
   dans le process Electron `main`.
 - Le renderer passe uniquement par l’API minimale exposée dans `src/preload.ts`.
