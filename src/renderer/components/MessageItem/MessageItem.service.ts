@@ -16,13 +16,13 @@ export function formatDuration(value: unknown): string {
 export function getExecutionMetadata(message: ChatMessage) {
   return [...(message.lifecycleLog ?? [])]
     .reverse()
-    .find((entry) => entry.event === "device-finished" || entry.event === "device-killed")?.metadata;
+    .find((entry) => entry.event === "ael-finished" || entry.event === "ael-killed")?.metadata;
 }
 
-export function isDeviceMessage(message: ChatMessage): boolean {
-  return message.from === "device"
+export function isAELMessage(message: ChatMessage): boolean {
+  return message.from === "ael"
     || (
-      message.to === "device"
+      message.to === "ael"
       && (Boolean(message.commandId) || message.status === "running" || message.status === "waiting-input")
     );
 }

@@ -8,7 +8,7 @@ describe("agent cycle trace finalization", () => {
     message.apiRequests = [{
       at: "2026-07-18T10:01:00.000Z",
       direction: "response",
-      from: "device-agent",
+      from: "agent-ael",
       payload: { command: "rg --files" },
       to: "openai",
     }];
@@ -17,11 +17,11 @@ describe("agent cycle trace finalization", () => {
       at: "2026-07-18T10:00:00.000Z",
       direction: "response",
       from: "openai",
-      payload: { to: "device-agent" },
+      payload: { to: "agent-ael" },
       to: "nova",
     }];
 
-    finalizeAgentCycleMessage(message, delegation, "device-agent");
+    finalizeAgentCycleMessage(message, delegation, "agent-ael");
 
     expect(message.apiRequests).toHaveLength(2);
     expect(message.lifecycleLog?.[message.lifecycleLog.length - 1]).toMatchObject({

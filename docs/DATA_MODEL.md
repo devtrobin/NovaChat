@@ -10,14 +10,14 @@ Champs obligatoires :
 | Champ | Rôle |
 | --- | --- |
 | `id` | UUID ou identifiant stable du message |
-| `from` | `user`, `assistant`, `agent`, `device` ou `system` |
-| `to` | `user`, `assistant`, `agent` ou `device` |
+| `from` | `user`, `assistant`, `agent`, `ael` ou `system` |
+| `to` | `user`, `assistant`, `agent` ou `ael` |
 | `content` | contenu principal ou commande |
 | `createdAt` | date ISO |
 
 Champs structurants optionnels :
 
-- `agentId` : `agent-planner` ou `device-agent` dans les flux actuels ;
+- `agentId` : `agent-acp` ou `agent-ael` dans les flux actuels ;
 - `status` : état UI/exécution (`pending`, `running`, `waiting-input`,
   `success`, `partial-success`, `error`, etc.) ;
 - `result` : résultat détaillé, souvent repliable ;
@@ -32,7 +32,7 @@ Les messages `system` sont transitoires : le renderer les filtre avant
 persistance et au chargement. Pour les anciens messages sans `visibility`, le
 renderer applique une règle déterministe : messages agent et échanges vers
 assistant internes, messages utilisateur, réponses finales, permissions,
-saisies et Device vers utilisateur publics.
+saisies et AEL vers utilisateur publics.
 
 ## Conversations
 
@@ -45,6 +45,17 @@ Une `Conversation` contient :
 - `messages`.
 
 `PersistedChatState` contient la liste et `activeConversationId`.
+
+La validation IPC normalise les anciens identifiants d’agent connus lorsqu’ils
+apparaissent dans `ChatMessage.agentId`, ainsi que l’ancien rôle d’exécution
+locale dans `from` et `to`. Cette compatibilité bornée protège la lecture, la
+poursuite et la sauvegarde des conversations existantes ; elle ne s’applique ni
+aux opérations d’agent, ni aux settings, ni aux chemins de stockage. Après
+validation, l’état sauvegardé contient les identifiants et rôles canoniques
+ACP/AEL. Une valeur inconnue reste invalide. Ce traitement s’applique aux
+messages reçus dans `chat.save` et `ai.runTurn` ; le parser ne vérifie pas
+qu’ils existaient auparavant sur disque. Il ne fournit pas d’alias aux
+opérations d’agent.
 
 ## Stockage des conversations principales
 
@@ -88,14 +99,14 @@ Sous `localFiles.agentsDirectory` :
 
 ```text
 agents/
-  agent-planner/
+  agent-acp/
     contexte.json
     permissions.json
     historique.json
     conversations/
       conversations.json
       ...
-  device-agent/
+  agent-ael/
     contexte.json
     permissions.json
     historique.json
@@ -113,10 +124,11 @@ agents/
 Toutes les opérations d’un même agent sont sérialisées par racine et ID afin
 d’éviter deux cycles lecture-modification-écriture concurrents.
 
-L’ancien identifiant `diagnostic-agent` est migré une seule fois. Son dossier
-est déplacé dans `agents/.migration-backups/`, puis copié ou fusionné dans
-`agent-planner` avec déduplication des permissions, historiques et
-conversations.
+Les seuls IDs acceptés pour un espace agent sont définis par
+`src/shared/system-agent.registry.ts`. Les anciens espaces de développement ne
+sont ni migrés ni sauvegardés ; ACP et AEL repartent dans leurs dossiers
+canoniques. La normalisation des messages historiques décrite plus haut ne
+réactive pas ces espaces.
 
 ## Settings
 
@@ -124,14 +136,14 @@ conversations.
 
 ```text
 activeProvider
-agents.agent-planner.enabled
-agents.device-agent.enabled
+agents.agent-acp.enabled
+agents.agent-ael.enabled
 apiTrace.enabled
 apiTrace.retentionDays
 apiTrace.maxEntriesPerMessage
 apiTrace.redactSensitiveData
-deviceExecution.maxOutputCharacters
-deviceExecution.timeoutMs
+aelExecution.maxOutputCharacters
+aelExecution.timeoutMs
 hideInternalConversations
 localFiles.settingsPath
 localFiles.conversationsDirectory
@@ -188,7 +200,7 @@ types, énumérations, longueurs, volume sérialisé, identifiants et chemins
 absolus. Les chemins construits à partir d’identifiants sont en plus confinés à
 leur racine de stockage.
 
-Le contrat public ne contient aucun canal Device direct ni API de conversation
+Le contrat public ne contient aucun canal AEL direct ni API de conversation
 agent sans interface. Toute exécution locale passe par le flux `ai` dans le
 main et par les contrôles de permission associés.
 
@@ -196,7 +208,7 @@ main et par les contrôles de permission associés.
 
 Les appels de l’assistant principal et des agents textuels peuvent attacher le
 payload de requête et la réponse à `apis.json`. Les traces de génération de
-commande Device sont fusionnées avec celles de la délégation et rattachées au
+commande AEL sont fusionnées avec celles de la délégation et rattachées au
 message final. Le test de connexion ne persiste aucune trace.
 
 Avant écriture, `apiTrace` peut supprimer toutes les traces, retirer celles
@@ -206,5 +218,26 @@ clés de forme `sk-*`. Ces règles s’appliquent au chat principal et aux agent
 
 Les résultats réinjectés au provider sont tronqués à 4 000 caractères. La
 sortie de commande conservée en mémoire est également plafonnée par
-`deviceExecution.maxOutputCharacters`. Les prompts et réponses fonctionnels
+`aelExecution.maxOutputCharacters`. Les prompts et réponses fonctionnels
 restent potentiellement sensibles même après la redaction ciblée des secrets.
+
+## Extension cible 6.2 — contrats ARI, non implémentés
+
+Les schémas v1 requête/résultat/source/affirmation/budgets sont définis par le
+[compagnon technique ARI](agents_specification/ARI_SPECIFICATION_TECHNIQUE.md).
+L’intention est séparée de l’enveloppe construite par le main : identités,
+rattachement parent/enfant et budgets ne proviennent pas du renderer ou du
+modèle. Leur implémentation relève de 6.2.2 dans le plan de 17 tâches.
+
+Le registre Credentials global conserve une projection expurgée, des références
+opaques et des ACL strictes. Les secrets et snapshots de sessions restent
+chiffrés et privés au main ; le courtier vérifie le demandeur effectif, les
+profils de lecture et la génération de révocation. Ces composants relèvent de
+6.2.9/6.2.10 et ne sont pas fournis par la qualification du runtime de 6.2.1.
+
+Les tâches ARI seront stockées séparément avec écritures atomiques, reprise
+explicite et rétention de 90 jours ou 1 000 tâches finales. Corps bruts,
+credentials, cookies et URL signées sont exclus des traces. Les citations
+publiques sont autonomes et restent lisibles après purge de la tâche ; les
+conversations et messages restent éclatés. Les détails sont implémentés en
+6.2.13, sans remplacement du stockage existant.

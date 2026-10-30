@@ -9,14 +9,14 @@ export function buildGenericAgentInput(
   request: string,
   userPrompt: string,
 ) {
-  const plannerInstructions = agentId === "agent-planner"
+  const acpInstructions = agentId === "agent-acp"
     ? [
       "Return plain text only using labeled sections, not JSON.",
       [
         "Use exactly these top-level labels, each on its own line:",
         "STATUS: ready|needs-info|blocked",
         "SUMMARY: <one short sentence>",
-        "AGENT: device-agent|none",
+        "AGENT: agent-ael|none",
         "MODE: goal|analysis|none",
         "GOAL: <short goal>",
         "REQUEST: <one short executable request or one short goal>",
@@ -30,8 +30,8 @@ export function buildGenericAgentInput(
       ].join(" "),
       "Recommend only one next atomic action. If more work is needed, Nova will call you again after the result.",
       "Do not call other agents yourself, do not write the final user answer, and do not execute commands.",
-      "Never write shell syntax. If Device is needed, set AGENT:device-agent, MODE:goal, and describe the objective in natural language.",
-      "The Device permission policy handles real permissions. Do not return needs-info merely because a command might require permission.",
+      "Never write shell syntax. If AEL is needed, set AGENT:agent-ael, MODE:goal, and describe the objective in natural language.",
+      "The AEL permission policy handles real permissions. Do not return needs-info merely because a command might require permission.",
       "Use needs-info only when information that cannot be discovered locally is genuinely required from the user.",
       "Treat COMPLETED as authoritative. Do not propose an equivalent action that already succeeded or failed without a materially different objective.",
       "Never return JSON, markdown, code fences, comments, numbering trees, or multiple alternative plans.",
@@ -57,7 +57,7 @@ export function buildGenericAgentInput(
       "Request source: assistant.",
       "Adapt all recommendations to the runtime platform.",
       "If the platform is darwin, do not suggest Linux-only commands such as lscpu, free, or journalctl unless you explicitly say they are Linux-specific alternatives.",
-      ...plannerInstructions,
+      ...acpInstructions,
       "Be concise, actionable, and useful for the main assistant.",
       "Do not speak to the end user. Help Nova reason, interpret, or decide the next step.",
     ],

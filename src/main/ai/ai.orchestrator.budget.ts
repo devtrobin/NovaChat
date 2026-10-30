@@ -1,48 +1,48 @@
 import { ChatMessage } from "../../shared/chat.types";
 
 export const MAX_ASSISTANT_CYCLES = 8;
-export const MAX_DEVICE_EXECUTIONS = 6;
+export const MAX_AEL_EXECUTIONS = 6;
 
 export type OrchestrationBudget = {
-  deviceExecutions: number;
-  executedDeviceCommands: Set<string>;
+  aelExecutions: number;
+  executedAELCommands: Set<string>;
 };
 
 export type BudgetDecision = {
   duplicateCommand: boolean;
-  deviceLimitReached: boolean;
+  aelLimitReached: boolean;
 };
 
 export function createOrchestrationBudget(): OrchestrationBudget {
   return {
-    deviceExecutions: 0,
-    executedDeviceCommands: new Set<string>(),
+    aelExecutions: 0,
+    executedAELCommands: new Set<string>(),
   };
 }
 
-export function registerDeviceResult(
+export function registerAELResult(
   budget: OrchestrationBudget,
   message: ChatMessage,
 ): BudgetDecision {
-  if (message.agentId !== "device-agent") {
+  if (message.agentId !== "agent-ael") {
     return {
       duplicateCommand: false,
-      deviceLimitReached: false,
+      aelLimitReached: false,
     };
   }
 
-  budget.deviceExecutions += 1;
-  const signature = extractDeviceCommand(message);
-  const duplicateCommand = Boolean(signature && budget.executedDeviceCommands.has(signature));
-  if (signature) budget.executedDeviceCommands.add(signature);
+  budget.aelExecutions += 1;
+  const signature = extractAELCommand(message);
+  const duplicateCommand = Boolean(signature && budget.executedAELCommands.has(signature));
+  if (signature) budget.executedAELCommands.add(signature);
 
   return {
     duplicateCommand,
-    deviceLimitReached: budget.deviceExecutions >= MAX_DEVICE_EXECUTIONS,
+    aelLimitReached: budget.aelExecutions >= MAX_AEL_EXECUTIONS,
   };
 }
 
-function extractDeviceCommand(message: ChatMessage): string | null {
+function extractAELCommand(message: ChatMessage): string | null {
   for (const entry of message.lifecycleLog ?? []) {
     const command = entry.metadata?.command;
     if (typeof command === "string" && command.trim()) {

@@ -9,7 +9,7 @@ Accepted
 Le projet doit :
 - appeler un provider IA
 - gerer des credentials
-- executer des commandes locales via `device`
+- executer des commandes locales via `ael`
 - boucler entre assistant et machine
 
 Si cette logique reste dans le renderer, on expose trop de logique sensible et on rend l'application plus fragile.
@@ -26,7 +26,7 @@ Le renderer :
 Le `main` :
 - charge les settings
 - appelle le provider
-- orchestre la boucle `assistant -> device -> assistant`
+- orchestre la boucle `assistant -> ael -> assistant`
 - renvoie des events au renderer
 
 ## Consequences

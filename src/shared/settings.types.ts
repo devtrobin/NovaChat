@@ -1,7 +1,9 @@
+import { SystemAgentId } from "./system-agent.registry";
+
 export type ActiveAIProviderId = "openai";
 export type PlannedAIProviderId = "anthropic" | "google" | "lmstudio" | "mistral" | "ollama";
 export type AIProviderId = ActiveAIProviderId | PlannedAIProviderId;
-export type AgentId = "agent-planner" | "device-agent";
+export type AgentId = SystemAgentId;
 
 export type AgentSettingsMap = Record<AgentId, { enabled: boolean }>;
 
@@ -11,7 +13,7 @@ export type LocalFilesSettings = {
   settingsPath: string;
 };
 
-export type DeviceExecutionSettings = {
+export type AELExecutionSettings = {
   maxOutputCharacters: number;
   timeoutMs: number;
 };
@@ -39,7 +41,7 @@ export type AppSettings = {
   activeProvider: ActiveAIProviderId;
   agents: AgentSettingsMap;
   apiTrace: ApiTraceSettings;
-  deviceExecution: DeviceExecutionSettings;
+  aelExecution: AELExecutionSettings;
   hideInternalConversations: boolean;
   localFiles: LocalFilesSettings;
   openai: OpenAISettings;

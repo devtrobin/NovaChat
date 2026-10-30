@@ -9,10 +9,10 @@ describe("message visibility", () => {
   it("keeps direct commands and compact public progress", () => {
     expect(resolveMessageVisibility(createMessage({
       from: "user",
-      to: "device",
+      to: "ael",
     }))).toBe("public");
     expect(resolveMessageVisibility(createMessage({
-      from: "device",
+      from: "ael",
       to: "user",
     }))).toBe("public");
     expect(resolveMessageVisibility(createMessage({
@@ -21,17 +21,17 @@ describe("message visibility", () => {
     }))).toBe("public");
   });
 
-  it("hides agent delegations and their device details", () => {
+  it("hides agent delegations and their ael details", () => {
     expect(resolveMessageVisibility(createMessage({
       from: "assistant",
       to: "agent",
     }))).toBe("internal");
     expect(resolveMessageVisibility(createMessage({
       from: "assistant",
-      to: "device",
+      to: "ael",
     }))).toBe("internal");
     expect(resolveMessageVisibility(createMessage({
-      from: "device",
+      from: "ael",
       to: "assistant",
     }))).toBe("internal");
   });

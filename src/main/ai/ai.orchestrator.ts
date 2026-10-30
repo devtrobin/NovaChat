@@ -25,11 +25,11 @@ import {
 } from "./ai.orchestrator.cycle.messages";
 import { handleMissingOpenAIConfig, handleTurnError } from "./ai.orchestrator.errors";
 import { finishTurn, startTurn, TurnStoppedError } from "./ai.turn-registry";
-import { resolvePlannerStep } from "./ai.orchestrator.planner-step";
+import { resolveACPStep } from "./ai.orchestrator.acp-step";
 import {
   createOrchestrationBudget,
   MAX_ASSISTANT_CYCLES,
-  registerDeviceResult,
+  registerAELResult,
 } from "./ai.orchestrator.budget";
 import { requestFinalSynthesis } from "./ai.orchestrator.finalization";
 
@@ -67,7 +67,7 @@ export async function runTurn(
 
   const turnMessages: ChatMessage[] = [...request.messages, userMessage];
   const turnId = startTurn(request.conversationId);
-  const executedPlannerSteps = new Set<string>();
+  const executedACPSteps = new Set<string>();
   const orchestrationBudget = createOrchestrationBudget();
   let assistantCycles = 0;
   const updatePipelineStage = (stage: PipelineStage, agentId?: AgentId) => {
@@ -96,11 +96,11 @@ export async function runTurn(
         return { ok: true };
       }
 
-      if (cycleResult.message.agentId === "agent-planner") {
-        const plannerResolution = await resolvePlannerStep({
+      if (cycleResult.message.agentId === "agent-acp") {
+        const acpResolution = await resolveACPStep({
           conversationId: request.conversationId,
           emit,
-          executedPlannerSteps,
+          executedACPSteps,
           message: cycleResult.message,
           settings,
           turnId,
@@ -109,35 +109,35 @@ export async function runTurn(
           userMessage,
         });
 
-        if (plannerResolution.kind === "assistant") {
-          emit({ conversationId: request.conversationId, messages: [plannerResolution.message], type: "append-messages" });
+        if (acpResolution.kind === "assistant") {
+          emit({ conversationId: request.conversationId, messages: [acpResolution.message], type: "append-messages" });
           emit({ conversationId: request.conversationId, messageId: systemMessage.id, type: "remove-message" });
           return { ok: true };
         }
-        if (plannerResolution.kind === "finalize") {
+        if (acpResolution.kind === "finalize") {
           break;
         }
 
-        turnMessages.push(plannerResolution.message);
-        const budgetDecision = registerDeviceResult(
+        turnMessages.push(acpResolution.message);
+        const budgetDecision = registerAELResult(
           orchestrationBudget,
-          plannerResolution.message,
+          acpResolution.message,
         );
         systemMessage = restartAssistantThinking(
           request.conversationId,
           emit,
           systemMessage.id,
           "analyzing-agent-result",
-          plannerResolution.message.agentId as AgentId | undefined,
+          acpResolution.message.agentId as AgentId | undefined,
         );
-        if (plannerResolution.message.lifecycleLog?.some((entry) => entry.event === "device-killed")) {
+        if (acpResolution.message.lifecycleLog?.some((entry) => entry.event === "ael-killed")) {
           appendInterruptedCommandContext(turnMessages);
         }
-        if (budgetDecision.duplicateCommand || budgetDecision.deviceLimitReached) break;
+        if (budgetDecision.duplicateCommand || budgetDecision.aelLimitReached) break;
         continue;
       }
 
-      const budgetDecision = registerDeviceResult(orchestrationBudget, cycleResult.message);
+      const budgetDecision = registerAELResult(orchestrationBudget, cycleResult.message);
       systemMessage = restartAssistantThinking(
         request.conversationId,
         emit,
@@ -145,10 +145,10 @@ export async function runTurn(
         "analyzing-agent-result",
         cycleResult.message.agentId as AgentId | undefined,
       );
-      if (cycleResult.message.lifecycleLog?.some((entry) => entry.event === "device-killed")) {
+      if (cycleResult.message.lifecycleLog?.some((entry) => entry.event === "ael-killed")) {
         appendInterruptedCommandContext(turnMessages);
       }
-      if (budgetDecision.duplicateCommand || budgetDecision.deviceLimitReached) break;
+      if (budgetDecision.duplicateCommand || budgetDecision.aelLimitReached) break;
     }
 
     updatePipelineStage("final-response");

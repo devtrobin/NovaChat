@@ -2,14 +2,14 @@ import { ChatMessage } from "../../shared/chat.types";
 import { RunTurnRequest, RunTurnResult } from "../../shared/ai.types";
 import { AppSettings } from "../../shared/settings.types";
 import {
-  createDeviceImmediateErrorMessage,
+  createAELImmediateErrorMessage,
   createInterruptedSystemMessage,
-  createRunningDeviceMessage,
+  createRunningAELMessage,
   createSystemMessage,
 } from "./ai.message-factory";
 import { appendLifecycleLog, extractDirectCommand, shouldSetTitle } from "./ai.orchestrator.runtime";
 import { Emit } from "./ai.orchestrator.types";
-import { executeDeviceCommand } from "./ai.device-flow";
+import { executeAELCommand } from "./ai.ael-flow";
 import { finishTurn, startTurn, TurnStoppedError } from "./ai.turn-registry";
 
 export async function runDirectCommandTurn(
@@ -35,24 +35,24 @@ export async function runDirectCommandTurn(
     type: "append-messages",
   });
 
-  const runningMessage = createRunningDeviceMessage(command, "", "user", "device");
-  appendLifecycleLog(runningMessage, "user-requested-device", "L'utilisateur a demande une execution device.", {
+  const runningMessage = createRunningAELMessage(command, "", "user", "ael");
+  appendLifecycleLog(runningMessage, "user-requested-ael", "L'utilisateur a demande une execution AEL.", {
     command,
     from: "user",
-    to: "device",
+    to: "ael",
   });
   emit({ conversationId: request.conversationId, messages: [runningMessage], type: "append-messages" });
 
   try {
-    await executeDeviceCommand({
+    await executeAELCommand({
       command,
       conversationId: request.conversationId,
       emit,
       initialMessage: runningMessage,
       messageId: runningMessage.id,
-      options: settings.deviceExecution,
+      options: settings.aelExecution,
       resultRecipient: "user",
-      resultSender: "device",
+      resultSender: "ael",
       turnId,
     });
     emit({ conversationId: request.conversationId, messageId: systemMessage.id, type: "remove-message" });
@@ -63,7 +63,7 @@ export async function runDirectCommandTurn(
       emit({ conversationId: request.conversationId, messages: [createInterruptedSystemMessage()], type: "append-messages" });
       return { ok: false };
     }
-    const errorMessage = createDeviceImmediateErrorMessage(command, runningMessage.id, error);
+    const errorMessage = createAELImmediateErrorMessage(command, runningMessage.id, error);
     emit({
       conversationId: request.conversationId,
       message: errorMessage,

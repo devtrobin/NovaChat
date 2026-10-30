@@ -2,13 +2,13 @@ import { describe, expect, it } from "vitest";
 import { ChatMessage } from "../../shared/chat.types";
 import {
   createOrchestrationBudget,
-  MAX_DEVICE_EXECUTIONS,
-  registerDeviceResult,
+  MAX_AEL_EXECUTIONS,
+  registerAELResult,
 } from "./ai.orchestrator.budget";
 
-function createDeviceMessage(command: string): ChatMessage {
+function createAELMessage(command: string): ChatMessage {
   return {
-    agentId: "device-agent",
+    agentId: "agent-ael",
     content: "Resultat",
     createdAt: "2026-07-19T12:00:00.000Z",
     from: "agent",
@@ -24,46 +24,46 @@ function createDeviceMessage(command: string): ChatMessage {
 }
 
 describe("orchestration budget", () => {
-  it("detects an equivalent repeated Device command", () => {
+  it("detects an equivalent repeated AEL command", () => {
     const budget = createOrchestrationBudget();
 
-    expect(registerDeviceResult(budget, createDeviceMessage("  RG   --files ")).duplicateCommand)
+    expect(registerAELResult(budget, createAELMessage("  RG   --files ")).duplicateCommand)
       .toBe(false);
-    expect(registerDeviceResult(budget, createDeviceMessage("rg --files")).duplicateCommand)
+    expect(registerAELResult(budget, createAELMessage("rg --files")).duplicateCommand)
       .toBe(true);
   });
 
-  it("keeps a separate Device execution ceiling", () => {
+  it("keeps a separate AEL execution ceiling", () => {
     const budget = createOrchestrationBudget();
     let limitReached = false;
 
-    for (let index = 0; index < MAX_DEVICE_EXECUTIONS; index += 1) {
-      limitReached = registerDeviceResult(
+    for (let index = 0; index < MAX_AEL_EXECUTIONS; index += 1) {
+      limitReached = registerAELResult(
         budget,
-        createDeviceMessage(`echo ${index}`),
-      ).deviceLimitReached;
+        createAELMessage(`echo ${index}`),
+      ).aelLimitReached;
     }
 
     expect(limitReached).toBe(true);
-    expect(budget.deviceExecutions).toBe(MAX_DEVICE_EXECUTIONS);
+    expect(budget.aelExecutions).toBe(MAX_AEL_EXECUTIONS);
   });
 
-  it("does not count Planner results as Device executions", () => {
+  it("does not count ACP results as AEL executions", () => {
     const budget = createOrchestrationBudget();
-    const decision = registerDeviceResult(budget, {
-      agentId: "agent-planner",
+    const decision = registerAELResult(budget, {
+      agentId: "agent-acp",
       content: "Plan",
       createdAt: "2026-07-19T12:00:00.000Z",
       from: "agent",
-      id: "planner-message",
+      id: "acp-message",
       to: "assistant",
       visibility: "internal",
     });
 
     expect(decision).toEqual({
       duplicateCommand: false,
-      deviceLimitReached: false,
+      aelLimitReached: false,
     });
-    expect(budget.deviceExecutions).toBe(0);
+    expect(budget.aelExecutions).toBe(0);
   });
 });

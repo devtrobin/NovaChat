@@ -23,18 +23,18 @@ afterEach(async () => {
 });
 
 describe("agent storage", () => {
-  it("initializes a complete Device workspace", async () => {
+  it("initializes a complete AEL workspace", async () => {
     const rootDirectory = await createTemporaryDirectory();
-    const workspace = await loadAgentWorkspace(rootDirectory, "device-agent");
+    const workspace = await loadAgentWorkspace(rootDirectory, "agent-ael");
 
     expect(workspace).toMatchObject({
       context: { schemaVersion: AGENT_CONTEXT_SCHEMA_VERSION },
       conversations: { activeConversationId: null, conversations: [] },
       history: [],
-      id: "device-agent",
+      id: "agent-ael",
       permissions: { rules: [] },
     });
-    expect(await readdir(path.join(rootDirectory, "device-agent"))).toEqual(expect.arrayContaining([
+    expect(await readdir(path.join(rootDirectory, "agent-ael"))).toEqual(expect.arrayContaining([
       "contexte.json",
       "conversations",
       "historique.json",
@@ -44,9 +44,9 @@ describe("agent storage", () => {
 
   it("persists, resolves and deletes an exact permission", async () => {
     const rootDirectory = await createTemporaryDirectory();
-    await saveAgentPermission(rootDirectory, "device-agent", "npm test", "allow", true);
+    await saveAgentPermission(rootDirectory, "agent-ael", "npm test", "allow", true);
 
-    expect(await getAgentPermission(rootDirectory, "device-agent", "npm test")).toMatchObject({
+    expect(await getAgentPermission(rootDirectory, "agent-ael", "npm test")).toMatchObject({
       decision: "allow",
       matchedRule: {
         command: "npm test",
@@ -55,23 +55,23 @@ describe("agent storage", () => {
       },
     });
 
-    await deleteAgentPermission(rootDirectory, "device-agent", "npm test");
-    expect(await getAgentPermission(rootDirectory, "device-agent", "npm test")).toEqual({
+    await deleteAgentPermission(rootDirectory, "agent-ael", "npm test");
+    expect(await getAgentPermission(rootDirectory, "agent-ael", "npm test")).toEqual({
       decision: null,
       matchedRule: null,
     });
   });
 
-  it("persists an internal Device exchange and its history entry", async () => {
+  it("persists an internal AEL exchange and its history entry", async () => {
     const rootDirectory = await createTemporaryDirectory();
     const { agentConversationId } = await recordAgentCommandExchange({
-      agentId: "device-agent",
+      agentId: "agent-ael",
       apiRequests: [{
         at: "2026-07-18T10:00:00.000Z",
         direction: "response",
         from: "openai",
         payload: { command: "rg --files" },
-        to: "device-agent",
+        to: "agent-ael",
       }],
       assistantRequest: "GOAL: Inspecter les fichiers",
       command: "rg --files",
@@ -85,7 +85,7 @@ describe("agent storage", () => {
       userPrompt: "Inspecte le projet",
     });
 
-    const workspace = await loadAgentWorkspace(rootDirectory, "device-agent");
+    const workspace = await loadAgentWorkspace(rootDirectory, "agent-ael");
     expect(workspace.history[0]).toMatchObject({
       agentConversationId,
       command: "rg --files",
@@ -93,11 +93,11 @@ describe("agent storage", () => {
       status: "success",
     });
     expect(workspace.conversations.conversations[0].messages).toMatchObject([
-      { from: "assistant", to: "device" },
+      { from: "assistant", to: "ael" },
       {
         apiRequests: [{ payload: { command: "rg --files" } }],
         content: "rg --files",
-        from: "device",
+        from: "ael",
         result: "package.json",
         to: "assistant",
       },
@@ -108,11 +108,11 @@ describe("agent storage", () => {
     const rootDirectory = await createTemporaryDirectory();
 
     await Promise.all([
-      saveAgentPermission(rootDirectory, "device-agent", "npm test", "allow", true),
-      saveAgentPermission(rootDirectory, "device-agent", "npm run lint", "deny", true),
+      saveAgentPermission(rootDirectory, "agent-ael", "npm test", "allow", true),
+      saveAgentPermission(rootDirectory, "agent-ael", "npm run lint", "deny", true),
     ]);
 
-    const workspace = await loadAgentWorkspace(rootDirectory, "device-agent");
+    const workspace = await loadAgentWorkspace(rootDirectory, "agent-ael");
     expect(workspace.permissions.rules).toEqual(expect.arrayContaining([
       expect.objectContaining({ command: "npm test", decision: "allow" }),
       expect.objectContaining({ command: "npm run lint", decision: "deny" }),
@@ -122,7 +122,7 @@ describe("agent storage", () => {
   it("preserves concurrent history entries for one agent", async () => {
     const rootDirectory = await createTemporaryDirectory();
     const createExchange = (command: string) => recordAgentCommandExchange({
-      agentId: "device-agent" as const,
+      agentId: "agent-ael" as const,
       assistantRequest: `Executer ${command}`,
       command,
       result: {
@@ -140,7 +140,7 @@ describe("agent storage", () => {
       createExchange("npm run lint"),
     ]);
 
-    const workspace = await loadAgentWorkspace(rootDirectory, "device-agent");
+    const workspace = await loadAgentWorkspace(rootDirectory, "agent-ael");
     expect(workspace.history).toHaveLength(2);
     expect(workspace.history.map((entry) => entry.command)).toEqual(
       expect.arrayContaining(["npm test", "npm run lint"]),

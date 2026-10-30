@@ -25,17 +25,17 @@ export function validateSettingsDraft(settings: AppSettings, category: SettingsC
     }
 
     if (
-      !Number.isInteger(settings.deviceExecution.timeoutMs)
-      || settings.deviceExecution.timeoutMs < 1_000
-      || settings.deviceExecution.timeoutMs > 300_000
+      !Number.isInteger(settings.aelExecution.timeoutMs)
+      || settings.aelExecution.timeoutMs < 1_000
+      || settings.aelExecution.timeoutMs > 300_000
     ) {
       return "Le delai maximal doit etre compris entre 1 000 et 300 000 ms.";
     }
 
     if (
-      !Number.isInteger(settings.deviceExecution.maxOutputCharacters)
-      || settings.deviceExecution.maxOutputCharacters < 10_000
-      || settings.deviceExecution.maxOutputCharacters > 1_000_000
+      !Number.isInteger(settings.aelExecution.maxOutputCharacters)
+      || settings.aelExecution.maxOutputCharacters < 10_000
+      || settings.aelExecution.maxOutputCharacters > 1_000_000
     ) {
       return "La sortie maximale doit etre comprise entre 10 000 et 1 000 000 caracteres.";
     }

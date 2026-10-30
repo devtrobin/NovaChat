@@ -3,9 +3,9 @@ import {
   loadAgentWorkspace,
   recordAgentCommandExchange,
 } from "./agent-storage.service";
-import { runDeviceAgentTask } from "./agent-task.device";
+import { runAELAgentTask } from "./agent-task.ael";
 import { createAgentResultMessage } from "./agent-task.messages";
-import { runPlannerAgentTask } from "./agent-task.planner";
+import { runACPAgentTask } from "./agent-task.acp";
 import {
   AgentTaskExecutionResult,
   RunAgentTaskArgs,
@@ -28,17 +28,17 @@ export async function runAgentTask(
   } = args;
   const currentAgentConversationId = await resolveAgentConversationId(settings, task, turnId);
   if (!settings.agents[task.agentId]?.enabled) {
-    const deviceMessage = createAgentResultMessage(
+    const aelMessage = createAgentResultMessage(
       task.agentId,
       `L'agent ${task.agentId} est actuellement desactive.`,
     );
 
     return {
-      deviceMessage,
+      aelMessage,
       result: {
         agentConversationId: "",
         kind: "completed",
-        output: deviceMessage.content,
+        output: aelMessage.content,
         request: task.request,
         resolvedCommand: task.request,
         status: "error",
@@ -56,9 +56,9 @@ export async function runAgentTask(
   });
 
   try {
-    return task.agentId === "device-agent"
-      ? await runDeviceAgentTask(args, activeTask.taskId, currentAgentConversationId)
-      : await runPlannerAgentTask(args, currentAgentConversationId);
+    return task.agentId === "agent-ael"
+      ? await runAELAgentTask(args, activeTask.taskId, currentAgentConversationId)
+      : await runACPAgentTask(args, currentAgentConversationId);
   } catch (error) {
     if (error instanceof TurnStoppedError || (error instanceof DOMException && error.name === "AbortError")) {
       await recordAgentCommandExchange({

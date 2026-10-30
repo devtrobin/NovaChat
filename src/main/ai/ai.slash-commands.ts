@@ -117,7 +117,7 @@ function formatHelp(requestedCommand: string): string {
     "",
     "Alias : /aide, /commands et /? ouvrent cette aide ; /etat et /parametres sont aussi acceptés.",
     "",
-    "Attention : /cmd exécute directement la commande demandée dans le shell local, sans permission de l'agent Device.",
+    "Attention : /cmd exécute directement la commande demandée dans le shell local, sans permission de l'agent AEL.",
   ].join("\n");
 }
 
@@ -126,7 +126,7 @@ function formatCommandHelp(definition: SlashCommandDefinition): string {
     ? `Alias : ${definition.aliases.map((alias) => `/${alias}`).join(", ")}`
     : "";
   const warning = definition.name === "cmd"
-    ? "Attention : cette commande utilise directement le shell local et ne passe pas par les permissions de l'agent Device."
+    ? "Attention : cette commande utilise directement le shell local et ne passe pas par les permissions de l'agent AEL."
     : "";
 
   return [
@@ -147,8 +147,8 @@ function formatStatus(settings: AppSettings): string {
     `- Provider sélectionné : ${settings.activeProvider}`,
     `- OpenAI : ${openAIReady ? "prêt" : "configuration incomplète"}`,
     `- Modèle OpenAI : ${settings.openai.model.trim() || "non configuré"}`,
-    `- Agent Planner : ${formatEnabled(settings.agents["agent-planner"].enabled)}`,
-    `- Agent Device : ${formatEnabled(settings.agents["device-agent"].enabled)}`,
+    `- Agent ACP : ${formatEnabled(settings.agents["agent-acp"].enabled)}`,
+    `- Agent AEL : ${formatEnabled(settings.agents["agent-ael"].enabled)}`,
     `- Mode aperçu : ${settings.previewMode ? "activé" : "désactivé"}`,
   ].join("\n");
 }
@@ -157,8 +157,8 @@ function formatAgents(settings: AppSettings): string {
   return [
     "Agents NovaChat :",
     "",
-    `- Planner — ${formatEnabled(settings.agents["agent-planner"].enabled)} : prépare la prochaine étape atomique.`,
-    `- Device — ${formatEnabled(settings.agents["device-agent"].enabled)} : exécute une commande locale avec le workflow de permission.`,
+    `- ACP — ${formatEnabled(settings.agents["agent-acp"].enabled)} : prépare la prochaine étape atomique.`,
+    `- AEL — ${formatEnabled(settings.agents["agent-ael"].enabled)} : exécute une commande locale avec le workflow de permission.`,
     "",
     "Nova sélectionne les agents automatiquement selon la demande.",
   ].join("\n");

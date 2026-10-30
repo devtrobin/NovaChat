@@ -43,7 +43,7 @@ export function classifyRuntimeError(error: Error): string {
     return `Erreur shell: ${message}`;
   }
   if (/policy/i.test(message)) {
-    return `Commande refusee par la policy device: ${message}`;
+    return `Commande refusee par la policy AEL: ${message}`;
   }
   return `Erreur Nova: ${message || "erreur inconnue."}`;
 }

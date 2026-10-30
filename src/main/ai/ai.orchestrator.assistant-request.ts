@@ -1,6 +1,6 @@
 import { ChatMessage } from "../../shared/chat.types";
 import { RuntimeAppSettings } from "../../shared/settings.types";
-import { getEnabledAgents } from "./ai.orchestrator.planner-handoff";
+import { getEnabledAgents } from "./ai.orchestrator.acp-handoff";
 import { generateOpenAIReply } from "./openai.service";
 import {
   registerAbortController,

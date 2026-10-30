@@ -53,35 +53,35 @@ ChatInput
 3. Nova crée le message user et un message système de progression ;
 4. la conversation complète est transformée en JSON pour OpenAI ;
 5. OpenAI doit renvoyer un objet Nova minifié ;
-6. le parser accepte une réponse user ou un handoff agent/device ;
+6. le parser accepte une réponse user ou un handoff agent/ael ;
 7. les traces API sont attachées au message user et au message final ;
 8. le renderer applique les événements puis auto-sauvegarde.
 
 Le titre devient les 36 premiers caractères du premier prompt visible.
 
-## 3. Handoff vers le Planner
+## 3. Handoff vers l’ACP
 
-Le Planner peut être demandé par la réponse OpenAI :
+L’ACP peut être demandé par la réponse OpenAI :
 
 ```json
-{"from":"assistant","to":"agent","agentId":"agent-planner","content":"..."}
+{"from":"assistant","to":"agent","agentId":"agent-acp","content":"..."}
 ```
 
 Un handoff peut aussi être forcé au premier cycle si :
 
-- Planner est activé ;
+- ACP est activé ;
 - le prompt dépasse 140 caractères ou contient un signal heuristique
   (`analyse`, `debug`, `plan`, `refactor`, etc.) ;
-- aucun résultat agent/device n’est déjà présent dans le tour ;
-- la réponse assistant ne mentionne pas déjà le Planner.
+- aucun résultat agent/ael n’est déjà présent dans le tour ;
+- la réponse assistant ne mentionne pas déjà l’ACP.
 
-Le Planner reçoit son contexte, la plateforme, le shell, la demande et le
+L’ACP reçoit son contexte, la plateforme, le shell, la demande et le
 prompt utilisateur. Il renvoie un format textuel :
 
 ```text
 STATUS: ready|needs-info|blocked
 SUMMARY: ...
-AGENT: device-agent|none
+AGENT: agent-ael|none
 MODE: goal|command|analysis|none
 GOAL: ...
 REQUEST: ...
@@ -99,19 +99,19 @@ Nova parse le plan :
 - `needs-info` : question/résumé à l’utilisateur ;
 - `blocked` : message de blocage ;
 - `none` : réponse avec le résumé ;
-- `device-agent` : délégation de `REQUEST`.
+- `agent-ael` : délégation de `REQUEST`.
 
 Une signature des étapes déjà exécutées empêche la répétition exacte dans un
 tour.
 
-## 4. Handoff vers le Device
+## 4. Handoff vers l’AEL
 
-Le Device reçoit l’un des deux formats :
+L’AEL reçoit l’un des deux formats :
 
 - commande exacte, mode `command` ;
 - objectif, généralement préfixé `GOAL:`, mode `goal`.
 
-Pour un objectif, `generateDeviceAgentCommand` effectue un appel OpenAI dédié
+Pour un objectif, `generateAELAgentCommand` effectue un appel OpenAI dédié
 et exige uniquement une commande shell en texte brut.
 
 La commande passe ensuite dans :
@@ -132,7 +132,7 @@ catégorie la plus risquée des segments shell est conservée et présentée dan
 la demande de permission. `destructive` et `unclassified` restent toujours
 non mémorisables.
 
-Après exécution, le Device crée :
+Après exécution, l’AEL crée :
 
 - un message de commande/progression visible ;
 - un message agent de synthèse vers l’assistant ;
@@ -162,7 +162,7 @@ règle existe.
 
 ## 6. Exécution locale
 
-`startDeviceCommand` :
+`startAELCommand` :
 
 1. normalise la commande ;
 2. rejette seulement vide/NUL ;
@@ -174,7 +174,7 @@ règle existe.
 8. applique le timeout actif configuré et le suspend pendant une attente de
    saisie ;
 9. arrête récursivement l’arbre de processus sur kill ou timeout ;
-10. produit `DeviceCommandResult`.
+10. produit `AELCommandResult`.
 
 Une sortie terminant par `password:`, `mot de passe:`, `passphrase:`, `?` ou
 `:` peut passer le message en `waiting-input`. Le renderer renvoie alors la
@@ -205,8 +205,8 @@ passe pas par les permissions de l’agent.
 ```text
 user /cmd
   -> runDirectCommandTurn
-  -> executeDeviceCommand
-  -> résultat device -> user
+  -> executeAELCommand
+  -> résultat ael -> user
 ```
 
 La commande reste soumise au contrôle minimal de `assertCommandAllowed`.
@@ -276,7 +276,7 @@ critique qui évite les écrasements entre tâches concurrentes.
 Une récupération partielle produit la même bannière que le chat principal et
 bloque les mutations du workspace concerné jusqu’à acknowledgement.
 
-Les pages Planner et Device interrogent les tâches actives chaque seconde et
+Les pages ACP et AEL interrogent les tâches actives chaque seconde et
 se rafraîchissent aussi après un événement IA.
 
 La vue globale `AgentsActivityView` agrège les deux workspaces, conserve les 24
@@ -284,7 +284,7 @@ entrées récentes et permet l’arrêt d’une tâche.
 
 ## 11. Conversations internes agent
 
-Les tâches Planner et Device créent automatiquement une conversation interne
+Les tâches ACP et AEL créent automatiquement une conversation interne
 d’origine `assistant`. Elle sert à :
 
 - conserver les demandes et résultats successifs d’un même tour ;
@@ -330,3 +330,27 @@ en clair.
 - `hideInternalConversations` filtre les messages dont la visibilité résolue
   vaut `internal`, sans modifier le stockage. Les permissions, saisies,
   progressions publiques et résultats d’un `/cmd` utilisateur restent visibles.
+
+## 14. Cible ARI 6.2 — recherche transversale, non implémentée
+
+Contrat de référence : [spécification technique ARI](agents_specification/ARI_SPECIFICATION_TECHNIQUE.md).
+
+Recherche publique : Nova reçoit une demande, le main crée l’enveloppe,
+examine l’URL directe éventuelle puis Google si nécessaire, contrôle les
+candidats, extrait le texte et retourne sources/faits/limites. Le transport
+public est Undici contrôlé, puis l’extraction statique sans scripts ni réseau
+implicite. Un rendu Chromium isolé n’est permis qu’après la preuve de sortie
+6.2.5, avec les mêmes budgets. Les autres candidats publics restent accessibles
+lorsqu’un site exige un compte ou un captcha.
+
+Lecture authentifiée : une entrée Credentials activée par l’utilisateur fournit
+une référence opaque. Le courtier main contrôle les ACL du demandeur effectif
+et le profil du site, puis utilise une partition Chromium dédiée après les
+preuves 6.2.5 et 6.2.10. Les cookies et secrets restent privés au courtier ;
+seuls des fragments bornés et expurgés peuvent alimenter la synthèse.
+
+Une demande issue d’ACP/AEL passe par Nova/main, met le parent en attente puis
+le reprend une seule fois. L’identité du véritable demandeur est préservée.
+Arrêter le tour ou révoquer un accès annule les opérations concernées ; aucune
+reprise automatique après redémarrage. L’interface Credentials expose des
+projections expurgées et des commandes étroites de partage et révocation.

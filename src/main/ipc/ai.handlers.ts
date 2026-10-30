@@ -2,7 +2,7 @@ import { IpcMain } from "electron";
 import { runTurn } from "../ai/ai.orchestrator";
 import { resolvePermissionRequest } from "../ai/ai.permission.service";
 import { stopTurnByConversation } from "../ai/ai.turn-registry";
-import { killDeviceCommand, submitInputToCommand } from "../device/device.service";
+import { killAELCommand, submitInputToCommand } from "../ael/ael.service";
 import { loadRuntimeSettingsFromDisk } from "../settings/settings.service";
 import {
   parseCommandId,
@@ -22,7 +22,7 @@ export function registerAiHandlers(ipcMain: IpcMain): void {
   });
 
   ipcMain.handle("nova:ai:kill-command", async (_event, payload: unknown) => {
-    await killDeviceCommand(parseCommandId(payload));
+    await killAELCommand(parseCommandId(payload));
   });
 
   ipcMain.handle("nova:ai:submit-command-input", async (_event, payload: unknown) => {

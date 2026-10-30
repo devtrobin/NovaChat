@@ -2,15 +2,15 @@ import { ApiRequestRecord } from "../../shared/chat.types";
 
 export type ProviderResponse =
   | { content: string; from: "assistant"; to: "user" }
-  | { content: string; from: "assistant"; to: "device" }
-  | { agentId: "agent-planner" | "device-agent"; content: string; from: "assistant"; to: "agent" };
+  | { content: string; from: "assistant"; to: "ael" }
+  | { agentId: "agent-acp" | "agent-ael"; content: string; from: "assistant"; to: "agent" };
 
 export type GenerateOpenAIReplyResult = {
   apiRecords: ApiRequestRecord[];
   providerResponse: ProviderResponse;
 };
 
-export type GenerateDeviceAgentCommandResult = {
+export type GenerateAELAgentCommandResult = {
   apiRecords: ApiRequestRecord[];
   command: string;
 };

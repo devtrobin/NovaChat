@@ -1,5 +1,5 @@
-import DeviceAgentPage from "./DeviceAgentPage/DeviceAgentPage";
-import PlannerAgentPage from "./PlannerAgentPage/PlannerAgentPage";
+import AELAgentPage from "./AELAgentPage/AELAgentPage";
+import ACPAgentPage from "./ACPAgentPage/ACPAgentPage";
 import AgentsPageEmpty from "./AgentsPageEmpty";
 import { AgentsPageProps } from "./AgentsPage.types";
 
@@ -8,12 +8,12 @@ export default function AgentsPage({ activeAgent, onSavedSettings }: AgentsPageP
     return <AgentsPageEmpty />;
   }
 
-  if (activeAgent.id === "device-agent") {
-    return <DeviceAgentPage agent={activeAgent} onSavedSettings={onSavedSettings} />;
+  if (activeAgent.id === "agent-ael") {
+    return <AELAgentPage agent={activeAgent} onSavedSettings={onSavedSettings} />;
   }
 
-  if (activeAgent.id === "agent-planner") {
-    return <PlannerAgentPage agent={activeAgent} onSavedSettings={onSavedSettings} />;
+  if (activeAgent.id === "agent-acp") {
+    return <ACPAgentPage agent={activeAgent} onSavedSettings={onSavedSettings} />;
   }
 
   return <AgentsPageEmpty />;

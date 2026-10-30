@@ -17,7 +17,7 @@ type PendingPermissionRequest = {
 const pendingPermissionRequests = new Map<string, PendingPermissionRequest>();
 const activeConversationRequests = new Map<string, string>();
 
-export async function requestDevicePermission(
+export async function requestAELPermission(
   conversationId: string,
   command: string,
   emit: Emit,

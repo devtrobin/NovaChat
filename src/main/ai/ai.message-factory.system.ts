@@ -61,7 +61,7 @@ export function createPermissionRequestSystemMessage(
     ],
     apiRequests: [],
     content: [
-      "Permission requise pour Device.",
+      "Permission requise pour AEL.",
       summary ? `Action demandee : ${summary}` : "L'assistant principal souhaite executer une commande locale.",
       "",
       "Commande proposee :",

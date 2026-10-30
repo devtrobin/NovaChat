@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { AGENT_CONTEXT_SCHEMA_VERSION } from "../../shared/agent.types";
 import {
-  buildDeviceAgentInput,
+  buildAELAgentInput,
   buildGenericAgentInput,
   buildInput,
 } from "./openai.payload";
@@ -24,12 +24,12 @@ describe("OpenAI payload builders", () => {
     const payload = buildInput([{
       content: "Resultat",
       createdAt: "2026-07-19T10:00:00.000Z",
-      from: "device",
+      from: "ael",
       id: "message-1",
       result: "x".repeat(4500),
       to: "assistant",
       visibility: "internal",
-    }], ["agent-planner"], { runtimeContext: runtime });
+    }], ["agent-acp"], { runtimeContext: runtime });
     const conversation = JSON.parse(payload[1].content[0].text) as {
       conversation: Array<{ result: string }>;
     };
@@ -38,23 +38,23 @@ describe("OpenAI payload builders", () => {
     expect(conversation.conversation[0].result).toContain("[output truncated: 500 chars omitted]");
   });
 
-  it("builds distinct Device and Planner instructions", () => {
-    const device = buildDeviceAgentInput(context, runtime, "Inspecter", "Diagnostic");
-    const planner = buildGenericAgentInput(
-      "agent-planner",
+  it("builds distinct AEL and ACP instructions", () => {
+    const ael = buildAELAgentInput(context, runtime, "Inspecter", "Diagnostic");
+    const acp = buildGenericAgentInput(
+      "agent-acp",
       context,
       runtime,
       "Planifier",
       "Diagnostic",
     );
 
-    expect(device[0].content[0].text).toContain("Return only the shell command");
-    expect(device[0].content[0].text).toContain("Use cmd.exe syntax only");
-    expect(device[0].content[0].text).toContain("Never use diskpart");
-    expect(device[0].content[0].text).toContain("at most three terminal segments");
-    expect(planner[0].content[0].text).toContain("STATUS: ready|needs-info|blocked");
-    expect(planner[0].content[0].text).toContain("Never write shell syntax");
-    expect(planner[1].content[0].text).toContain('"source":"assistant"');
+    expect(ael[0].content[0].text).toContain("Return only the shell command");
+    expect(ael[0].content[0].text).toContain("Use cmd.exe syntax only");
+    expect(ael[0].content[0].text).toContain("Never use diskpart");
+    expect(ael[0].content[0].text).toContain("at most three terminal segments");
+    expect(acp[0].content[0].text).toContain("STATUS: ready|needs-info|blocked");
+    expect(acp[0].content[0].text).toContain("Never write shell syntax");
+    expect(acp[1].content[0].text).toContain('"source":"assistant"');
   });
 
   it("forces the reserved synthesis cycle to answer without agents", () => {

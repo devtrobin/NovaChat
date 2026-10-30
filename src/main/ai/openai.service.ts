@@ -5,12 +5,12 @@ import {
   AgentRuntimeContext,
   createAgentRuntimeContext,
 } from "../agents/agent-prompt.service";
-import { buildDeviceAgentInput, buildGenericAgentInput, buildInput } from "./openai.payload";
+import { buildAELAgentInput, buildGenericAgentInput, buildInput } from "./openai.payload";
 import { createResponseRecord, postOpenAIResponse } from "./openai.client";
 import { throwNovaParseError, throwOpenAIRequestError } from "./openai.errors";
-import { extractText, normalizeDeviceCommand, parseProviderResponse, stripCodeFences } from "./openai.parser";
+import { extractText, normalizeAELCommand, parseProviderResponse, stripCodeFences } from "./openai.parser";
 import {
-  GenerateDeviceAgentCommandResult,
+  GenerateAELAgentCommandResult,
   GenerateOpenAIReplyResult,
 } from "./openai.types";
 export { NovaResponseParseError, OpenAIRequestError } from "./openai.types";
@@ -55,16 +55,16 @@ export async function generateOpenAIReply(
   };
 }
 
-export async function generateDeviceAgentCommand(
+export async function generateAELAgentCommand(
   settings: OpenAIRuntimeSettings,
   context: AgentContextFile,
   runtimeContext: AgentRuntimeContext,
   goal: string,
   userPrompt: string,
   signal?: AbortSignal,
-): Promise<GenerateDeviceAgentCommandResult> {
+): Promise<GenerateAELAgentCommandResult> {
   const requestBody = {
-    input: buildDeviceAgentInput(context, runtimeContext, goal, userPrompt),
+    input: buildAELAgentInput(context, runtimeContext, goal, userPrompt),
     model: settings.model,
     store: false,
   };
@@ -80,7 +80,7 @@ export async function generateDeviceAgentCommand(
   const text = extractText(data);
   const responseRecord = createResponseRecord(data, response.ok, response.status, response.statusText);
   const apiRecords = [requestRecord, responseRecord];
-  const command = normalizeDeviceCommand(stripCodeFences(text));
+  const command = normalizeAELCommand(stripCodeFences(text));
 
   if (!command) {
     throwNovaParseError(text, apiRecords);

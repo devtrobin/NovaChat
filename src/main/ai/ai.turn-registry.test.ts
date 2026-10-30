@@ -2,11 +2,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   cancelPermissionRequest: vi.fn(() => true),
-  killDeviceCommand: vi.fn(async () => undefined),
+  killAELCommand: vi.fn(async () => undefined),
 }));
 
-vi.mock("../device/device.service", () => ({
-  killDeviceCommand: mocks.killDeviceCommand,
+vi.mock("../ael/ael.service", () => ({
+  killAELCommand: mocks.killAELCommand,
 }));
 vi.mock("./ai.permission.service", () => ({
   cancelPermissionRequest: mocks.cancelPermissionRequest,
@@ -36,7 +36,7 @@ afterEach(() => {
 });
 
 describe("turn cancellation registry", () => {
-  it("aborts providers, permissions and device commands atomically", async () => {
+  it("aborts providers, permissions and AEL commands atomically", async () => {
     const turnId = startTestTurn("conversation-stop");
     const controller = new AbortController();
     registerAbortController(turnId, controller);
@@ -47,7 +47,7 @@ describe("turn cancellation registry", () => {
 
     expect(controller.signal.aborted).toBe(true);
     expect(mocks.cancelPermissionRequest).toHaveBeenCalledWith("permission-1");
-    expect(mocks.killDeviceCommand).toHaveBeenCalledWith("command-1");
+    expect(mocks.killAELCommand).toHaveBeenCalledWith("command-1");
     expect(isTurnStopped(turnId)).toBe(true);
     expect(() => throwIfTurnStopped(turnId)).toThrow("interrompue");
     await expect(stopTurnByConversation("conversation-stop")).resolves.toBe(false);
@@ -56,7 +56,7 @@ describe("turn cancellation registry", () => {
   it("stops an entire turn from one active agent task and clears it on finish", async () => {
     const turnId = startTestTurn("conversation-agent");
     const task = registerActiveAgentTask(turnId, {
-      agentId: "agent-planner",
+      agentId: "agent-acp",
       conversationId: "conversation-agent",
       request: "Planifier",
       startedAt: "2026-07-19T10:00:00.000Z",
@@ -64,11 +64,11 @@ describe("turn cancellation registry", () => {
       title: "Plan",
     });
 
-    expect(getActiveAgentTasks("agent-planner")).toEqual([task]);
+    expect(getActiveAgentTasks("agent-acp")).toEqual([task]);
     await expect(stopTurnByAgentTask(task.taskId)).resolves.toBe(true);
     finishTurn(turnId);
     activeTurnIds.splice(activeTurnIds.indexOf(turnId), 1);
-    expect(getActiveAgentTasks("agent-planner")).toEqual([]);
+    expect(getActiveAgentTasks("agent-acp")).toEqual([]);
   });
 });
 

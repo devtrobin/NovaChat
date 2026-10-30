@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   extractText,
-  normalizeDeviceCommand,
+  normalizeAELCommand,
   parseProviderResponse,
   stripCodeFences,
 } from "./openai.parser";
@@ -30,7 +30,7 @@ describe("OpenAI response parser", () => {
 
   it("parses recursively stringified JSON", () => {
     const response = {
-      agentId: "agent-planner",
+      agentId: "agent-acp",
       content: "Planifie la prochaine étape.",
       from: "assistant",
       to: "agent",
@@ -39,18 +39,13 @@ describe("OpenAI response parser", () => {
     expect(parseProviderResponse(JSON.stringify(JSON.stringify(response)))).toEqual(response);
   });
 
-  it("normalizes the legacy diagnostic agent id", () => {
+  it("rejects an unknown agent id", () => {
     expect(parseProviderResponse(JSON.stringify({
-      agentId: "diagnostic-agent",
+      agentId: "agent-unknown",
       content: "Analyse ce problème.",
       from: "assistant",
       to: "agent",
-    }))).toEqual({
-      agentId: "agent-planner",
-      content: "Analyse ce problème.",
-      from: "assistant",
-      to: "agent",
-    });
+    }))).toBeNull();
   });
 
   it.each([
@@ -63,6 +58,6 @@ describe("OpenAI response parser", () => {
 
   it("strips markdown fences and redundant POSIX shell wrappers", () => {
     expect(stripCodeFences("```json\nvalue\n```")).toBe("value");
-    expect(normalizeDeviceCommand("bash -lc 'rg --files'")).toBe("rg --files");
+    expect(normalizeAELCommand("bash -lc 'rg --files'")).toBe("rg --files");
   });
 });

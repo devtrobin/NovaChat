@@ -1,11 +1,10 @@
-import { mkdtemp, mkdir, readFile, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { writeJsonFile } from "../chat/chat-storage.io";
 import {
   migrateApplicationData,
-  migrateDiagnosticAgentDirectory,
   rewriteLegacySettings,
 } from "./data-migration.service";
 
@@ -17,14 +16,14 @@ afterEach(async () => {
 });
 
 describe("application data migrations", () => {
-  it("copies legacy defaults to userData, rewrites paths and migrates diagnostic-agent once", async () => {
+  it("copies legacy defaults to userData and resets incompatible agent settings", async () => {
     const legacyRoot = await createTemporaryDirectory("legacy");
     const userDataRoot = await createTemporaryDirectory("user-data");
     await writeJsonFile(path.join(legacyRoot, "settings.json"), {
       activeProvider: "openai",
       agents: {
-        "diagnostic-agent": { enabled: false },
-        "device-agent": { enabled: true },
+        "agent-acp": { enabled: false },
+        "agent-ael": { enabled: true },
       },
       localFiles: {
         agentsDirectory: path.join(legacyRoot, "agents"),
@@ -32,10 +31,6 @@ describe("application data migrations", () => {
         settingsPath: path.join(legacyRoot, "settings.json"),
       },
     });
-    await writeJsonFile(
-      path.join(legacyRoot, "agents", "diagnostic-agent", "permissions.json"),
-      { rules: [{ command: "npm test", decision: "allow" }] },
-    );
     await writeJsonFile(path.join(legacyRoot, "conversations", "conversations.json"), {
       activeConversationId: null,
       conversations: [],
@@ -52,18 +47,9 @@ describe("application data migrations", () => {
       conversationsDirectory: path.join(userDataRoot, "conversations"),
       settingsPath: path.join(userDataRoot, "settings.json"),
     });
-    expect(settings.agents).toEqual({
-      "agent-planner": { enabled: false },
-      "device-agent": { enabled: true },
-    });
-    expect(JSON.parse(await readFile(
-      path.join(userDataRoot, "agents", "agent-planner", "permissions.json"),
-      "utf8",
-    ))).toMatchObject({
-      rules: [expect.objectContaining({ command: "npm test" })],
-    });
+    expect(settings).not.toHaveProperty("agents");
     expect(await readFile(path.join(userDataRoot, "migration-state.json"), "utf8"))
-      .toContain("diagnostic-agent-v1");
+      .toContain("user-data-v1");
   });
 
   it("preserves explicitly configured custom paths", () => {
@@ -87,28 +73,6 @@ describe("application data migrations", () => {
     });
   });
 
-  it("merges legacy agent permissions into an existing planner workspace", async () => {
-    const agentRoot = await createTemporaryDirectory("agents");
-    await writeJsonFile(path.join(agentRoot, "diagnostic-agent", "permissions.json"), {
-      rules: [{ command: "npm test", decision: "allow", remember: true }],
-    });
-    await writeJsonFile(path.join(agentRoot, "agent-planner", "permissions.json"), {
-      rules: [{ command: "npm run lint", decision: "deny", remember: true }],
-    });
-    await mkdir(path.join(agentRoot, "agent-planner", "conversations"), { recursive: true });
-
-    await expect(migrateDiagnosticAgentDirectory(agentRoot)).resolves.toBe(true);
-    await expect(migrateDiagnosticAgentDirectory(agentRoot)).resolves.toBe(false);
-
-    const permissions = JSON.parse(await readFile(
-      path.join(agentRoot, "agent-planner", "permissions.json"),
-      "utf8",
-    ));
-    expect(permissions.rules).toEqual(expect.arrayContaining([
-      expect.objectContaining({ command: "npm test" }),
-      expect.objectContaining({ command: "npm run lint" }),
-    ]));
-  });
 });
 
 async function createTemporaryDirectory(label: string): Promise<string> {

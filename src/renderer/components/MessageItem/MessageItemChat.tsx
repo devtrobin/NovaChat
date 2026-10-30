@@ -8,7 +8,7 @@ type MessageItemChatProps = Pick<MessageItemProps, "isSearchMatch" | "message" |
 export default function MessageItemChat({ isSearchMatch, message, searchQuery }: MessageItemChatProps) {
   const author = resolveAuthor(message);
   const [showDetails, setShowDetails] = React.useState(false);
-  const isDelegation = message.from === "assistant" && (message.to === "agent" || message.to === "device");
+  const isDelegation = message.from === "assistant" && (message.to === "agent" || message.to === "ael");
   const isAgentReply = message.from === "agent";
 
   return (
@@ -50,23 +50,23 @@ function resolveAuthor(message: MessageItemChatProps["message"]): string {
   }
 
   if (message.from === "agent") {
-    return message.agentId === "agent-planner"
-      ? "Planner"
-      : message.agentId === "device-agent"
-        ? "Device"
+    return message.agentId === "agent-acp"
+      ? "ACP"
+      : message.agentId === "agent-ael"
+        ? "AEL"
         : "Agent";
   }
 
   if (message.from === "assistant" && message.to === "agent") {
-    return message.agentId === "agent-planner"
-      ? "Nova -> Planner"
-      : message.agentId === "device-agent"
-        ? "Nova -> Device"
+    return message.agentId === "agent-acp"
+      ? "Nova -> ACP"
+      : message.agentId === "agent-ael"
+        ? "Nova -> AEL"
         : "Nova -> Agent";
   }
 
-  if (message.from === "assistant" && message.to === "device") {
-    return message.agentId === "device-agent" ? "Nova -> Device" : "Nova -> Device";
+  if (message.from === "assistant" && message.to === "ael") {
+    return message.agentId === "agent-ael" ? "Nova -> AEL" : "Nova -> AEL";
   }
 
   return "Nova";

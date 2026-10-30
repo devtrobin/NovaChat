@@ -5,6 +5,7 @@ import {
   AppSettings,
   RuntimeAppSettings,
 } from "../../shared/settings.types";
+import { SYSTEM_AGENT_DEFINITIONS } from "../../shared/system-agent.registry";
 import { parseAppSettings } from "../validation/ipc-payload.validation";
 import { getOpenAICredentialStore } from "../credentials/electron-credential.service";
 import {
@@ -52,7 +53,7 @@ export function createDefaultSettings(): AppSettings {
       redactSensitiveData: true,
       retentionDays: 30,
     },
-    deviceExecution: {
+    aelExecution: {
       maxOutputCharacters: 200_000,
       timeoutMs: 15_000,
     },
@@ -73,10 +74,12 @@ export function createDefaultSettings(): AppSettings {
 }
 
 function createDefaultAgentSettings(): AgentSettingsMap {
-  return {
-    "agent-planner": { enabled: true },
-    "device-agent": { enabled: true },
-  };
+  return Object.fromEntries(
+    Object.values(SYSTEM_AGENT_DEFINITIONS).map((agent) => [
+      agent.id,
+      { enabled: agent.defaultEnabled },
+    ]),
+  ) as AgentSettingsMap;
 }
 
 function mergeSettings(partial: unknown): AppSettings {
@@ -92,23 +95,22 @@ function mergeSettings(partial: unknown): AppSettings {
     agents: {
       ...defaults.agents,
       ...parsed.agents,
-      "agent-planner": {
-        ...defaults.agents["agent-planner"],
-        ...parsed.agents?.["agent-planner"],
-        ...((parsed.agents as Partial<Record<"diagnostic-agent", { enabled: boolean }>> | undefined)?.["diagnostic-agent"] ?? {}),
+      "agent-acp": {
+        ...defaults.agents["agent-acp"],
+        ...parsed.agents?.["agent-acp"],
       },
-      "device-agent": {
-        ...defaults.agents["device-agent"],
-        ...parsed.agents?.["device-agent"],
+      "agent-ael": {
+        ...defaults.agents["agent-ael"],
+        ...parsed.agents?.["agent-ael"],
       },
     },
     apiTrace: {
       ...defaults.apiTrace,
       ...parsed.apiTrace,
     },
-    deviceExecution: {
-      ...defaults.deviceExecution,
-      ...parsed.deviceExecution,
+    aelExecution: {
+      ...defaults.aelExecution,
+      ...parsed.aelExecution,
     },
     localFiles: {
       ...defaults.localFiles,

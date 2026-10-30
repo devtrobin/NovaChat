@@ -1,5 +1,5 @@
-export type MessageSender = 'user' | 'assistant' | 'agent' | 'device' | 'system';
-export type MessageRecipient = 'user' | 'assistant' | 'agent' | 'device';
+export type MessageSender = 'user' | 'assistant' | 'agent' | 'ael' | 'system';
+export type MessageRecipient = 'user' | 'assistant' | 'agent' | 'ael';
 export type ConversationOrigin = 'assistant' | 'user';
 export type MessageVisibility = "internal" | "public";
 export type SystemActionId =
@@ -92,7 +92,7 @@ export type ChatLoadResult = {
   state: PersistedChatState;
 };
 
-export type DeviceCommandResult = {
+export type AELCommandResult = {
   commandId: string;
   code: number;
   cwd: string;
@@ -105,14 +105,14 @@ export type DeviceCommandResult = {
   signal?: string | null;
 };
 
-export type StartedDeviceCommand = {
+export type StartedAELCommand = {
   commandId: string;
   cwd: string;
   normalizedCommand: string;
   shell: string;
 };
 
-export type DeviceCommandProgress = {
+export type AELCommandProgress = {
   awaitingInput: boolean;
   commandId: string;
   inputPlaceholder?: string;

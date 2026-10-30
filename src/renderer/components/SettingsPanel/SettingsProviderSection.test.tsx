@@ -25,8 +25,8 @@ function createSettings(): AppSettings {
   return {
     activeProvider: "openai",
     agents: {
-      "agent-planner": { enabled: true },
-      "device-agent": { enabled: true },
+      "agent-acp": { enabled: true },
+      "agent-ael": { enabled: true },
     },
     apiTrace: {
       enabled: true,
@@ -34,7 +34,7 @@ function createSettings(): AppSettings {
       redactSensitiveData: true,
       retentionDays: 30,
     },
-    deviceExecution: {
+    aelExecution: {
       maxOutputCharacters: 200_000,
       timeoutMs: 15_000,
     },

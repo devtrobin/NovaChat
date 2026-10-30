@@ -1,8 +1,8 @@
 import React from "react";
 import MessageItemChat from "./MessageItemChat";
-import MessageItemDevice from "./MessageItemDevice";
+import MessageItemAEL from "./MessageItemAEL";
 import MessageItemSystem from "./MessageItemSystem";
-import { isDeviceMessage, isSystemMessage } from "./MessageItem.service";
+import { isAELMessage, isSystemMessage } from "./MessageItem.service";
 import { MessageItemProps } from "./MessageItem.types";
 import "./MessageItem.css";
 
@@ -17,9 +17,9 @@ export default function MessageItem(props: MessageItemProps) {
     );
   }
 
-  if (isDeviceMessage(props.message)) {
+  if (isAELMessage(props.message)) {
     return (
-      <MessageItemDevice
+      <MessageItemAEL
         isSearchMatch={props.isSearchMatch}
         message={props.message}
         onKillCommand={props.onKillCommand}

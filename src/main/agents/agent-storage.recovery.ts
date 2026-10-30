@@ -32,10 +32,10 @@ export function recoverHistoryFromConversations(
       const resultMessage = conversation.messages[index + 1];
       if (!assistantMessage || !resultMessage) continue;
       if (assistantMessage.from !== "assistant") continue;
-      if (resultMessage.from !== "agent" && resultMessage.from !== "device") continue;
+      if (resultMessage.from !== "agent" && resultMessage.from !== "ael") continue;
 
       const recoveredRequest = normalizeRecoveredAssistantRequest(assistantMessage.content);
-      const recoveredCommand = resultMessage.from === "device"
+      const recoveredCommand = resultMessage.from === "ael"
         ? resultMessage.content
         : recoveredRequest || assistantMessage.content;
       const recoveredResult = resultMessage.result ?? resultMessage.content;
@@ -67,7 +67,7 @@ export function recoverHistoryFromConversations(
 
 function normalizeRecoveredAssistantRequest(value: string): string {
   return value
-    .replace(/^Execute la commande suivante sur le device:\n/i, "")
+    .replace(/^Execute la commande suivante avec AEL:\n/i, "")
     .replace(/^Demande d'analyse envoyee a [^:\n]+:\n/i, "")
     .replace(/^Objectif delegue par l'assistant:\n/i, "")
     .trim();

@@ -5,10 +5,10 @@ export {
   createAssistantMessage,
 } from "./ai.message-factory.assistant";
 export {
-  createDeviceImmediateErrorMessage,
-  createDeviceResultMessage,
-  createRunningDeviceMessage,
-} from "./ai.message-factory.device";
+  createAELImmediateErrorMessage,
+  createAELResultMessage,
+  createRunningAELMessage,
+} from "./ai.message-factory.ael";
 export {
   createInterruptedSystemMessage,
   createInternalSystemMessage,

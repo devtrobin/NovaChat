@@ -1,6 +1,6 @@
 import { ApiRequestRecord, ChatMessage } from "../../shared/chat.types";
 import { RunTurnRequest, RunTurnResult } from "../../shared/ai.types";
-import { DevicePolicyError } from "../device/device.types";
+import { AELPolicyError } from "../ael/ael.types";
 import {
   attachAssistantApiTrace,
   createAssistantErrorMessage,
@@ -39,8 +39,8 @@ export async function handleTurnError(
       messageId: userMessage.id,
       type: "replace-message",
     });
-  } else if (error instanceof DevicePolicyError) {
-    errorDisplayMessage = `Commande refusee par la policy device: ${error.message}`;
+  } else if (error instanceof AELPolicyError) {
+    errorDisplayMessage = `Commande refusee par la policy AEL: ${error.message}`;
   } else if (error instanceof Error) {
     errorDisplayMessage = classifyRuntimeError(error);
   }
