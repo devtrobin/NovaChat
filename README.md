@@ -13,6 +13,8 @@ Fonctionnalités branchées :
 - assistant principal Nova ;
 - `agent-acp` pour proposer la prochaine étape atomique ;
 - `agent-ael` pour concevoir ou exécuter une commande ;
+- création de nouveaux fichiers par AEL avec aperçu, permission ponctuelle
+  et relecture, sans exécuter le code créé ;
 - workflow de permission `Oui`, `Oui permanent`, `Non` ;
 - commandes locales `/help`, `/status`, `/agents` et `/settings` sans appel
   provider ;
@@ -24,16 +26,20 @@ Fonctionnalités branchées :
 Seul OpenAI est réellement implémenté. Les autres providers visibles en mode
 preview sont des placeholders.
 
+La [préparation de phase 7](docs/PHASE_7.md) décrit les capacités futures et
+le dossier [Providers](docs/Providers/INDEX.md). Ces documents ne rendent pas
+Mistral ou Ollama sélectionnables dans la version actuelle.
+
 Important : le canal `ael` est fonctionnel mais sa policy actuelle n’est
 pas une frontière de sécurité complète. Lire
 [docs/RISKS.md](docs/RISKS.md) avant de l’étendre.
 
 ## Stack
 
-- Electron 39
+- Electron 44
 - React 19
 - TypeScript 5.9
-- Electron Forge 7
+- Electron Forge 8
 - Webpack
 - i18next
 
@@ -66,6 +72,11 @@ La qualification de 6.2.1 du 30 octobre 2026 valide Electron 44, Forge 8 et
 Packager 20 : 285 tests dans 42 fichiers sous Node 22/24, typage, lint,
 audits à zéro et harnais DOM/PDF packagé. Voir
 [le rapport](docs/validation/ARI_RUNTIME_6_2_1.md).
+
+Le correctif AEL du 30 octobre porte la suite à 337 tests dans 47 fichiers
+sous Node 22/24, avec parcours Electron synthétique et validation utilisateur.
+Voir [la validation AEL](docs/validation/AEL_FILE_WRITE.md). La correction
+documentaire de phase 7 ne constitue pas une qualification de nouveaux providers.
 
 ## Configuration OpenAI
 

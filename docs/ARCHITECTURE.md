@@ -349,6 +349,21 @@ d’une validation complets.
 
 ## Contrats transversaux
 
+### Extension providers préparée, non implémentée
+
+Le [plan Providers](Providers/PROVIDERS_PLAN.md), révisé le 30 octobre 2026,
+propose des adaptateurs sous `src/main/ai/providers/`. Leur résultat de
+transport ne remplace ni `ChatMessage` ni le `ProviderResponse` Nova utilisé
+pour le routage. Les formats texte/JSON restent définis par l'appel métier.
+Signal d'arrêt, limites, traces expurgées et sélection stable par tour font
+partie du contrat à qualifier.
+
+La configuration OpenAI et son coffre sont conservés. L'extension proposée
+pour Mistral et Ollama est additive, avec secrets privés au main et projections
+publiques distinctes. Aucun de ces types, IPC ou connecteurs futurs n'est
+exposé par la version actuelle. Ce chantier appartient à la phase 7 après
+validation d'ARI et d'ACA ; voir [le cadrage global](PHASE_7.md).
+
 ### Extension ARI préparée, non implémentée
 
 Au 29 octobre 2026, les cahiers ARI et les arbitrages D01 à D10 sont consolidés.

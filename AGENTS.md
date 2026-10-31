@@ -47,6 +47,13 @@ de recherche n’est activé. ACA possède aussi un cahier
 technique initial ; sa frontière d’exécution du code généré reste bloquante.
 Ses réponses restent à relire avant le découpage de la phase 6.3.
 
+La préparation documentaire de phase 7 a été consolidée le 30 octobre 2026
+dans `docs/PHASE_7.md` et `docs/Providers/`. Seul OpenAI reste implémenté.
+Les connecteurs cibles sont `mistral` et `ollama`, séparés du choix du modèle.
+Préserver les messages Nova, les permissions et le coffre OpenAI ; la cible
+des settings est additive. Les schémas, migrations et tests providers décrits
+restent à implémenter après ARI/ACA. La prochaine tâche active reste 6.2.2.
+
 ## Invariants d’architecture
 
 Le correctif AEL du 30 octobre 2026 ajoute `write-file` (voir

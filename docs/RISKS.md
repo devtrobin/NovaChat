@@ -119,6 +119,26 @@ préservées.
 
 ## P1 — Risques de données, sécurité et cohérence produit
 
+### Providers futurs : migration, destination des données et annulation
+
+La préparation de phase 7 a été corrigée le 30 octobre 2026 dans
+[Providers](Providers/INDEX.md). Les scripts de transformation directe et les
+exemples de stockage de clés dans les settings ont été retirés. La cible est
+additive et doit préserver le coffre OpenAI, les chemins personnalisés et la
+récupération du stockage. Ces nouveaux connecteurs ne sont pas actifs.
+
+Avant activation, qualifier secrets privés au main, redaction indépendante du
+préfixe de clé, origine validée sans redirection, sélection stable par tour et
+consentement avant nouvel envoi d'un historique à une autre destination.
+Une URL locale Ollama ne démontre pas une inférence locale ; le modèle et la
+configuration serveur doivent aussi être contrôlés. Le premier périmètre
+refuse les endpoints Ollama hors boucle locale.
+
+Les formats structurés, sorties tronquées, arrêt pendant lecture du corps,
+budgets et permissions de tous les agents livrés doivent être testés. Un test
+de connexion réussi ne suffit pas. Le reste de la phase 7 est cadré dans
+[PHASE_7.md](PHASE_7.md), sans prétendre que ces garanties sont déjà implémentées.
+
 ### ARI : garanties réseau et sessions à démontrer — bloque l’activation en 6.2
 
 Le cahier fonctionnel impose un scraper Google local puis la lecture de pages

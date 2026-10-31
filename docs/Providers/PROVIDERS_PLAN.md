@@ -1,371 +1,159 @@
-# Architecture des Providers - NovaChat
+# Architecture cible des providers — phase 7
 
-## 📋 État actuel
+Statut : conception préparée le 30 octobre 2026, non implémentée.
+Lire [l'état disponible](README.md) avant d'utiliser les exemples.
 
-### Provider implémenté
-- **OpenAI** (ID: `openai`) : **Fonctionnel** et actif par défaut
-  - Utilise la **Responses API** (`/v1/responses`)
-  - Clé API chiffrée via `electron.safeStorage`
-  - Configuration stockée dans `settings.openai.model` et `settings.openai.baseUrl`
+## Point de départ
 
-### Providers visibles (catalogue planifié)
-Les identifiants suivants sont **visibles dans l'UI** mais **non implémentés** :
-- `anthropic`
-- `google`
-- `mistral` (à remplacer par `mistral-ollama` et `mistral-cloud`)
-- `ollama` (à fusionner avec `mistral-ollama`)
-- `lm-studio`
+Le code actuel appelle OpenAI depuis `src/main/ai/openai.service.ts` pour
+trois usages : réponse Nova, réponse textuelle ACP et génération AEL.
+Les settings publics et runtime sont séparés dans `src/shared/settings.types.ts`.
+La clé est résolue dans le main depuis
+`src/main/credentials/electron-credential.service.ts`.
 
-**Comportement actuel** :
-- Désactivés dans l'UI (non sélectionnables)
-- Rejetés par la validation dans le **main process**
-- `ActiveAIProviderId` ne peut contenir que `openai`
+La cible ajoute des adaptateurs dans `src/main/ai/providers/`, sans créer un
+autre orchestrateur ni déplacer la logique métier dans les composants React.
+Un registre fixe de connecteurs suffit ; une classe globale avec un provider
+actif mutable pendant un tour n'est pas nécessaire.
 
----
+## Identité du connecteur et choix du modèle
 
-## 🏗 Architecture cible
+| Identifiant cible | Transport | Choix du modèle |
+| --- | --- | --- |
+| `openai` | Responses API existante | modèle compatible configuré |
+| `mistral` | Chat Completions Mistral | modèle autorisé pour le compte et capable de chat |
+| `ollama` | API native Ollama, boucle locale pour la première livraison | modèle installé et qualifié pour l'usage demandé |
 
-### Schéma global
-```
-Utilisateur
-  -> UI (React)
-  -> preload (window.nova)
-  -> Electron main
-      -> Provider Manager
-          -> OpenAI Provider (implémenté)
-          -> Mistral Cloud Provider (à implémenter)
-          -> Mistral Ollama Provider (à implémenter)
-          -> [Autres providers futurs]
-      -> Agents (ACP, AEL, ARI...)
-      -> Stockage JSON
-```
+Ne pas fusionner `ollama` avec une famille de modèles. Les autres identifiants
+du catalogue restent planifiés ; les connecteurs absents demeurent désactivés
+et refusés par la validation main.
 
-### Contrat technique des providers
+## Frontière entre transport et messages Nova
 
-#### 1. Interface commune
-Tous les providers doivent implémenter l'interface suivante :
+`ChatMessage` reste le type de `src/shared/chat.types.ts`, avec `from`, `to`,
+`agentId`, `status`, les traces et l'aperçu de fichier. Le `ProviderResponse`
+Nova actuel reste une union de réponse utilisateur et de délégations, dont
+`write-file`. Aucun de ces types n'est remplacé par un message `role/content`.
 
-```typescript
-interface AIProvider {
-  // Identifiant unique du provider
-  id: string;
-  
-  // Nom affichable
-  displayName: string;
-  
-  // Description
-  description: string;
-  
-  // Type de provider (cloud, local, hybrid)
-  type: 'cloud' | 'local' | 'hybrid';
-  
-  // Icône (pour l'UI)
-  icon: string;
-  
-  // Configuration requise
-  requiredConfig: ProviderConfigRequirement[];
-  
-  // Méthode pour envoyer une requête
-  sendRequest(
-    messages: ChatMessage[],
-    options: ProviderOptions
-  ): Promise<ProviderResponse>;
-  
-  // Méthode pour valider la configuration
-  validateConfig(config: ProviderConfig): ValidationResult;
-  
-  // Méthode pour tester la connexion
-  testConnection(config: ProviderConfig): Promise<ConnectionTestResult>;
-  
-  // Méthode pour obtenir les modèles disponibles
-  getAvailableModels(config: ProviderConfig): Promise<Model[]>;
-}
-```
+L'adaptateur traduit seulement l'enveloppe réseau. Le contenu des messages
+Nova est sérialisé par les builders de prompts existants ; leur représentation
+interne n'est pas réduite à une alternance de rôles conversationnels.
 
-#### 2. Structure des messages
-Le format des messages doit être **compatible** avec le système existant :
+Contrat de travail proposé, à finaliser dans les types main :
 
-```typescript
-interface ChatMessage {
-  role: 'user' | 'assistant' | 'system';
-  content: string | ContentBlock[];
-  // Métadonnées optionnelles
-  metadata?: {
-    timestamp?: number;
-    providerId?: string;
-    modelId?: string;
+~~~typescript
+type TransportRequest = {
+  instructions: string;
+  input: unknown;
+  output: "text" | "json";
+  signal: AbortSignal;
+};
+
+type TransportResult = {
+  text: string;
+  apiRecords: import("../../../shared/chat.types").ApiRequestRecord[];
+  finishReason: "completed" | "length" | "refusal" | "other";
+  usage?: {
+    inputTokens?: number;
+    outputTokens?: number;
   };
-}
-```
+};
+~~~
 
-#### 3. Structure de la réponse
-```typescript
-interface ProviderResponse {
-  // Réponse textuelle
-  content: string;
-  
-  // ID du message (pour suivi)
-  messageId: string;
-  
-  // ID du modèle utilisé
-  modelId: string;
-  
-  // Statut de la réponse
-  status: 'success' | 'error' | 'partial' | 'aborted';
-  
-  // Métadonnées
-  metadata: {
-    // Usage (tokens)
-    usage?: {
-      promptTokens?: number;
-      completionTokens?: number;
-      totalTokens?: number;
-    };
-    // Temps de réponse (ms)
-    responseTime?: number;
-    // Erreur (si status === 'error')
-    error?: ProviderError;
-  };
-}
-```
+Le chemin d'import ci-dessus correspond à un futur fichier situé sous
+`src/main/ai/providers/`. Ces types ne constituent pas une API preload.
+Le client est construit dans le main avec la configuration et les credentials
+du tour ; la requête ne laisse pas le modèle choisir un endpoint ou une clé.
 
-#### 4. Configuration des providers
-Chaque provider a sa propre configuration stockée dans `settings.providers[providerId]` :
+| Usage | Sortie attendue | Traitement main |
+| --- | --- | --- |
+| Nova | JSON Nova | parser et validation des destinataires/actions existants |
+| ACP | texte à sections | parser ACP existant |
+| AEL terminal | commande courte en texte | profil et permission shell existants |
+| AEL création | JSON de création | validation `write-file`, permission ponctuelle et relecture |
+| ARI/ACA après leur livraison | contrats propres à chaque appel | préserver leurs validateurs, droits, budgets et isolation |
 
-```typescript
-interface ProviderConfig {
-  // Clé API (chiffrée pour les providers cloud)
-  apiKey?: string;
-  
-  // URL de base de l'API
-  baseUrl?: string;
-  
-  // ID du modèle à utiliser
-  modelId: string;
-  
-  // Paramètres spécifiques
-  parameters?: {
-    temperature?: number;
-    maxTokens?: number;
-    topP?: number;
-    // ... autres paramètres
-  };
-  
-  // Configuration spécifique au provider
-  providerSpecific?: Record<string, unknown>;
-}
-```
+Le mode de sortie est décidé par l'appel métier, pas globalement par le
+provider. La génération AEL peut retourner du texte ou un JSON de fichier :
+ne pas lui imposer un schéma JSON excluant les commandes. Ne pas forcer ACP
+à produire du JSON. Un JSON syntaxiquement valide n'autorise aucune action
+sans validation main. Un résultat tronqué ou un appel d'outil inattendu est
+refusé comme résultat opérationnel complet.
 
----
+## Configuration et secrets
 
-## 🎯 Provider Manager
+La cible conserve `settings.activeProvider` et `settings.openai`.
+Les paramètres supplémentaires sont proposés sous :
 
-### Responsabilités
-1. **Gestion du cycle de vie** : Instanciation, configuration, destruction des providers
-2. **Routing des requêtes** : Sélection du provider actif et transmission des requêtes
-3. **Validation** : Vérification de la configuration avant envoi
-4. **Gestion des erreurs** : Normalisation des erreurs provenant des différents providers
-5. **Cache des modèles** : Mise en cache des listes de modèles disponibles
+~~~typescript
+type AdditionalProvidersSettingsV1 = {
+  version: 1;
+  mistral?: { baseUrl: string; model: string };
+  ollama?: { baseUrl: string; model: string };
+};
+~~~
 
-### Implémentation proposée
-```typescript
-class ProviderManager {
-  private providers: Map<string, AIProvider>;
-  private activeProviderId: string;
-  private config: ProvidersConfig;
-  
-  constructor() {
-    this.providers = new Map();
-    this.registerBuiltInProviders();
-  }
-  
-  // Enregistrement des providers natifs
-  private registerBuiltInProviders(): void {
-    this.registerProvider(new OpenAIProvider());
-    this.registerProvider(new MistralCloudProvider());
-    this.registerProvider(new MistralOllamaProvider());
-  }
-  
-  // Sélection du provider actif
-  setActiveProvider(providerId: string): void {
-    if (!this.providers.has(providerId)) {
-      throw new Error(`Provider ${providerId} non enregistré`);
-    }
-    this.activeProviderId = providerId;
-  }
-  
-  // Envoi d'une requête via le provider actif
-  async sendRequest(
-    messages: ChatMessage[],
-    options: ProviderOptions
-  ): Promise<ProviderResponse> {
-    const provider = this.getActiveProvider();
-    return provider.sendRequest(messages, options);
-  }
-  
-  // Validation de la configuration
-  validateConfig(providerId: string, config: ProviderConfig): ValidationResult {
-    const provider = this.providers.get(providerId);
-    if (!provider) {
-      return { valid: false, error: `Provider ${providerId} non trouvé` };
-    }
-    return provider.validateConfig(config);
-  }
-}
-```
+Ce type formerait le nouveau champ optionnel `settings.providers`.
+La validation actuelle ne le prend pas en charge. Les paramètres de génération
+seront ajoutés comme champs fermés et bornés lors de la qualification ; aucun
+sac `providerSpecific: Record<string, unknown>` transmis directement à l'API.
 
----
+Une projection publique par provider expose un indicateur de clé configurée.
+Une commande de remplacement ponctuel et une commande d'effacement passent
+au main. La clé déchiffrée est réservée au client réseau runtime ; ni valeur
+en clair, ni blob chiffré ne sont renvoyés dans les settings publics.
+Le coffre OpenAI reste à son emplacement existant. Les nouveaux secrets
+reçoivent des espaces distincts via les primitives de coffre du main.
 
-## 🔌 Intégration avec l'orchestrateur
+Réutiliser les primitives de Credentials livrées en 6.2 lorsque pertinent,
+sans confondre clés de modèles et sessions de lecture de sites ARI.
+Aucun IPC général de lecture de secrets n'est ajouté.
+Voir [la migration](MIGRATION_GUIDE.md) et
+[les fragments de configuration](CONFIGURATION_EXAMPLES.md).
 
-### Modifications nécessaires
+## Tour, annulation et changement de provider
 
-#### 1. Dans le `main process`
-- **Remplacer** les appels directs à OpenAI par des appels au `ProviderManager`
-- **Adapter** le format des réponses pour maintenir la compatibilité avec Nova
-- **Gérer** les erreurs spécifiques aux providers
+Le main capture au début du tour le provider, le modèle, l'endpoint, les
+paramètres et la référence de credential. Les appels Nova/agents du même tour
+gardent cette sélection ; un changement UI s'applique au tour suivant.
+Un credential révoqué ne doit pas être rechargé implicitement pour continuer.
 
-#### 2. Dans le `preload`
-- **Exposer** les méthodes nécessaires pour :
-  - Lister les providers disponibles
-  - Obtenir la configuration d'un provider
-  - Tester la connexion à un provider
-  - Changer de provider actif
+Avant d'envoyer l'historique à une nouvelle destination, l'UI indique cette
+destination et demande confirmation si l'historique change de destinataire
+ou passe d'un traitement local à un cloud. Aucun repli automatique vers un
+autre provider, modèle ou endpoint ne transmet les messages à l'insu de
+l'utilisateur. Un échec d'un provider produit un résultat exploitable pour Nova.
 
-#### 3. Dans le `renderer`
-- **Créer les écrans** dans `Paramètres > Providers`
-- **Gérer les formulaires** de configuration par provider
-- **Afficher les statuts** de connexion et erreurs
+Chaque appel reçoit le signal du registre de tour. Arrêter annule la requête,
+la lecture de son corps et toute attente de retry. Délais et tailles de réponse
+sont bornés, y compris après réception des en-têtes. Les timers sont nettoyés.
+Les retries éventuels restent explicites et bornés par le budget du tour ;
+ils ne relancent jamais une action AEL déjà effectuée.
 
----
+## Réseau, traces et intégration UI
 
-## 📊 Stockage des configurations
+- Mistral utilise HTTPS et une origine explicitement configurée. Une modification
+  d'origine est confirmée avant de lui envoyer une clé.
+- Ollama est limité à la boucle locale dans le premier périmètre ; serveur
+  distant et authentification distante attendent une spécification séparée.
+- Les redirections sont refusées pour ces appels. Aucun header, URL ou secret
+  privilégié ne vient du texte généré par le modèle.
+- Un serveur sur la boucle locale ne prouve pas à lui seul une inférence locale.
+  Le mode confidentiel demande un modèle local et un serveur sans fonctions cloud.
+- Les traces passent par la politique existante : activation, rétention,
+  plafonds et redaction. Le masquage doit couvrir les nouvelles clés sans
+  supposer un préfixe particulier ; les erreurs HTTP peuvent contenir des secrets.
 
-### Structure proposée pour `settings.json`
-```json
-{
-  "providers": {
-    "activeProviderId": "openai",
-    "openai": {
-      "apiKey": "[CHIFFRÉ]",
-      "baseUrl": "https://api.openai.com/v1",
-      "modelId": "gpt-4o-mini",
-      "parameters": {
-        "temperature": 0.7,
-        "maxTokens": 4096
-      }
-    },
-    "mistral-cloud": {
-      "apiKey": "[CHIFFRÉ]",
-      "baseUrl": "https://api.mistral.ai/v1",
-      "modelId": "mistral-medium",
-      "parameters": {
-        "temperature": 0.7
-      }
-    },
-    "mistral-ollama": {
-      "baseUrl": "http://localhost:11434",
-      "modelId": "mistral:latest",
-      "parameters": {
-        "temperature": 0.7
-      }
-    }
-  }
-}
-```
+Les formulaires existants sous `src/renderer/components/SettingsPanel/`
+sont étendus avec leur contrôleur. Le preload garde des méthodes étroites et
+des projections expurgées. Tester une connexion depuis un brouillon ne
+sauvegarde pas le brouillon et ne modifie pas le provider actif.
+Le changement de moteur n'affaiblit aucune permission AEL ni aucun droit ARI/ACA.
 
-### Chiffrement des clés API
-- Utiliser `electron.safeStorage` pour chiffrer les clés API
-- **Ne jamais** stocker les clés en clair dans `settings.json`
-- **Ne jamais** exposer les clés au renderer
+## Conditions avant activation
 
----
-
-## 🎨 UI - Écrans de configuration
-
-### Structure proposée pour `Paramètres > Providers`
-
-```
-Paramètres
-└── Providers
-    ├── Sélecteur de provider actif (dropdown)
-    │
-    ├── OpenAI (onglet)
-    │   ├── Clé API (champ chiffré)
-    │   ├── Base URL (champ texte)
-    │   ├── Modèle (dropdown)
-    │   ├── Paramètres avancés
-    │   └── Bouton "Tester la connexion"
-    │
-    ├── Mistral Cloud (onglet)
-    │   ├── Clé API (champ chiffré)
-    │   ├── Base URL (champ texte, défaut: https://api.mistral.ai/v1)
-    │   ├── Modèle (dropdown)
-    │   ├── Paramètres avancés
-    │   └── Bouton "Tester la connexion"
-    │
-    └── Mistral Ollama (onglet)
-        ├── Base URL (champ texte, défaut: http://localhost:11434)
-        ├── Modèle (dropdown avec détection automatique)
-        ├── Bouton "Rafraîchir la liste des modèles"
-        └── Bouton "Tester la connexion"
-```
-
----
-
-## 🔒 Sécurité et validation
-
-### Règles de sécurité
-1. **Aucun appel direct** : Le renderer ne doit **jamais** appeler un provider directement
-2. **Chiffrement obligatoire** : Toutes les clés API doivent être chiffrées
-3. **Validation stricte** : Les URLs et configurations doivent être validées
-4. **Permissions** : Les appels provider doivent respecter les permissions de l'utilisateur
-
-### Validation des configurations
-
-#### Pour Mistral Cloud
-- **Clé API** : Obligatoire, format valide (commence par `mst_`)
-- **Base URL** : Doit être une URL HTTPS valide
-- **Modèle** : Doit exister dans la liste des modèles disponibles
-
-#### Pour Mistral Ollama
-- **Base URL** : Doit être une URL valide (HTTP ou HTTPS)
-- **Modèle** : Doit exister localement (vérification via `/api/tags`)
-- **Ollama** : Doit être installé et en cours d'exécution
-
----
-
-## 📈 Métriques et monitoring
-
-### À implémenter
-1. **Journalisation** des appels aux providers (sans les clés API)
-2. **Suivi des tokens** consommés par provider
-3. **Temps de réponse** par provider et modèle
-4. **Taux d'erreur** par provider
-
-### Stockage
-- Stocker les métriques dans des fichiers JSON séparés
-- Permettre l'export pour analyse
-- Respecter les paramètres de confidentialité de l'utilisateur
-
----
-
-## 🔄 Migration depuis l'ancien système
-
-### Étapes de migration
-1. **Conserver** la configuration OpenAI existante
-2. **Ajouter** les nouveaux providers dans `settings.providers`
-3. **Migrer** `settings.openai` vers `settings.providers.openai`
-4. **Mettre à jour** `ActiveAIProviderId` pour pointer vers `settings.providers.activeProviderId`
-5. **Nettoyer** les anciennes clés dans `settings.json`
-
-### Rétrocompatibilité
-- **Maintenir** le support de l'ancienne structure pendant la transition
-- **Avertir** l'utilisateur de migrer vers la nouvelle structure
-- **Automatiser** la migration si possible
-
----
-
-## 🚀 Prochaines étapes
-
-Voir **[MISTRAL_IMPLEMENTATION_PLAN.md](MISTRAL_IMPLEMENTATION_PLAN.md)** pour le plan détaillé d'implémentation de Mistral AI.
+Schémas publics/runtime validés, migration additive et idempotente qualifiée,
+régression OpenAI, sorties Nova/ACP/AEL valides, arrêt effectif, secrets absents
+du renderer et des traces, origine stable pendant le tour et parcours isolés
+validés. Après ARI/ACA, leurs appels doivent aussi figurer dans cette matrice.
+Le calendrier global reste [NEXT_STEPS.md](../NEXT_STEPS.md).

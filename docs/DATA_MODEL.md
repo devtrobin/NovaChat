@@ -258,3 +258,19 @@ credentials, cookies et URL signées sont exclus des traces. Les citations
 publiques sont autonomes et restent lisibles après purge de la tâche ; les
 conversations et messages restent éclatés. Les détails sont implémentés en
 6.2.13, sans remplacement du stockage existant.
+
+## Extension cible phase 7 — providers, non implémentée
+
+Les contrats proposés sont centralisés dans
+[PROVIDERS_PLAN.md](Providers/PROVIDERS_PLAN.md). Ils séparent requête/résultat
+de transport et messages Nova ; `from`, `to`, `agentId` et actions structurées
+restent l'autorité du routage main après validation. Les configurations et
+credentials ne proviennent jamais du texte généré par le modèle.
+
+La cible conserve `settings.activeProvider`, `settings.openai` et le coffre
+OpenAI. Un champ optionnel `settings.providers` versionné ajouterait les
+configurations `mistral` et `ollama`, sans y stocker de clé en clair ou chiffrée.
+La projection publique indique la présence du secret ; son remplacement et
+son effacement sont des opérations main séparées. La validation actuelle ne
+prend pas en charge ce schéma futur. Ne pas copier les fragments proposés
+sur les settings actuels ; voir [la stratégie de migration](Providers/MIGRATION_GUIDE.md).

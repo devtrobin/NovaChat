@@ -30,6 +30,12 @@ permission ponctuelle et relecture, sans shell ni exécution du code produit.
 Voir [sa validation et ses limites](validation/AEL_FILE_WRITE.md). Le travail
 ARI reste ordonné selon les 17 tâches approuvées.
 
+La [préparation de phase 7](PHASE_7.md) et le dossier
+[Providers](Providers/INDEX.md) ont été corrigés le 30 octobre 2026 contre le
+code et les références API officielles. Ils distinguent état actuel, contrats
+proposés et preuves à produire. Seul OpenAI est actif ; cette révision reste
+documentaire et ne modifie pas l'ordre ARI, ACA, puis phase 7.
+
 ## Parcours de lecture
 
 Pour reprendre rapidement le projet :
@@ -48,6 +54,7 @@ Pour reprendre rapidement le projet :
 8. [agents_specification/README.md](agents_specification/README.md) — index des
    cahiers fonctionnels et spécifications techniques ACP, AEL, ARI et ACA.
 9. [HANDOFF.md](HANDOFF.md) — reprise express après une interruption.
+10. [PHASE_7.md](PHASE_7.md) — cadrage des capacités futures et accès au dossier Providers.
 
 ## Documents normatifs
 

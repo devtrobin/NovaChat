@@ -56,6 +56,10 @@
 - traces `message.json`, `log.json`, `apis.json` par message
 
 ### Changed
+- préparation documentaire de phase 7 consolidée : cadrage des capacités,
+  contrats Providers alignés sur Nova, identifiants `mistral`/`ollama`, migration
+  additive sans déplacement du coffre OpenAI, exemples API corrigés et matrice
+  de validation future ; aucune nouvelle capacité activée
 - sauvegardes JSON sous Windows : reprises bornées du même renommage atomique
   sur `EPERM`, `EACCES` et `EBUSY`, après reproduction de verrouillages pendant
   le test d'interface ; aucun effacement du fichier cible comme solution de repli

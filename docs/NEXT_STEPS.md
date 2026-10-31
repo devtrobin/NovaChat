@@ -590,16 +590,29 @@ fonctionnelles ACA restent à relire avec l’utilisateur avant le découpage de
 
 ## Phase 7 — Nouvelles capacités
 
-Seulement après les phases précédentes :
+La [préparation de phase 7](PHASE_7.md) a été consolidée le 30 octobre 2026 :
+cadrage de chaque capacité, frontières à préserver et critères de sortie.
+Le volet [Providers](Providers/INDEX.md) dispose de contrats proposés et de
+dix tâches P7-P01 à P7-P10 ; les autres volets restent à découper après réaudit
+du socle livré par ARI/ACA. Cette préparation documentaire n'active aucun
+provider, ne clôt pas ARI/ACA et ne remplace pas la prochaine tâche 6.2.2.
+
+Seulement après les phases précédentes, les capacités retenues restent :
 
 1. streaming provider ;
-2. provider local Ollama ou LM Studio ;
-3. autres providers ;
+2. provider local : connecteur Ollama générique préparé, LM Studio à spécifier ;
+3. autres providers : Mistral préparé, autres connecteurs à spécifier ;
 4. recherche globale ;
 5. nouveaux agents spécialisés ;
 6. résumé/compaction des longues conversations ;
 7. extension i18n au reste de l’interface si le bilingue devient un objectif
    confirmé.
+
+Les principes providers préparés sont la conservation des contrats Nova et
+des permissions, une extension additive des settings et du coffre, des formats
+texte/JSON par usage, une sélection stable pendant le tour et un transfert
+d'historique vers une nouvelle destination confirmé par l'utilisateur.
+La migration et les harnais de tests correspondants restent à implémenter.
 
 ## Entretien continu des dépendances
 

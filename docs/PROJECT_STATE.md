@@ -119,6 +119,13 @@ catalogue planifié, mais aucune implémentation provider correspondante
 n’existe. Ils sont désactivés dans l’UI et rejetés par la validation main.
 `ActiveAIProviderId` ne contient donc qu’OpenAI.
 
+Le 30 octobre 2026, la préparation documentaire des providers a été corrigée :
+connecteur `ollama` indépendant des modèles, connecteur `mistral`, préservation
+des messages Nova, extension additive proposée des settings et du coffre,
+annulation et transfert d'historique encadrés. Les schémas, migrations et tests
+de ces nouveaux connecteurs ne sont pas implémentés. Voir
+[le dossier Providers](Providers/INDEX.md) et [le cadre de phase 7](PHASE_7.md).
+
 ## Validation technique
 
 Réussites :

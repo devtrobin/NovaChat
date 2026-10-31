@@ -62,6 +62,14 @@ pas une dépendance privée d’ACA. Les autres nouvelles capacités restent en
 phase 7. Les installateurs et essais du binaire distribué restent la toute
 dernière tâche absolue.
 
+La [préparation de phase 7](PHASE_7.md) a été consolidée le 30 octobre 2026,
+avec correction des dix documents [Providers](Providers/INDEX.md). Les
+connecteurs futurs restent `mistral` et `ollama` ; le modèle Mistral local
+n'est pas un provider séparé. Les contrats Nova et le coffre OpenAI sont
+préservés par la conception proposée. Migration, nouveaux IPC et tests de
+ces connecteurs restent à réaliser après ARI/ACA. Reprendre ARI en 6.2.2,
+sans confondre cette préparation documentaire avec une activation de phase 7.
+
 ## Commandes de départ
 
 ```powershell
